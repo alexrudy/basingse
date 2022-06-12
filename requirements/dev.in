@@ -1,0 +1,10 @@
+-r tests.in
+-r typing.in
+pip-compile-multi
+pre-commit
+tox
+black
+flake8
+bump2version
+build
+twine

@@ -1,0 +1,22 @@
+include CONTRIBUTING.rst
+include HISTORY.rst
+include LICENSE
+include README.rst
+
+graft src/basingse/templates
+graft src/basingse/static
+graft src/basingse/data
+graft src/basingse/assets
+
+recursive-include src/basingse/ templates/*.html
+recursive-include src/basingse/ templates/**/*.html
+recursive-include src/basingse/ data/*
+recursive-include src/basingse/ *.py
+recursive-include src/basingse/ *.cfg
+include src/basingse/py.typed
+
+recursive-include tests *
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+
+recursive-include docs *.rst conf.py Makefile make.bat *.jpg *.png *.gif

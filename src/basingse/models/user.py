@@ -3,6 +3,8 @@ import uuid
 from typing import Any
 from typing import cast
 
+from basingse.models.permissions import Role
+from basingse.models.permissions import RoleUserAssociation
 from basingse.models.types import GUID
 from flask_login import AnonymousUserMixin
 from sqlalchemy import Boolean
@@ -37,6 +39,8 @@ class User(Model):
 
     username = Column(String, nullable=False, unique=True, doc="Username")
     active: bool = Column(Boolean, nullable=False, default=False, doc="Is this user active?")
+
+    roles: set[Role] = relationship(Role, secondary=RoleUserAssociation, collection_class=set)
 
     @property
     def is_active(self) -> bool:

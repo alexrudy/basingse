@@ -4,8 +4,8 @@ from sqlalchemy import ForeignKey
 from sqlalchemy import select
 from sqlalchemy import String
 from sqlalchemy.orm import aliased
-from sqlalchemy.orm import relationship
 from sqlalchemy.orm import object_session
+from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import Select
 

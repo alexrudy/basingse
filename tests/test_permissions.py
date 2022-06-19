@@ -1,7 +1,7 @@
 import pytest
+from basingse.models import Capability
+from basingse.models import Role
 from sqlalchemy import select
-
-from basingse.models import Capability, Role
 from sqlalchemy.orm import Session
 
 
@@ -35,7 +35,7 @@ def test_nested_roles_middle(session: Session) -> None:
     r = session.execute(select(Role).where(Role.name == "admin")).scalar_one()
 
     assert r.name == "admin"
-    assert set(c.name for c in r.capabilities) == {"create", "update", "read"}
+    assert {c.name for c in r.capabilities} == {"create", "update", "read"}
     assert len(r.capabilities) == 3
 
 
@@ -45,7 +45,7 @@ def test_nested_roles_root(session: Session) -> None:
     r = session.execute(select(Role).where(Role.name == "superadmin")).scalar_one()
 
     assert r.name == "superadmin"
-    assert set(c.name for c in r.capabilities) == {"create", "update", "read", "delete"}
+    assert {c.name for c in r.capabilities} == {"create", "update", "read", "delete"}
     assert len(r.capabilities) == 4
 
 
@@ -56,7 +56,7 @@ def test_nested_roles_leaf(session: Session) -> None:
 
     assert r.name == "user"
 
-    assert set(c.name for c in r.capabilities) == {"read"}
+    assert {c.name for c in r.capabilities} == {"read"}
     assert len(r.capabilities) == 1
 
 
@@ -66,5 +66,5 @@ def test_nested_roles_outside_graph(session: Session) -> None:
     r = session.execute(select(Role).where(Role.name == "auditor")).scalar_one()
     assert r.name == "auditor"
 
-    assert set(c.name for c in r.capabilities) == {"observe"}
+    assert {c.name for c in r.capabilities} == {"observe"}
     assert len(r.capabilities) == 1

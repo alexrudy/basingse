@@ -24,6 +24,7 @@ from werkzeug.security import generate_password_hash
 
 from .base import Base
 from .types import GUID
+from .user import AnonymousUser
 from .user import EmailContact
 from .user import User
 
@@ -31,13 +32,39 @@ __all__ = ["AuthenticationKind", "Authentication", "Password", "Session", "Token
 
 
 class AuthenticationKind(enum.Enum):
+    ANONYMOUS = enum.auto()
     PASSWORD = enum.auto()
     SESSION = enum.auto()
     TOKEN = enum.auto()
     LINK = enum.auto()
 
 
-class Authentication(Base):
+class AuthenticationMixin:
+
+    id: uuid.UUID
+    user: User
+    active: bool
+    kind: AuthenticationKind
+
+    def revoke(self) -> None:
+        pass
+
+    def check_capability(self, capability: str) -> bool:
+        return False
+
+    def _get_current_object(self) -> "AuthenticationMixin":
+        return self
+
+
+class AnonymousAuthentication(AuthenticationMixin):
+    def __init__(self) -> None:
+        self.user = AnonymousUser()
+        self.active = False
+        self.kind = AuthenticationKind.ANONYMOUS
+        self.id = uuid.UUID(int=0)
+
+
+class Authentication(Base, AuthenticationMixin):
 
     id: Mapped[uuid.UUID] = Column(GUID(), primary_key=True, default=uuid.uuid4)
     created = Column(DateTime(timezone=True), server_default=func.now())
@@ -64,7 +91,7 @@ class Password(Authentication):
     }
 
     id: Mapped[uuid.UUID] = Column(
-        GUID(), ForeignKey("auth.authentication.id", ondelete="CASCADE"), primary_key=True, default=uuid.uuid4
+        GUID(), ForeignKey("auth.authentications.id", ondelete="CASCADE"), primary_key=True, default=uuid.uuid4
     )
     password = Column(String, nullable=False, doc="User's password for login")
 
@@ -108,7 +135,7 @@ class Session(Authentication):
     }
 
     id: Mapped[uuid.UUID] = Column(
-        GUID(), ForeignKey("auth.authentication.id", ondelete="CASCADE"), primary_key=True, default=uuid.uuid4
+        GUID(), ForeignKey("auth.authentications.id", ondelete="CASCADE"), primary_key=True, default=uuid.uuid4
     )
     revoke_at: dt.datetime = Column(DateTime(), nullable=False, doc="When this session should be revoked")
     _token = Column("token", String(50), nullable=False, default=default_token("session"))
@@ -137,7 +164,7 @@ class Token(Authentication):
         "polymorphic_identity": AuthenticationKind.TOKEN,
     }
 
-    id: Mapped[uuid.UUID] = Column(GUID(), ForeignKey("auth.authentication.id"), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = Column(GUID(), ForeignKey("auth.authentications.id"), primary_key=True, default=uuid.uuid4)
     _token = Column("token", String(50), nullable=False, default=default_token("ba-sing-se"))
     revoke_at = Column(DateTime(), nullable=False, doc="When this token should be revoked")
 
@@ -159,9 +186,9 @@ class Link(Authentication):
     }
 
     id: Mapped[uuid.UUID] = Column(
-        GUID(), ForeignKey("auth.authentication.id", ondelete="CASCADE"), primary_key=True, default=uuid.uuid4
+        GUID(), ForeignKey("auth.authentications.id", ondelete="CASCADE"), primary_key=True, default=uuid.uuid4
     )
-    email_id = Column(GUID(), ForeignKey("auth.emails.id", ondelete="CASCADE"))
+    email_id = Column(GUID(), ForeignKey("auth.emailcontacts.id", ondelete="CASCADE"))
     email: EmailContact = relationship(EmailContact)
     _token = Column("token", String(50), nullable=False, default=default_token("link"))
 

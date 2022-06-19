@@ -15,7 +15,7 @@ build==0.8.0
     # via -r requirements/dev.in
 bump2version==1.0.1
     # via -r requirements/dev.in
-certifi==2022.5.18.1
+certifi==2022.6.15
     # via requests
 cfgv==3.3.1
     # via pre-commit

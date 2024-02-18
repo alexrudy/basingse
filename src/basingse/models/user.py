@@ -1,10 +1,11 @@
 import enum
+import functools
 import uuid
 from typing import Any
 from typing import cast
+from typing import TYPE_CHECKING
 
 from basingse.models.permissions import Role
-from basingse.models.permissions import RoleUserAssociation
 from basingse.models.types import GUID
 from flask_login import AnonymousUserMixin
 from sqlalchemy import Boolean
@@ -19,6 +20,10 @@ from sqlalchemy.orm import Session as SASession
 
 from .base import Base
 from .base import Model
+
+
+if TYPE_CHECKING:
+    from .permissions import Capability  # noqa: F401
 
 
 class AnonymousUser(AnonymousUserMixin):  # type: ignore
@@ -40,7 +45,14 @@ class User(Model):
     username = Column(String, nullable=False, unique=True, doc="Username")
     active: bool = Column(Boolean, nullable=False, default=False, doc="Is this user active?")
 
-    roles: set[Role] = relationship(Role, secondary=RoleUserAssociation, collection_class=set)
+    roles: set[Role] = relationship(Role, secondary="auth.roleuserassociations", collection_class=set)
+
+    @functools.cached_property
+    def capabilities(self) -> set["Capability"]:
+        capabilites: set["Capability"] = set()
+        for role in self.roles:
+            capabilites = capabilites.union(role.capabilities)
+        return capabilites
 
     @property
     def is_active(self) -> bool:

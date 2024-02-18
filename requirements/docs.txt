@@ -6,53 +6,53 @@
 #    pip-compile-multi
 #
 -r base.txt
-alabaster==0.7.12
+alabaster==0.7.16
     # via sphinx
-babel==2.10.3
+babel==2.14.0
     # via sphinx
-certifi==2022.6.15
+certifi==2024.2.2
     # via requests
-charset-normalizer==2.0.12
+charset-normalizer==3.3.2
     # via requests
-docutils==0.18.1
+docutils==0.20.1
     # via
     #   sphinx
     #   sphinx-mdinclude
-idna==3.3
+idna==3.6
     # via requests
-imagesize==1.3.0
+imagesize==1.4.1
     # via sphinx
-mistune==2.0.2
+mistune==2.0.5
     # via sphinx-mdinclude
-packaging==21.3
+packaging==23.2
     # via sphinx
-pygments==2.12.0
-    # via sphinx
-pyparsing==3.0.9
-    # via packaging
-requests==2.28.0
+pygments==2.17.2
+    # via
+    #   sphinx
+    #   sphinx-mdinclude
+requests==2.31.0
     # via sphinx
 snowballstemmer==2.2.0
     # via sphinx
-sphinx==5.0.2
+sphinx==7.2.6
     # via
     #   -r requirements/docs.in
     #   sphinx-automodapi
-sphinx-automodapi==0.14.1
+sphinx-automodapi==0.16.0
     # via -r requirements/docs.in
-sphinx-mdinclude==0.5.1
+sphinx-mdinclude==0.5.3
     # via -r requirements/docs.in
-sphinxcontrib-applehelp==1.0.2
+sphinxcontrib-applehelp==1.0.8
     # via sphinx
-sphinxcontrib-devhelp==1.0.2
+sphinxcontrib-devhelp==1.0.6
     # via sphinx
-sphinxcontrib-htmlhelp==2.0.0
+sphinxcontrib-htmlhelp==2.0.5
     # via sphinx
 sphinxcontrib-jsmath==1.0.1
     # via sphinx
-sphinxcontrib-qthelp==1.0.3
+sphinxcontrib-qthelp==1.0.7
     # via sphinx
-sphinxcontrib-serializinghtml==1.1.5
+sphinxcontrib-serializinghtml==1.1.10
     # via sphinx
-urllib3==1.26.9
+urllib3==2.2.0
     # via requests

@@ -24,7 +24,7 @@ class GUID(TypeDecorator):
         if dialect.name == "postgresql":
             return dialect.type_descriptor(postgresql.UUID())
         else:
-            return dialect.type_descriptor(CHAR(32))  # type: ignore
+            return dialect.type_descriptor(CHAR(32))
 
     def process_bind_param(self, value: Optional[UUID], dialect: Dialect) -> Optional[str]:
         if value is None:

@@ -1,0 +1,20 @@
+version: 1
+
+roles:
+  user:
+    capabilities:
+      - read
+  admin:
+    capabilities:
+      - update
+      - create
+    roles:
+      - user
+  superadmin:
+    capabilities:
+      - delete
+    roles:
+      - admin
+  auditor:
+    capabilities:
+      - observe

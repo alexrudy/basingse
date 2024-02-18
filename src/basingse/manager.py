@@ -15,6 +15,7 @@ from flask import Response
 from flask_login import current_user
 from flask_login import login_required
 from flask_login import LoginManager
+from sqlalchemy import func
 from sqlalchemy import select
 from werkzeug.exceptions import Unauthorized
 from werkzeug.local import LocalProxy
@@ -90,7 +91,7 @@ class LoginHandlers:
         now = dt.datetime.utcnow()
         stmt = (
             select(Session)
-            .where(Session.token == session_id, Session.active, Session.revoke_at >= now)
+            .where(Session.token == session_id, Session.active == True, Session.revoke_at >= now)
             .order_by(Session.created.desc())
             .limit(1)
         )
@@ -110,7 +111,11 @@ class LoginHandlers:
         if api_key:
             api_key = api_key.replace("Bearer ", "", 1)
 
-            stmt = select(Token).where(Token.token == api_key, Token.active).limit(1)
+            stmt = (
+                select(Token)
+                .where(Token.token == api_key, Token.active == True, Token.revoke_at > func.current_time())
+                .limit(1)
+            )
             auth: Optional[Token] = self.session.execute(stmt).scalar_one_or_none()
             if auth is None:
                 return auth

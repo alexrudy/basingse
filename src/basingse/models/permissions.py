@@ -1,4 +1,6 @@
-from cached_property import cached_property
+import functools
+from typing import cast
+
 from sqlalchemy import Column
 from sqlalchemy import ForeignKey
 from sqlalchemy import select
@@ -6,7 +8,6 @@ from sqlalchemy import String
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm import object_session
 from sqlalchemy.orm import relationship
-from sqlalchemy.orm import Session
 from sqlalchemy.sql import Select
 
 from .base import Model
@@ -22,30 +23,29 @@ class Capability(Model):
 
 
 def role_capability_association() -> Select:
+    """Produce the SQL statement to retrieve the capabilities for a role and its children"""
 
     leaves = aliased(Role, name="role_leaves")
     parent = aliased(RoleRoleAssociation, name="role_roots")
     child = aliased(RoleRoleAssociation, name="role_children")
 
     roles = (
-        select([parent.parent_role_id.label("parent_id"), parent.child_role_id.label("child_id")])
-        .union(select([leaves.id.label("parent_id"), leaves.id.label("child_id")]))
+        select(parent.parent_role_id.label("parent_id"), parent.child_role_id.label("child_id"))
+        .union(select(leaves.id.label("parent_id"), leaves.id.label("child_id")))
         .cte()
     )
 
-    role_heirarchy = select([roles]).cte(recursive=True, name="role_heirarchy")
+    role_heirarchy = select(roles).cte(recursive=True, name="role_heirarchy")
     role_heirarchy = role_heirarchy.union(
-        select([role_heirarchy.c.parent_id.label("parent_id"), child.child_role_id.label("child_id")]).where(
+        select(role_heirarchy.c.parent_id.label("parent_id"), child.child_role_id.label("child_id")).where(
             child.parent_role_id == role_heirarchy.c.child_id
         )
     )
 
     capability_mapping = (
         select(
-            [
-                Role.id.label("role_id"),
-                RoleCapabilityAssociation.capability_id.label("capability_id"),
-            ]
+            Role.id.label("role_id"),
+            RoleCapabilityAssociation.capability_id.label("capability_id"),
         )
         .join(role_heirarchy, Role.id == role_heirarchy.c.parent_id)
         .join(RoleCapabilityAssociation, role_heirarchy.c.child_id == RoleCapabilityAssociation.role_id)
@@ -70,13 +70,15 @@ class Role(Model):
         cascade="all",
     )
 
-    @cached_property
+    @functools.cached_property
     def capabilities(self) -> frozenset[Capability]:
         src = role_capability_association().cte()
         session = object_session(self)
-        assert isinstance(session, Session), "Expected ORM Session"
+        if session is None:
+            return frozenset(self.direct_capabilities)
         stmt = select(Capability).join(src, src.c.capability_id == Capability.id).where(src.c.role_id == self.id)
-        return frozenset(session.execute(stmt).scalars())
+        results = session.execute(stmt).scalars().all()
+        return cast(frozenset[Capability], frozenset(results))
 
 
 class RoleCapabilityAssociation(Model):

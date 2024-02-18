@@ -6,8 +6,10 @@ import uuid
 from collections.abc import Callable
 from typing import Any
 from typing import Optional
+from typing import TYPE_CHECKING
 
 import pytz
+from basingse.models.permissions import Role
 from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import DateTime
@@ -25,10 +27,13 @@ from werkzeug.security import generate_password_hash
 from .base import Base
 from .types import GUID
 from .user import AnonymousUser
-from .user import EmailContact
 from .user import User
 
-__all__ = ["AuthenticationKind", "Authentication", "Password", "Session", "Token", "Link"]
+if TYPE_CHECKING:
+    from .permissions import Capability  # noqa: F401
+
+
+__all__ = ["AuthenticationKind", "Authentication", "Password", "Session", "Token"]
 
 
 class AuthenticationKind(enum.Enum):
@@ -36,15 +41,14 @@ class AuthenticationKind(enum.Enum):
     PASSWORD = enum.auto()
     SESSION = enum.auto()
     TOKEN = enum.auto()
-    LINK = enum.auto()
 
 
 class AuthenticationMixin:
 
-    id: uuid.UUID
-    user: User
-    active: bool
-    kind: AuthenticationKind
+    id: Mapped[uuid.UUID]
+    user: Mapped[User]
+    active: Mapped[bool]
+    kind: Mapped[AuthenticationKind]
 
     def revoke(self) -> None:
         pass
@@ -73,10 +77,22 @@ class Authentication(Base, AuthenticationMixin):
     user_id: Mapped[uuid.UUID] = Column(GUID(), ForeignKey("auth.users.id", ondelete="CASCADE"), nullable=False)
     user: User = relationship(User, backref="authentication_methods")
 
-    active = Column(Boolean, nullable=False, default=False, doc="Is this authentication type active?")
-    kind: AuthenticationKind = Column(Enum(AuthenticationKind), nullable=False)
+    active: Mapped[bool] = Column(Boolean, nullable=False, default=False, doc="Is this authentication type active?")
+    kind: Mapped[AuthenticationKind] = Column(Enum(AuthenticationKind), nullable=False)
 
     __mapper_args__: dict[str, Any] = {"polymorphic_on": kind}
+
+    roles: set[Role] = relationship(Role, secondary="auth.roleauthenticationassociations", collection_class=set)
+
+    @functools.cached_property
+    def capabilities(self) -> set["Capability"]:
+        caps: set["Capability"] = set()
+        for role in self.roles:
+            caps = caps.union(role.capabilities)
+        return caps
+
+    def check_capability(self, capability: str) -> bool:
+        return any(c.name == capability for c in self.capabilities)
 
     def revoke(self) -> None:
         """Revoke this authentication method"""
@@ -98,6 +114,13 @@ class Password(Authentication):
     def __repr__(self) -> str:
         password = "'*****'" if self.password is not None else repr(None)
         return f"Password(id={self.id}, password={password})"
+
+    @functools.cached_property
+    def capabilities(self) -> set["Capability"]:
+        caps: set["Capability"] = set()
+        for role in self.roles:
+            caps = caps.union(role.capabilities)
+        return caps
 
     @validates("password")
     def set_password(self, key: str, password: Optional[str]) -> Optional[str]:
@@ -147,7 +170,7 @@ class Session(Authentication):
         return self._token
 
     @token.expression
-    def _(cls) -> Column[String]:  # noqa: B902
+    def _(cls) -> Mapped[str]:  # noqa: B902
         return cls._token  # type: ignore
 
     def expired(self, now: Optional[dt.datetime] = None) -> bool:
@@ -175,29 +198,5 @@ class Token(Authentication):
         return self._token
 
     @token.expression
-    def _(cls) -> Column[String]:  # noqa: B902
-        return cls._token  # type: ignore
-
-
-class Link(Authentication):
-
-    __mapper_args__ = {
-        "polymorphic_identity": AuthenticationKind.LINK,
-    }
-
-    id: Mapped[uuid.UUID] = Column(
-        GUID(), ForeignKey("auth.authentications.id", ondelete="CASCADE"), primary_key=True, default=uuid.uuid4
-    )
-    email_id = Column(GUID(), ForeignKey("auth.emailcontacts.id", ondelete="CASCADE"))
-    email: EmailContact = relationship(EmailContact)
-    _token = Column("token", String(50), nullable=False, default=default_token("link"))
-
-    @hybrid_property
-    def token(self) -> str:
-        if self._token is None:
-            self._token = default_token("link")()
-        return self._token
-
-    @token.expression
-    def _(cls) -> Column[String]:  # noqa: B902
+    def _(cls) -> Mapped[str]:  # noqa: B902
         return cls._token  # type: ignore

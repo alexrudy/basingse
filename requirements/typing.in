@@ -2,3 +2,4 @@
 mypy
 sqlalchemy[mypy]>=1.4
 types-pytz
+typing_extensions>=4.8.0

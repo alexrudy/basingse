@@ -1,5 +1,4 @@
 from .authentication import Authentication
-from .authentication import Link
 from .authentication import Password
 from .authentication import Session
 from .authentication import Token
@@ -16,7 +15,6 @@ __all__ = [
     "Password",
     "Session",
     "Token",
-    "Link",
     "User",
     "Contact",
     "EmailContact",

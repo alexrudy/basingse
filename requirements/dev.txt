@@ -37,10 +37,8 @@ filelock==3.13.1
     #   virtualenv
 flake8==7.0.0
     # via -r requirements/dev.in
-identify==2.5.34
+identify==2.5.35
     # via pre-commit
-idna==3.6
-    # via requests
 importlib-metadata==7.0.1
     # via
     #   keyring
@@ -74,7 +72,7 @@ platformdirs==4.2.0
     #   black
     #   tox
     #   virtualenv
-pre-commit==3.6.1
+pre-commit==3.6.2
     # via -r requirements/dev.in
 pycodestyle==2.11.1
     # via flake8
@@ -110,7 +108,7 @@ tox==4.13.0
     # via -r requirements/dev.in
 twine==5.0.0
     # via -r requirements/dev.in
-urllib3==2.2.0
+urllib3==2.2.1
     # via
     #   requests
     #   twine

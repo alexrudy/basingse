@@ -1,0 +1,43 @@
+{% macro login_form(form, endpoint='auth.login') %}
+<div class="mx-auto">
+    <form action="{{ url_for_next(endpoint, next=request.args.get('next')) }}" method="post">
+        {{ form.hidden_tag() }}
+        <div class="form-group d-flex flex-column">
+            <div class="my-2 flex-row">
+                <div class="row g-3 justify-content-lg-between">
+                    <div class="col-auto">{{ form.email.label(class_="col-form-label") }}</div>
+                    <div class="col-auto ms-auto">{{ form.email(size=32, class_="form-control") }}</div>
+                </div>
+                <div class="row">
+                    <div class="col-auto">
+                        {% for error in form.email.errors %}
+                        <span style="color: red;">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="my-2 flex-row">
+                <div class="row g-3 justify-content-lg-between">
+                    <div class="col-lg-2">{{ form.password.label(class_="col-form-label") }}</div>
+                    <div class="col-auto ms-auto">{{ form.password(size=32, class_="form-control") }}</div>
+                </div>
+                <div class="row">
+                    <div class="col-auto">
+                        {% for error in form.password.errors %}
+                        <span style="color: red;">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex align-items-center">
+                <div class="flex-fill">{{ form.remember_me.label(class_="col-form-label pe-3") }}{{ form.remember_me()
+                    }}
+                </div>
+                <div>{{ form.submit(class_="btn btn-primary") }}</div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endmacro %}
+
+{{ login_form(form) }}

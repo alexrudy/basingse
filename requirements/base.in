@@ -1,5 +1,12 @@
-sqlalchemy>=1.4
-flask
-flask-login
+Flask-BCrypt
+Flask-Login
+Flask-WTF
+Flask!=3.0.1,>=2
+itsdangerous
+marshmallow
 pytz
-cached_property
+SQLAlchemy>=1.4
+structlog
+svcs
+wtforms[email]
+wtforms-sqlalchemy

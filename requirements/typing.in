@@ -1,5 +1,5 @@
 -r base.in
 mypy
-sqlalchemy[mypy]>=1.4
+sqlalchemy[mypy]
 types-pytz
 typing_extensions>=4.8.0

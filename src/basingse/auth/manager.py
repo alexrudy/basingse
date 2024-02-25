@@ -1,7 +1,7 @@
 import functools
 
 import structlog
-import svcs
+from basingse import svcs
 from flask import abort
 from flask import flash
 from flask import redirect
@@ -26,7 +26,7 @@ def load_auth(token: str) -> User | None:
     If the auth doesn't exist, flask-login will transparently
     handle issues
     """
-    session = svcs.flask.get(Session)
+    session = svcs.get(Session)
     log.debug("Loading user", token=token)
     return session.execute(select(User).where(User.token == token).limit(1)).scalar_one_or_none()
 

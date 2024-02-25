@@ -1,0 +1,30 @@
+{% extends "core.html" %}
+
+{% block meta %}
+<meta name="csrf" content="{{ csrf_token() }}">
+{% endblock %}
+
+{% block title %}Admin | {{ site_settings.title }}{% endblock %}
+
+{% import "admin/_breadcrumbs.html" as bread %}
+
+{% block body %}
+<main class="d-flex vh-100">
+    {% block navbar %}
+    {% include "admin/_sidebar.html" %}
+    {% endblock %}
+    <div class="container" style="margin-left: 300px;">
+        <div class="row mt-5">
+            <div class="col-5">
+                {% block breadcrumbs %}{% endblock %}
+            </div>
+        </div>
+        <div class="row my-3">
+            <div class="col-5">
+                {% include "_flash.html" %}
+            </div>
+        </div>
+        {% block main %}{% endblock %}
+    </div>
+</main>
+{% endblock %}

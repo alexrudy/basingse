@@ -1,0 +1,19 @@
+{% from "bootstrap/_form.html" import errors %}
+{% from "_icon.html" import icon %}
+
+{% macro link_input_field(field, iconname, link_base) %}
+<div class="px-1 text-muted d-inline-flex align-items-top">
+    <span>{{ icon(iconname) }}</span>
+    <span class="ps-1">{{ field.label(class_="form-label") }}</span>
+</div>
+<div class="mb-3">
+    <div class="input-group form">
+        <div class="input-group-text form-control-sm"><span class="form-text font-monospace">{{
+                link_base }}</span></div>
+        {{ field(class_="form-control form-control-sm") }}
+    </div>
+</div>
+<div>
+    {{ errors(field.errors) }}
+</div>
+{% endmacro %}

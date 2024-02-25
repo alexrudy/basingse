@@ -3,7 +3,7 @@ import uuid
 from typing import Any
 
 import structlog
-import svcs
+from basingse import svcs
 from flask import abort
 from flask import Blueprint
 from flask import current_app
@@ -114,7 +114,7 @@ def password() -> Any:
             flash("Incorrect current password", category="error")
         else:
             extension = get_extension()
-            session = svcs.flask.get(Session)
+            session = svcs.get(Session)
             user.password = form.new_password.data
             session.add(user)
             session.commit()
@@ -126,7 +126,7 @@ def password() -> Any:
 @bp.route("/user/<uuid:id>/activate")
 @require_permission("user.edit")
 def user_activate(id: uuid.UUID) -> Any:
-    session = svcs.flask.get(Session)
+    session = svcs.get(Session)
     user = get_or_404(session, id)
     user.active = True
     log.info("Activated user", user=user)
@@ -137,7 +137,7 @@ def user_activate(id: uuid.UUID) -> Any:
 @bp.route("/user/<uuid:id>/deactivate")
 @require_permission("user.edit")
 def user_deactivate(id: uuid.UUID) -> Any:
-    session = svcs.flask.get(Session)
+    session = svcs.get(Session)
     user = get_or_404(session, id)
     user.active = False
     log.info("Deactivated user", user=user)
@@ -148,7 +148,7 @@ def user_deactivate(id: uuid.UUID) -> Any:
 @bp.route("/user/<uuid:id>/reset-session/")
 @require_permission("user.edit")
 def session_reset_token(id: uuid.UUID) -> Any:
-    session = svcs.flask.get(Session)
+    session = svcs.get(Session)
     user = get_or_404(session, id)
     user.reset_token()
     session.commit()
@@ -190,7 +190,7 @@ def dev_login() -> Any:
     input_data = request.get_json() or {}
     email = input_data["email"]
 
-    session = svcs.flask.get(Session)
+    session = svcs.get(Session)
     user = session.execute(select(User).where(User.email == email).limit(1)).scalar_one_or_none()
     if user is None:
         log.warning(

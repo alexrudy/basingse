@@ -1,0 +1,22 @@
+{% macro trail(content) %}
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a class="text-reset" href="{{ url_for('admin.home') }}">Admin</a>
+        </li>
+        {{ caller() }}
+    </ol>
+</nav>
+{% endmacro %}
+
+
+{% macro crumb(name, url) %}
+<li class="breadcrumb-item">
+    <a class="text-reset" href="{{ url }}">{{ name }}</a>
+</li>
+{% endmacro %}
+{% macro crust(name) %}
+<li class="breadcrumb-item active" aria-current="page">
+    {{ name }}
+</li>
+{% endmacro %}

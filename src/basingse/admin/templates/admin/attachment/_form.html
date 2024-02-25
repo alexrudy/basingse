@@ -1,0 +1,56 @@
+{% import "bootstrap/_form.html" as bform %}
+{% from "admin/_link_form_field.html" import link_input_field %}
+<form action="" method="post" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+    <div class="form-group">
+        <div class="d-flex my-2">
+            <div class="flex-grow-1 me-auto">
+                {{ bform.field(form.filename, size=64) }}
+            </div>
+            <div class="ms-2">
+                {% if attachment.mimetype %}
+                {{ bform.field(form.content_type, text="MIME Type is currently " + attachment.mimetype) }}
+                {% else %}
+                {{ bform.field(form.content_type) }}
+                {% endif %}
+            </div>
+        </div>
+        <div class="d-flex my-2">
+            <div class="me-2">
+                {{ bform.field(form.compression, class="form-select") }}
+            </div>
+            <div class="ms-auto">
+                {{ bform.field(form.digest_algorithm, class="form-select") }}
+            </div>
+        </div>
+
+        <div class="d-flex my-2">
+            <div class="flex-grow-1 me-auto">
+                <fieldset disabled>
+                    {{ bform.field(form.digest) }}
+                </fieldset>
+            </div>
+        </div>
+
+
+        <div class="d-flex my-2">
+            <div class="flex-grow-1 me-auto">
+                {{ bform.field(form.attachment) }}
+            </div>
+        </div>
+        <div class="d-flex my-2">
+
+            <div class="ms-auto d-flex">
+                {% if current_user.can('attachment.delete') and attachment.id %}
+                <div class="px-2">
+                    <a class="btn btn-danger" href="{{ url_for('.delete', id=attachment.id) }}">Delete</a>
+                </div>
+                {% endif %}
+                <div class="px-2">
+                    <a class="btn btn-secondary" href="{{ url_for('.list') }}">Discard Changes</a>
+                </div>
+                <div class="ps-2">{{ form.submit(class_="btn btn-primary") }}</div>
+            </div>
+        </div>
+    </div>
+</form>

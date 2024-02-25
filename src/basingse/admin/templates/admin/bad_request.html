@@ -1,0 +1,17 @@
+{% extends "admin/base.html" %}
+
+
+{% block title %}
+Not Found | Admin | {{ site_settings.title }}
+{% endblock %}
+
+{% block main %}
+<div class="row me-5">
+    <div class="col-xl-6">
+        <h2>Bad Request (400)</h2>
+        <p>Something went wrong with your request to {{ request.path }}</p>
+        <p>{{ message }}</p>
+        <pre>{{ g.get('request_info').id|default('') }}</pre>
+    </div>
+</div>
+{% endblock %}

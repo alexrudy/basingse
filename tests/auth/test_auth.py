@@ -1,6 +1,10 @@
+import contextlib
 import datetime as dt
 import uuid
+from collections.abc import Iterator
 from typing import Any
+from typing import Callable
+from typing import ContextManager
 from urllib.parse import parse_qs
 from urllib.parse import urlsplit as url_parse
 
@@ -8,7 +12,7 @@ import freezegun
 import pytest
 import pytz
 import structlog
-import svcs
+from basingse import svcs
 from basingse.auth.models import User
 from basingse.auth.models import UserSchema
 from basingse.auth.testing import LoginClient
@@ -32,6 +36,23 @@ def admin(user: Any) -> User:
 @pytest.fixture
 def author(user: Any) -> User:
     return user("author")
+
+
+ModifyContext = Callable[[], ContextManager[Session]]
+
+
+@pytest.fixture
+def modify(app: Flask) -> ModifyContext:
+
+    @contextlib.contextmanager
+    def _modify_context() -> Iterator[Session]:
+        with app.app_context():
+            session = svcs.get(Session)
+            session.expire_on_commit = False
+            yield session
+            session.commit()
+
+    return _modify_context
 
 
 @pytest.mark.usefixtures("secure")
@@ -89,10 +110,10 @@ def test_dev_login_unknown_user(author: User, client: LoginClient) -> None:
 
 
 @pytest.mark.usefixtures("secure")
-def test_dev_login_inactive_user(session: Session, author: User, client: LoginClient) -> None:
-    author.active = False
-    session.add(author)
-    session.commit()
+def test_dev_login_inactive_user(modify: ModifyContext, author: User, client: LoginClient) -> None:
+    with modify() as session:
+        author.active = False
+        session.add(author)
 
     with client.post("/auth/testing/login/", follow_redirects=True, json={"email": author.email}) as resp:
         assert resp == Unauthorized()
@@ -131,10 +152,10 @@ def test_login_logout_client(author: User, client: LoginClient) -> None:
 
 
 @pytest.mark.usefixtures("secure")
-def test_login_failure_not_active(author: User, client: LoginClient, session: Session) -> None:
-    author.active = False
-    session.add(author)
-    session.commit()
+def test_login_failure_not_active(modify: ModifyContext, author: User, client: LoginClient) -> None:
+    with modify() as session:
+        author.active = False
+        session.add(author)
 
     resp = client.get("/")
 
@@ -146,7 +167,7 @@ def test_login_failure_not_active(author: User, client: LoginClient, session: Se
 
 
 @pytest.mark.usefixtures("secure")
-def test_change_password(session: Session, author: User, client: LoginClient) -> None:
+def test_change_password(app: Flask, author: User, client: LoginClient) -> None:
     client.login_session(author.email)  # type: ignore
 
     resp = client.get("/auth/password/")
@@ -166,10 +187,12 @@ def test_change_password(session: Session, author: User, client: LoginClient) ->
         data={"old_password": "badpassword", "new_password": "worsepassword", "confirm": "worsepassword"},
     )
 
-    session.add(author)
-    session.refresh(author)
-    assert not author.compare_password("badpassword")
-    assert author.compare_password("worsepassword")
+    with app.app_context():
+        session = svcs.get(Session)
+        session.add(author)
+        session.refresh(author)
+        assert not author.compare_password("badpassword")
+        assert author.compare_password("worsepassword")
 
 
 @pytest.mark.usefixtures("extension", "engine")
@@ -179,17 +202,19 @@ def test_user_not_found(client: LoginClient) -> None:
 
 
 @pytest.mark.usefixtures("secure")
-def test_remove_password(session: Session, author: User, client: LoginClient) -> None:
-    author.password = None
-    session.add(author)
-    session.commit()
+def test_remove_password(modify: ModifyContext, author: User, client: LoginClient) -> None:
+    with modify() as session:
+        author.password = None
+        session.add(author)
 
     client.post("/auth/login/", data={"email": author.email, "password": "badpassword"})
     assert not current_user.is_authenticated
 
 
-@pytest.mark.usefixtures("secure")
-def test_user_attributes(session: Session, author: User, client: LoginClient) -> None:
+@pytest.mark.usefixtures("secure", "app_context")
+def test_user_attributes(author: User, client: LoginClient) -> None:
+    session = svcs.get(Session)
+
     session.add(author)
     author.email = "test-user@basingse.test"  # type: ignore
     assert author.last_login_at == None
@@ -204,29 +229,32 @@ def test_user_attributes(session: Session, author: User, client: LoginClient) ->
 
 
 @pytest.mark.usefixtures("secure")
-def test_user_activate_endpoints(session: Session, author: User, admin: User, client: LoginClient) -> None:
-    session.add(author)
-    session.commit()
-    assert author.is_active
+def test_user_activate_endpoints(author: User, admin: User, client: LoginClient) -> None:
 
     client.login_session(admin.email)  # type: ignore
 
     log.info("GET /activate", user=author, active=author.is_active)
     with client.get(f"/auth/user/{author.id}/activate") as resp:
+        session = svcs.get(Session)
         assert resp == Redirect("/"), "/activate should redirect to /"
-        session.refresh(author)
+        if (author := session.get(User, author.id)) is None:  # type: ignore[assignment]
+            raise AssertionError("Author should be in the session")
         assert author.is_active, "User should be active"
 
     log.info("GET /deactivate", user=author, active=author.is_active)
     with client.get(f"/auth/user/{author.id}/deactivate") as resp:
+        session = svcs.get(Session)
         assert resp == Redirect("/"), "/deactivate should redirect to /"
-        session.refresh(author)
+        if (author := session.get(User, author.id)) is None:  # type: ignore[assignment]
+            raise AssertionError("Author should be in the session")
         assert not author.is_active, "User should be deactivated"
 
     log.info("GET /activate", user=author, active=author.is_active)
     with client.get(f"/auth/user/{author.id}/activate") as resp:
+        session = svcs.get(Session)
         assert resp == Redirect("/"), "/activate should redirect to /"
-        session.refresh(author)
+        if (author := session.get(User, author.id)) is None:  # type: ignore[assignment]
+            raise AssertionError("Author should be in the session")
         assert author.is_active, "User should be active"
 
 
@@ -315,7 +343,7 @@ def test_login_link(author: User, client: LoginClient, app: Flask) -> None:
 
     # Reset the author's token
     with app.app_context():
-        session = svcs.flask.get(Session)
+        session = svcs.get(Session)
         session.get(User, author.id).reset_token()  # type: ignore
         session.commit()
 
@@ -328,7 +356,7 @@ def test_login_link(author: User, client: LoginClient, app: Flask) -> None:
         client.logout()
 
         with app.app_context():
-            session = svcs.flask.get(Session)
+            session = svcs.get(Session)
             user = session.get(User, author.id)
             assert user is not None
             link = user.link()
@@ -342,6 +370,7 @@ def test_login_link(author: User, client: LoginClient, app: Flask) -> None:
             assert not current_user.is_active, "User should be inactive"
 
 
+@pytest.mark.usefixtures("extension", "engine")
 @pytest.mark.parametrize(
     "email, password, success",
     [
@@ -350,13 +379,15 @@ def test_login_link(author: User, client: LoginClient, app: Flask) -> None:
         ("imposter@basingse.test", "badpassword", False),
     ],
 )
-def test_login_model(app: Flask, session: Session, email: str, password: str, success: bool) -> None:
+def test_login_model(app: Flask, email: str, password: str, success: bool) -> None:
     with app.app_context():
+        session = svcs.get(Session)
         user = User(email="author@basingse.test", password="badpassword", active=True)
         session.add(user)
         session.commit()
 
     with app.test_request_context("/"):
+        session = svcs.get(Session)
         assert User.login(session, email, password) == success
 
 

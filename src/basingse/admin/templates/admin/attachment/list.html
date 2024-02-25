@@ -1,0 +1,65 @@
+{% extends "admin/base/list.html" %}
+
+{% block title %}
+Attachments | {{ super() }}
+{% endblock %}
+
+{% block breadcrumbs %}
+{% call bread.trail() %}
+{{ bread.crust('Attachments') }}
+{% endcall %}
+{% endblock %}
+
+{% block heading %}
+<h2>Attachments</h2>
+{% endblock %}
+
+{% block thead %}
+<th scope="col">ID</th>
+<th scope="col">Filename</th>
+<th scope="col">Extension</th>
+<th scope="col">MIME Type</th>
+<th scope="col">Compression</th>
+<th scope="col">
+    {{ column_icon('save', 'On Disk')}}
+</th>
+<th></th>
+<th></th>
+{% endblock %}
+
+{% block tbody %}
+{% for attachment in attachments %}
+<tr>
+    <td>
+        {{ attachment.id.hex | truncate(10, true, '') }}</a>
+    </td>
+    <td>
+        <a href="{{ url_for('.edit', id=attachment.id) }}"
+            class="{% if not current_user.can('attachment.edit') %}disabled{% endif %}">
+            {{ attachment.filename|truncate(40) }}
+        </a>
+    </td>
+    <td>{{ attachment.extension }}</td>
+    <td>{{ attachment.mimetype|truncate(20) }}</td>
+    <td>{{ attachment.compression.name }}</td>
+    <td class="text-start">
+        {{ is_present(attachment.cached_filepath.exists())}}
+    </td>
+    <td>
+        <a href="{{ url_for('attachments.download', id=attachment.id) }}">
+            {{- icon("download") -}}
+        </a>
+    </td>
+    <td>
+        <a href="{{ url_for('.delete', id=attachment.id) }}">
+            {{- icon("trash") -}}
+        </a>
+    </td>
+
+</tr>
+{% endfor %}
+{% endblock %}
+
+{% block controls %}
+<a class="btn btn-secondary" href="{{ url_for('.new') }}">New Attachment</a>
+{% endblock %}

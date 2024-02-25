@@ -47,12 +47,8 @@ jaraco-classes==3.3.1
     # via keyring
 keyring==24.3.0
     # via twine
-markdown-it-py==3.0.0
-    # via rich
 mccabe==0.7.0
     # via flake8
-mdurl==0.1.2
-    # via markdown-it-py
 more-itertools==10.2.0
     # via jaraco-classes
 nh3==0.2.15
@@ -112,7 +108,7 @@ urllib3==2.2.1
     # via
     #   requests
     #   twine
-virtualenv==20.25.0
+virtualenv==20.25.1
     # via
     #   pre-commit
     #   tox

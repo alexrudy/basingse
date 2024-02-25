@@ -1,0 +1,41 @@
+{% extends "admin/base/edit.html" %}
+
+{% block navbar %}
+{% set active_endpoint = 'admin.attachments' %}
+{% include "admin/_sidebar.html" %}
+{% endblock %}
+
+{% block title %}
+{% if attachment.id %}
+Edit Attachment {{ attachment.id }} | {{ super() }}
+{% else %}
+New Attachment | {{ super() }}
+{% endif %}
+{% endblock %}
+
+{% block breadcrumbs %}
+{% call bread.trail() %}
+{{ bread.crumb('Attachments', url_for('.list')) }}
+{% if attachment.id %}
+{{ bread.crust('Edit ' + attachment.filename) }}
+{% else %}
+{{ bread.crust('New Attachment') }}
+{% endif %}
+{% endcall %}
+{% endblock %}
+
+{% block heading %}
+<div class="col-lg-9">
+    {% if attachment.id %}
+    <h2>Edit Attachment <strong>{{ attachment.filename }}</strong></h2>
+    {% else %}
+    <h2>Create a new Attachment</h2>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block form %}
+<div class="col-lg-9">
+    {% include "admin/attachment/_form.html" %}
+</div>
+{% endblock %}

@@ -1,7 +1,7 @@
 from typing import TypeVar
 
 import structlog
-import svcs
+from basingse import svcs
 from flask import current_app
 from flask import Flask
 from flask_bcrypt import Bcrypt
@@ -103,7 +103,7 @@ class Authentication:
     @property
     def session(self) -> Session:
         """Get a SQLAlchemy session"""
-        return svcs.flask.get(Session)
+        return svcs.get(Session)
 
     @property
     def bcrypt(self) -> Bcrypt:

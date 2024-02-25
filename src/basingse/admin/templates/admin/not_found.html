@@ -1,0 +1,23 @@
+{% extends "admin/base.html" %}
+
+
+{% block title %}
+Not Found | Admin | {{ site_settings.title }}
+{% endblock %}
+
+{% block main %}
+<div class="row me-5">
+    <div class="col-xl-6">
+        <h2>Not Found (404)</h2>
+        <p>We couldn't find what you are looking for. Are you sure there is something at {{ request.path }}?</p>
+
+        <h3>Request Info</h3>
+        {% if 'request_info' in g %}
+        <pre>{{ g.request_info.id }}</pre>
+        {% else %}
+        <p>No request info available.</p>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

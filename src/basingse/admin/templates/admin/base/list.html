@@ -1,0 +1,42 @@
+{% extends "admin/base.html" %}
+
+
+{% macro column_icon(name, title) %}
+<a href="#" data-bs-toggle="tooltip" data-bs-title="{{ title }}" class="link-dark">
+    {{ icon(name, height=12, width=12) }}
+</a>
+{% endmacro %}
+
+{% macro is_present(expr) %}
+{% if expr %}
+{{ icon('check', classes="text-success") }}
+{% else %}
+{{ icon('x', classes="text-danger")}}
+{% endif %}
+{% endmacro %}
+
+
+{% block main %}
+<div class="row me-5">
+    <div class="col">
+        {% block heading %}
+        {% endblock %}
+        <table class="table table-sm table-hover">
+            <thead>
+                {% block thead %}
+                {% endblock %}
+            </thead>
+            <tbody>
+                {% block tbody %}
+                {% endblock %}
+            </tbody>
+        </table>
+
+        <div class="px-2">
+            {% block controls %}
+            {% endblock %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

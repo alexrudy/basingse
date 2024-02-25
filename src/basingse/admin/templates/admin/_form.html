@@ -1,0 +1,65 @@
+{% from "admin/_link_form_field.html" import link_input_field %}
+
+{% macro base(form, url) %}
+<form action="{{ url }}" method="post">
+    {{ form.hidden_tag() }}
+    {{ caller() }}
+</form>
+{% endmacro %}
+
+<div class="form-group">
+    <div class="d-flex my-2">
+        <div class="flex-grow-1 me-auto">
+            {{ form.username.label(class_="form-label")}}
+            {{ form.username(size=64, class_="form-control") }}
+            <div class="form-text">Username is deprecated</div>
+            {{ errors(form.username.errors) }}
+        </div>
+    </div>
+    <div class="d-flex my-2">
+        <div class="flex-grow-1 me-auto">
+            {{ form.email.label(class_="form-label")}}
+            {{ form.email(size=64, class_="form-control") }}
+            {{ errors(form.email.errors) }}
+        </div>
+    </div>
+    <div class="d-flex my-2">
+        <div class="flex-grow-1 me-auto">
+            {{ form.password.label(class_="form-label")}}
+            {{ form.password(size=64, class_="form-control") }}
+            {{ errors(form.password.errors) }}
+        </div>
+    </div>
+
+    <div class="d-flex my-2">
+        <div class="flex-grow-1 me-auto">
+            {{ form.role.label(class_="form-label")}}
+            {{ form.role(class_="form-select") }}
+            {{ errors(form.password.errors) }}
+        </div>
+    </div>
+
+
+    <div class="d-flex my-2">
+        <div>
+            <div class="form-check form-switch">
+                {{ form.active(class_="form-check-input", role="switch") }}
+                {{ form.active.label(class_="form-check-label")}}
+            </div>
+        </div>
+        <div class="ms-auto d-flex">
+            {% if user.id and current_user.can('user.delete') %}
+            <div class="px-2">
+                <a class="btn btn-danger {% if user.id == current_user.id %}disabled{% endif %}" {% if
+                    user.id==current_user.id %}aria-disabled="true" {% endif %}
+                    href="{{ url_for('admin.user_delete', username=user.username) }}">Delete</a>
+            </div>
+            {% endif %}
+            <div class="px-2">
+                <a class="btn btn-secondary" href="{{ url_for('admin.users') }}">Discard Changes</a>
+            </div>
+            <div class="ps-2">{{ form.submit(class_="btn btn-primary") }}</div>
+        </div>
+    </div>
+</div>
+</form>

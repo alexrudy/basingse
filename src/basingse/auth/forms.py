@@ -2,8 +2,10 @@ import operator as op
 from collections.abc import Iterable
 from typing import Any
 
+from basingse import svcs
 from flask_wtf import FlaskForm
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 from wtforms import BooleanField
 from wtforms import EmailField
 from wtforms import PasswordField
@@ -16,7 +18,6 @@ from wtforms.validators import Length
 from wtforms.validators import Optional
 from wtforms_sqlalchemy.fields import QuerySelectField
 
-from .extension import get_extension
 from .permissions import Role
 
 PASSWORD_MINIMUM_LENGTH = 6
@@ -55,7 +56,7 @@ class MaybePasswordField(PasswordField):  # type: ignore
 
 
 def role_query_factory() -> Iterable[Role]:
-    return get_extension().session.scalars(select(Role))
+    return svcs.get(Session).scalars(select(Role))
 
 
 class UserEditForm(FlaskForm):  # type: ignore
@@ -73,5 +74,4 @@ class UserEditForm(FlaskForm):  # type: ignore
     )
 
     active = BooleanField("Active")
-
     submit = SubmitField("Save")

@@ -12,6 +12,7 @@ from typing import TypeVar
 
 import flask_login.config
 import structlog
+from basingse import svcs
 from flask import current_app
 from flask import request
 from flask.typing import ResponseReturnValue
@@ -28,6 +29,7 @@ from sqlalchemy.ext.associationproxy import AssociationProxy
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Session
 
 if TYPE_CHECKING:
     from .models import User
@@ -269,11 +271,9 @@ def require_permission(
 
 def create_administrator(email: str, password: str) -> "User":
     """Initialize the administrator user if it doesn't exist"""
-    from .extension import get_extension
     from .models import User
 
-    session = get_extension().session
-
+    session = svcs.get(Session)
     user = session.execute(select(User).where(User.email == email).limit(1)).scalar_one_or_none()
     if user is None:
         user = User(email=email, active=True)

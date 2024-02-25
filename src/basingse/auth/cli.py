@@ -1,11 +1,11 @@
 import click
 import structlog
+from basingse import svcs
 from flask.cli import AppGroup
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session
 
-from .extension import get_extension
 from .models import User
 from .permissions import Action
 from .permissions import create_administrator
@@ -41,7 +41,7 @@ def get_role(session: Session, role: str) -> Role:
 @click.option("--display-name", help="Display name for the new user", type=str, required=False)
 def new_user(email: str, password: str, active: bool, role: str | None, display_name: str | None) -> None:
     """Add a user to the authentication system."""
-    session = get_extension().session
+    session = svcs.get(Session)
 
     user = session.execute(select(User).where(User.email == email).limit(1)).scalar_one_or_none()
     if user is None:
@@ -65,7 +65,7 @@ def new_user(email: str, password: str, active: bool, role: str | None, display_
 @click.option("--role", help="Role for the user", type=str, required=True, prompt=True)
 def role(email: str, role: str) -> None:
     """Set a role for a user."""
-    session = get_extension().session
+    session = svcs.get(Session)
 
     user = get_or_abort(session, email)
     log.info("Updating user", user=user)
@@ -81,7 +81,7 @@ def role(email: str, role: str) -> None:
 @click.option("--administrator/--not-administrator", default=False, help="Is this an administrator role?")
 def new_role(name: str, administrator: bool) -> None:
     """Add a role to the authentication system."""
-    session = get_extension().session
+    session = svcs.get(Session)
 
     role = session.execute(select(Role).where(Role.name == name).limit(1)).scalar_one_or_none()
     if role is None:
@@ -108,7 +108,7 @@ def new_role(name: str, administrator: bool) -> None:
 )
 def grant(role: str, model: str, permission: str) -> None:
     """Grant a permission to a role."""
-    session = get_extension().session
+    session = svcs.get(Session)
     permission = Action[permission.upper()]
 
     role = get_role(session, role)
@@ -124,7 +124,7 @@ def grant(role: str, model: str, permission: str) -> None:
 @click.option("--active/--inactive", default=True, help="Is this account active?", prompt=True)
 def activate(email: str, active: bool) -> None:
     """Activate or deactivate a user."""
-    session = get_extension().session
+    session = svcs.get(Session)
 
     user = get_or_abort(session, email)
     log.info("Updating user", user=user)
@@ -139,7 +139,7 @@ def activate(email: str, active: bool) -> None:
 @click.option("--email", type=str, prompt=True, help="Email we want to log out")
 def logout(email: str) -> None:
     """Log a user out of the web interface by resetting their token"""
-    session = get_extension().session
+    session = svcs.get(Session)
     user = get_or_abort(session, email)
     log.info("Resetting login token", user=user)
     user.reset_token()
@@ -151,7 +151,7 @@ def logout(email: str) -> None:
 @click.password_option(help="New password for the user")
 def set_password(email: str, password: str) -> None:
     """Set a new password for a user."""
-    session = get_extension().session
+    session = svcs.get(Session)
     user = get_or_abort(session, email)
     log.info("Updating user", user=user)
 
@@ -166,7 +166,7 @@ def set_password(email: str, password: str) -> None:
 @click.option("--yes", "confirm", is_flag=True, default=False, help="Don't prompt for input")
 def delete_user(email: str, confirm: bool) -> None:
     """Delete a user and all associated data"""
-    session = get_extension().session
+    session = svcs.get(Session)
 
     user = get_or_abort(session, email)
 
@@ -182,7 +182,7 @@ def delete_user(email: str, confirm: bool) -> None:
 @click.option("--administrator/--not-administrator", default=None, help="Filter by administrator status")
 def list_users(active: bool | None, role: str | None, administrator: bool | None) -> None:
     """List users"""
-    session = get_extension().session
+    session = svcs.get(Session)
 
     query = select(User).order_by(User.email)
     if active is not None:
@@ -212,7 +212,7 @@ def list_users(active: bool | None, role: str | None, administrator: bool | None
 @click.option("--password", help="Password for the admin user", prompt=True, hide_input=True, required=True)
 def init(email: str, password: str) -> None:
     """Initialize the authentication system with an administrator user"""
-    session = get_extension().session
+    session = svcs.get(Session)
     user = create_administrator(email, password)
     if not user.is_administrator:
         click.echo("Administrator already exists!")

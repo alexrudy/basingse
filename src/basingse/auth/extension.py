@@ -1,7 +1,6 @@
 from typing import TypeVar
 
 import structlog
-from basingse import svcs
 from flask import current_app
 from flask import Flask
 from flask_bcrypt import Bcrypt
@@ -9,7 +8,6 @@ from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from itsdangerous import URLSafeTimedSerializer
 from sqlalchemy.orm import registry as Registry
-from sqlalchemy.orm import Session
 
 from .models import User
 from .permissions import PermissionGrant
@@ -99,11 +97,6 @@ class Authentication:
         manager_module.init_extension(manager)
         views.init_app(app)
         utils.init_app(app)
-
-    @property
-    def session(self) -> Session:
-        """Get a SQLAlchemy session"""
-        return svcs.get(Session)
 
     @property
     def bcrypt(self) -> Bcrypt:

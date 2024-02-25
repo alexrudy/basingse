@@ -59,7 +59,7 @@ def login() -> Any:
 
     form = LoginForm()
     if form.validate_on_submit():
-        session = extension.session
+        session = svcs.get(Session)
         if not User.login(session, form.email.data, form.password.data):
             flash("Invalid username or password", category="error")
             log.info("Failed login attempt, redirecting", email=form.email.data)
@@ -88,7 +88,7 @@ def login_link(link_token: str) -> Any:
         log.debug("Bad login token")
         return redirect(url_for(".login"))
 
-    session = extension.session
+    session = svcs.get(Session)
     user = session.execute(select(User).where(User.token == token)).scalar_one_or_none()
     if user is None:
         log.debug("Login link with unknown token")

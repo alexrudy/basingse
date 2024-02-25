@@ -50,11 +50,11 @@ class Permission:
     action: Action
 
     @overload
-    def __init__(self, model: str, action: str | Action) -> None:  # pragma: no cover
+    def __init__(self, model: str, action: str | Action) -> None:  # pragma: nocover
         ...
 
     @overload
-    def __init__(self, permission: tuple[str, str | Action], /) -> None:  # pragma: no cover
+    def __init__(self, permission: tuple[str, str | Action], /) -> None:  # pragma: nocover
         ...
 
     def __init__(self, model: tuple[str, str | Action] | str, action: str | Action | None = None) -> None:
@@ -65,7 +65,7 @@ class Permission:
         elif isinstance(model, str):
             model, action = model.split(".")
 
-        if not isinstance(model, str):  # pragma: no cover
+        if not isinstance(model, str):  # pragma: nocover
             raise TypeError(f"model must be a string, not {type(model)}")
 
         self.model = model
@@ -82,7 +82,7 @@ R = TypeVar("R", covariant=True)
 S = TypeVar("S", covariant=True)
 
 
-class Permissionable(Protocol[S, R]):  # pragma: no cover
+class Permissionable(Protocol[S, R]):  # pragma: nocover
     @overload
     def __call__(self: S, permission: Permission) -> R: ...
 
@@ -224,19 +224,19 @@ class RoleGrant:
 @overload
 def require_permission(
     model: str, action: str | Action, /
-) -> Callable[[RouteCallable], RouteCallable]:  # pragma: no cover
+) -> Callable[[RouteCallable], RouteCallable]:  # pragma: nocover
     ...
 
 
 @overload
-def require_permission(permission: Permission) -> Callable[[RouteCallable], RouteCallable]:  # pragma: no cover
+def require_permission(permission: Permission) -> Callable[[RouteCallable], RouteCallable]:  # pragma: nocover
     ...
 
 
 @overload
 def require_permission(
     permission: str | tuple[str, str | Action]
-) -> Callable[[RouteCallable], RouteCallable]:  # pragma: no cover
+) -> Callable[[RouteCallable], RouteCallable]:  # pragma: nocover
     ...
 
 

@@ -170,7 +170,7 @@ def delete_user(email: str, confirm: bool) -> None:
 
     user = get_or_abort(session, email)
 
-    if confirm or click.confirm(f"Are you sure you want to delete {user}"):  # pragma: no cover
+    if confirm or click.confirm(f"Are you sure you want to delete {user}"):  # pragma: nocover
         log.info("Deleting user", user=user)
         session.delete(user)
         session.commit()

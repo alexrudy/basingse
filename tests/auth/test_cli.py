@@ -195,6 +195,9 @@ def test_delete_user(runner: FlaskCliRunner, app: Flask) -> None:
         session.add(user)
         session.commit()
 
+    result = runner.invoke(auth_cli, ["delete-user", "--email", "hello@basingse.test"], catch_exceptions=False)
+    assert result.exit_code == 0
+
     result = runner.invoke(auth_cli, ["delete-user", "--email", "hello@basingse.test", "--yes"], catch_exceptions=False)
     assert result.exit_code == 0
 

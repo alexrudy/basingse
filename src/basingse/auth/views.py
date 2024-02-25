@@ -32,7 +32,7 @@ from .utils import redirect
 from .utils import redirect_next
 
 
-bp = Blueprint("auth", __name__, url_prefix="/auth/", template_folder="templates")
+bp = Blueprint("auth", __name__, template_folder="templates")
 
 log = structlog.get_logger(__name__)
 
@@ -175,11 +175,11 @@ def logout() -> Any:
 
 @bp.route("/testing/login/", methods=["POST"])
 def dev_login() -> Any:
-    if not current_app.testing:  # pragma: no cover
+    if not current_app.testing:  # pragma: nocover
         log.warning("Test login attempted", testing=current_app.testing, env=current_app.config.get("ENV"))
         abort(401)
 
-    if current_app.config.get("ENV", "").lower() == "production":  # pragma: no cover
+    if current_app.config.get("ENV", "").lower() == "production":  # pragma: nocover
         log.critical(
             "Test login attempted on production, but .testing didn't catch it?",
             testing=current_app.testing,

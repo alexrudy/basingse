@@ -78,10 +78,10 @@ class Authentication:
         # Login links expire after 24 hours by default
         app.config.setdefault("LOGIN_LINK_EXPIRATION", 60 * 60 * 24)
 
-        if not hasattr(app, "extensions"):  # pragma: no cover
+        if not hasattr(app, "extensions"):  # pragma: nocover
             app.extensions = {}
 
-        if not hasattr(app, "login_manager"):  # pragma: no cover
+        if not hasattr(app, "login_manager"):  # pragma: nocover
             manager = LoginManager()
             manager.init_app(app)
 

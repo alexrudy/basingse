@@ -7,6 +7,7 @@ import pytest
 from basingse import svcs
 from basingse.auth.testing import LoginClient
 from flask import Flask
+from jinja2 import FileSystemLoader
 from sqlalchemy import create_engine
 from sqlalchemy import event
 from sqlalchemy import text
@@ -74,7 +75,20 @@ def engine(app: Flask, registry: Registry) -> Iterator[Engine]:
 
 @pytest.fixture
 def app() -> Iterator[Flask]:
-    app = Flask(__name__)
+    import glob
+    from werkzeug.utils import cached_property
+    from jinja2.loaders import BaseLoader
+
+    class TestingFlask(Flask):
+        @cached_property
+        def jinja_loader(self) -> BaseLoader | None:
+            """Override the jinja loader to look through all test folders"""
+            assert self.template_folder is not None
+            return FileSystemLoader(
+                [str(self.template_folder)] + glob.glob(self.root_path + "/**/templates", recursive=True)
+            )
+
+    app = TestingFlask(__name__)
     app.test_client_class = LoginClient
     app.config.update(
         {

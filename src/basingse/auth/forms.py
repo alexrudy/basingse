@@ -1,11 +1,6 @@
-import operator as op
-from collections.abc import Iterable
 from typing import Any
 
-from basingse import svcs
 from flask_wtf import FlaskForm
-from sqlalchemy import select
-from sqlalchemy.orm import Session
 from wtforms import BooleanField
 from wtforms import EmailField
 from wtforms import PasswordField
@@ -16,9 +11,6 @@ from wtforms.validators import Email
 from wtforms.validators import EqualTo
 from wtforms.validators import Length
 from wtforms.validators import Optional
-from wtforms_sqlalchemy.fields import QuerySelectField
-
-from .permissions import Role
 
 PASSWORD_MINIMUM_LENGTH = 6
 PASSWORD_VALIDATOR = Length(
@@ -55,22 +47,12 @@ class MaybePasswordField(PasswordField):  # type: ignore
         return super().process_formdata(values)
 
 
-def role_query_factory() -> Iterable[Role]:
-    return svcs.get(Session).scalars(select(Role))
-
-
 class UserEditForm(FlaskForm):  # type: ignore
     username = StringField("Username")
-    email = EmailField("Email", validators=[DataRequired(), Email()])
+    email = EmailField("Email", validators=[DataRequired(), Email(granular_message=True)])
     password = MaybePasswordField(
         "Set New Password",
         validators=[Optional(), PASSWORD_VALIDATOR],
-    )
-    role = QuerySelectField(
-        label="Role",
-        query_factory=role_query_factory,
-        get_pk=op.attrgetter("id"),
-        get_label=op.attrgetter("name"),
     )
 
     active = BooleanField("Active")

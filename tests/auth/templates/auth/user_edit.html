@@ -1,0 +1,15 @@
+<form action="{{ url_for('edit_user', user_id=user.id) }}" method="post">
+    {{ form.hidden_tag() }}
+
+    {% for field in form %}
+    <div>
+        {{ field.label(class_="form-label") }}
+        {{ field(class_="form-control") }}
+        <div class="errors">
+            {% for error in field.errors %}
+            <span style="color: red;">{{ error }}</span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</form>

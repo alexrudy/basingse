@@ -1,5 +1,6 @@
 import atexit
-from typing import Any
+from collections.abc import Awaitable
+from typing import Callable
 from typing import overload
 
 from flask import current_app
@@ -34,8 +35,18 @@ def init_app(app: Flask) -> None:
     atexit.register(close_registry, app)
 
 
-def register_factory(app: Flask, factory: type, *args: Any, **kwargs: Any) -> None:
-    app.extensions[_REGISTRY_KEY].register_factory(factory, *args, **kwargs)
+def register_factory(
+    app: Flask,
+    svc_type: type,
+    factory: Callable,
+    *,
+    enter: bool = True,
+    ping: Callable | None = None,
+    on_registry_close: Callable | Awaitable | None = None,
+) -> None:
+    app.extensions[_REGISTRY_KEY].register_factory(
+        svc_type, factory, enter=enter, ping=ping, on_registry_close=on_registry_close
+    )
 
 
 def teardown(exc: BaseException | None) -> None:

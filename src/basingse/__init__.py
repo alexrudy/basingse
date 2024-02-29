@@ -1,4 +1,4 @@
-"""Top-level package for Ba Sing Se."""
+"""Top-level package for BaSingSe."""
 
 __author__ = """Alex Rudy"""
 __email__ = "opensource@alexrudy.net"

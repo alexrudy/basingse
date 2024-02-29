@@ -75,7 +75,6 @@ def test_redirect_next(app: Flask, next: str | None, kwargs: dict[str, Any], exp
         assert utils.redirect_next(**kwargs) == Redirect(expected)
 
 
-@pytest.mark.usefixtures("extension")
 @pytest.mark.parametrize(
     "endpoint, kwargs, expected",
     [

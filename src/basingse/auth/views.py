@@ -8,7 +8,6 @@ from flask import abort
 from flask import Blueprint
 from flask import current_app
 from flask import flash
-from flask import Flask
 from flask import jsonify
 from flask import render_template
 from flask import request
@@ -32,7 +31,7 @@ from .utils import redirect
 from .utils import redirect_next
 
 
-bp = Blueprint("auth", __name__, template_folder="templates")
+bp = Blueprint("auth", __name__, url_prefix="/auth/", template_folder="templates")
 
 log = structlog.get_logger(__name__)
 
@@ -208,10 +207,3 @@ def dev_login() -> Any:
         return ("", 204)
     log.info("Login failed", user=user)
     abort(401)
-
-
-def init_app(app: Flask) -> None:
-    lm = app.login_manager  # type: ignore[attr-defined]
-    lm.blueprint_login_views[bp.name] = f"{bp.name}.login"
-    lm.login_view = f"{bp.name}.login"
-    app.register_blueprint(bp)

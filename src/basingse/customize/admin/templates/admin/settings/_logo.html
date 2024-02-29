@@ -1,0 +1,31 @@
+{% import "bootstrap/_form.html" as bform %}
+
+<div class="accordion" id="logo">
+
+    {% macro logo_upload_form(attachment, id, label) %}
+    <div class="accordion-item">
+        <h5 class="accordion-header" id="{{ id }}LogoHeader">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                data-bs-target="#{{ id }}LogoForm" aria-expanded="true" aria-controls="{{ id }}LogoForm">
+                {{ label}}
+            </button>
+        </h5>
+        <div class="accordion-collapse collapse" id="{{ id }}LogoForm" aria-labelledby="{{ id }}LogoForm"
+            data-bs-parent="#logo">
+            <div class="accordion-body">
+                <div>
+                    <div class="my-2" hx-swap="outerHTML" id="{{ id }}Logo" hx-select="#{{ id }}Logo"
+                        hx-target="#{{ id }}Logo">
+                        {% include "admin/settings/_logo_upload_form.html" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endmacro %}
+
+    {{ logo_upload_form(logo.small, 'small', 'Small (48x48)')}}
+    {{ logo_upload_form(logo.large, 'large', 'Large (192x192)')}}
+    {{ logo_upload_form(logo.text, 'text', 'Logo with Text (256x48)')}}
+    {{ logo_upload_form(logo.favicon, 'favicon', 'Favicon (16x16)')}}
+</div>

@@ -1,0 +1,35 @@
+<nav class="navbar navbar-dark navbar-expand-lg bg-dark" id="topbar">
+    <!-- TopBar -->
+    <div class="container-fluid">
+        {% if config['ENV'].lower() != 'production' %}
+        {% include "_devbar.html" %}
+        {% endif %}
+        <div class="navbar-collapse collapse">
+            <ul class="navbar-nav ms-4 me-auto mb-2 mb-lg-0 text-uppercase">
+                <li class="nav-item pe-2">
+                    <a class="nav-link" href="{{ site_settings.contactpage.url }}">{{
+                        site_settings.contact_message }}</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="d-inline-flex justify-content-end">
+        <ul class="navbar-nav flex-row ms-4 me-auto mb-0 pe-2">
+            {% for link in social_links %}
+            <li class="nav-item pe-2 text-lg-center">
+                <a class="nav-link d-flex" href="{{ link.url }}">
+                    {% if link.image %}
+                    <div class="pe-2 d-inline-flex align-items-center opacity-50"><img
+                            src=" {{ url_for('attachment.id', id=link.image.id ) }}" width="16" , height="16">
+                    </div>
+                    {% else %}
+                    <div class="pe-2 d-inline-flex align-items-center">{{ icon(link.icon) }}</div>
+                    {% endif %}
+                    <div class="d-none d-md-inline-flex">{{ link.name }}</div>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <!-- TopBar -->
+</nav>

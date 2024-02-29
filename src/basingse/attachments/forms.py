@@ -18,7 +18,7 @@ from wtforms.validators import Optional
 log = structlog.get_logger(__name__)
 
 
-class AttachmentField(FileField):  # type: ignore[misc]
+class AttachmentField(FileField):
     def process_formdata(self, valuelist: Any) -> None:
         super().process_formdata(valuelist)
         data = cast(FileStorage | Attachment | None, self.data)  # type: ignore[has-type]

@@ -1,0 +1,15 @@
+{% extends "admin/base.html" %}
+
+{% block main %}
+<div class="row me-5">
+    <div class="col">
+        {% if table %}
+        {% include "admin/table.html" %}
+        {% endif %}
+        <div class="px-2">
+            {% block controls %}
+            {% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}

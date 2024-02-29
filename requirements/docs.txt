@@ -22,10 +22,6 @@ imagesize==1.4.1
     # via sphinx
 mistune==2.0.5
     # via sphinx-mdinclude
-pygments==2.17.2
-    # via
-    #   sphinx
-    #   sphinx-mdinclude
 requests==2.31.0
     # via sphinx
 snowballstemmer==2.2.0

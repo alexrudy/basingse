@@ -5,7 +5,6 @@ from typing import Any
 from urllib.parse import urlsplit as url_parse
 
 import pytest
-from basingse.auth.extension import Authentication
 from basingse.auth.models import User
 from basingse.auth.testing import Ok
 from basingse.auth.testing import Redirect
@@ -13,16 +12,8 @@ from basingse.auth.testing import Response
 from basingse.auth.testing import Unauthorized
 from flask import Flask
 from sqlalchemy import select
-from sqlalchemy.engine import Engine
-from sqlalchemy.orm import registry as Registry
 from sqlalchemy.orm import Session
 from werkzeug import Response as WerkzeugResponse
-
-
-@pytest.fixture
-def extension(app: Flask, registry: Registry) -> Iterator[Authentication]:
-    auth_extension = Authentication(app=app, registry=registry)
-    yield auth_extension
 
 
 @pytest.fixture
@@ -37,7 +28,6 @@ def create_user(
     *,
     request: Any,
     app: Flask,
-    engine: Engine,
     counter: Iterator[int],
 ) -> User:
     from basingse.auth.models import User
@@ -71,9 +61,9 @@ def create_user(
 
 
 @pytest.fixture
-def user(engine: Engine, app: Flask, request: Any, extension: Authentication) -> Iterator[functools.partial[User]]:
+def user(app: Flask, request: Any) -> Iterator[functools.partial[User]]:
     counter = itertools.count()
-    yield functools.partial(create_user, app=app, request=request, engine=engine, counter=counter)
+    yield functools.partial(create_user, app=app, request=request, counter=counter)
 
 
 def pytest_assertrepr_compare(op: str, left: Any, right: Any) -> list[str] | None:

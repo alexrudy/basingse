@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% block meta %}{% endblock %}
+    <title>{% block title %}{% endblock %}</title>
+
+    {% if site_settings.logo.favicon %}
+    <link rel="icon" href="{{ url_for('customize.favicon') }}">
+    {% else %}
+    <link rel="icon" href="{{ url_for('static', filename='img/logo/icon32.png') }}">
+    {% endif %}
+    <link href="{{ url_for('static', filename='css/bootstrap/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
+    {% block style %}{% endblock %}
+</head>
+
+{% from "_icon.html" import icon %}
+
+<body class="d-flex flex-column min-vh-100">
+    {% block body %}
+    {% endblock %}
+    <footer>
+        {% block footer %}
+        {% endblock %}
+        <script src="{{ url_for('static', filename='js/bootstrap/bootstrap.bundle.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/sortable.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/htmx.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/htmx.json-enc.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/init.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/htmx.sortable.js') }}"></script>
+        {% block scripts %}{% endblock %}
+    </footer>
+</body>
+
+</html>

@@ -1,4 +1,5 @@
 import dataclasses as dc
+import os.path
 from collections.abc import Callable
 from collections.abc import Iterator
 from typing import Any
@@ -18,6 +19,7 @@ from basingse.svcs import get
 from blinker import signal
 from flask import abort
 from flask import Blueprint
+from flask import current_app
 from flask import Flask
 from flask import render_template
 from flask import request
@@ -26,10 +28,15 @@ from flask.cli import with_appcontext
 from flask.typing import ResponseReturnValue as IntoResponse
 from flask.views import View
 from flask_attachments import Attachment
+from jinja2 import FileSystemLoader
 from marshmallow import Schema
 from sqlalchemy import delete
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+
+from .nav import Item
+from .nav import Nav
+from .table import Table
 
 
 log = structlog.get_logger(__name__)
@@ -42,6 +49,19 @@ on_new = signal("new")
 on_update = signal("update")
 on_delete = signal("delete")
 on_submit = signal("submit")
+
+
+@dc.dataclass
+class Portal:
+
+    blueprint: Blueprint
+    items: list[Item] = dc.field(default_factory=list)
+
+    def add(self, item: Item) -> None:
+        self.items.append(item)
+
+    def context(self) -> dict[str, Any]:
+        return {"nav": Nav(self.items)}
 
 
 @dc.dataclass
@@ -115,7 +135,11 @@ class AdminView(View, Generic[M, F]):
     #: The model to use for this view
     model: type[M]
 
-    schema: type[Schema] | None
+    #: The schema to use for API responses
+    schema: type[Schema] | None = None
+
+    #: The table to use for rendering list views
+    table: type[Table] | None = None
 
     #: The name of this view
     name: ClassVar[str]
@@ -132,12 +156,25 @@ class AdminView(View, Generic[M, F]):
     #: The CLI group to use for importers
     importer_group: ClassVar[click.Group] = click.Group("import", help="Import data from YAML files")
 
-    def __init_subclass__(cls, /, blueprint: Blueprint, namespace: str | None = None) -> None:
+    nav: ClassVar[Item | None] = None
+
+    @classmethod
+    def sidebar(cls) -> Nav:
+        return Nav([scls.nav for scls in iter_subclasses(cls) if scls.nav is not None])
+
+    def __init_subclass__(
+        cls, /, blueprint: Blueprint | None = None, namespace: str | None = None, portal: Portal | None = None
+    ) -> None:
         super().__init_subclass__()
         if not hasattr(cls, "permission"):
             cls.permission = cls.name
 
-        cls.register(blueprint, namespace, cls.url, cls.key)
+        if portal is not None:
+            cls.register_portal(portal)
+            cls.register_blueprint(portal.blueprint, namespace, cls.url, cls.key)
+
+        if blueprint is not None:
+            cls.register_blueprint(blueprint, namespace, cls.url, cls.key)
 
     def dispatch_action(self, action: str, **kwargs: Any) -> IntoResponse:
         method = getattr(self, action, None)
@@ -213,7 +250,9 @@ class AdminView(View, Generic[M, F]):
         return True
 
     def render_form(self, form: F, obj: M) -> IntoResponse:
-        return render_template(f"admin/{self.name}/edit.html", **{self.name: obj, "form": form})
+        return render_template(
+            [f"admin/{self.name}/edit.html", "admin/portal/edit.html"], **{self.name: obj, "form": form}
+        )
 
     @action()
     def edit(self, **kwargs: Any) -> Any:
@@ -254,7 +293,14 @@ class AdminView(View, Generic[M, F]):
 
     @action
     def list(self, **kwargs: Any) -> IntoResponse:
-        return render_template(f"admin/{self.name}/list.html", **{f"{self.name}s": self.query()})
+        items = self.query()
+        context = {f"{self.name}s": items, "rows": items}
+        if self.table is not None:
+            context["table"] = self.table()
+        return render_template(
+            [f"admin/{self.name}/list.html", "admin/portal/list.html"],
+            **context,
+        )
 
     @action(permission="edit", methods=["GET", "DELETE"], attachments=True)
     def delete_attachment(self, *, attachment: str, partial: str, **kwargs: Any) -> IntoResponse:
@@ -287,7 +333,7 @@ class AdminView(View, Generic[M, F]):
         return redirect_next(url_for(f".{cls.bp.name}.{action}", **kwargs))
 
     @classmethod
-    def register(cls, scaffold: Flask | Blueprint, namespace: str | None, url: str, key: str) -> None:
+    def register_blueprint(cls, scaffold: Flask | Blueprint, namespace: str | None, url: str, key: str) -> None:
         cls.bp = Blueprint(namespace or cls.name, cls.__module__, url_prefix=f"/{url}/", template_folder="templates/")
 
         if getattr(cls, "schema", None) is not None:
@@ -339,6 +385,11 @@ class AdminView(View, Generic[M, F]):
             methods=["GET"],
         )
 
+    @classmethod
+    def register_portal(cls, portal: "Portal") -> None:
+        if cls.nav is not None:
+            portal.add(cls.nav)
+
 
 C = TypeVar("C")
 
@@ -377,3 +428,18 @@ def import_all(filename: IO[str], clear: bool) -> None:
         else:
             schema = schema()
             session.add(schema.load(items))
+
+
+class AdminBlueprint(Blueprint):
+    @property
+    def jinja_loader(self) -> FileSystemLoader | None:  # type: ignore[override]
+        searchpath = []
+        if self.template_folder:
+            searchpath.append(os.path.join(self.root_path, self.template_folder))
+
+        admin = current_app.blueprints.get("admin")
+        if admin is not None:
+            admin_template_folder = os.path.join(admin.root_path, admin.template_folder)  # type: ignore[arg-type]
+            searchpath.append(admin_template_folder)
+
+        return FileSystemLoader(searchpath)

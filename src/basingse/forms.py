@@ -20,7 +20,7 @@ def _enum_labelfunc(value: E) -> str:
     return value.name.capitalize().replace("_", "-")
 
 
-class EnumField(fields.SelectField, Generic[E]):  # type: ignore[misc]
+class EnumField(fields.SelectField, Generic[E]):
     def __init__(self, label: str | None = None, validators: Any = None, *, enum: type[E], **kwargs: Any) -> None:
         labelfunc = kwargs.pop("labelfunc", _enum_labelfunc)
         kwargs.setdefault("choices", [(value.name, labelfunc(value)) for value in enum])
@@ -43,7 +43,7 @@ def unwrap_paragraphs(txt: str) -> str:
     return "\n\n".join([paragraph.replace("\n", " ") for paragraph in txt.split("\n\n")])
 
 
-class MarkdownField(fields.TextAreaField):  # type: ignore[misc]
+class MarkdownField(fields.TextAreaField):
     def _value(self) -> str:
         if self.data:
             return unwrap_paragraphs(self.data)
@@ -69,7 +69,7 @@ class KnownMIMEType:
             raise ValidationError(self.message)
 
 
-class Form(FlaskForm):  # type: ignore[misc]
+class Form(FlaskForm):
     @property
     def is_valid(self) -> bool:
         for errors in self.errors.values():

@@ -1,0 +1,20 @@
+{% extends "core.html" %}
+
+
+{% block body %}
+<header>
+    {% block navbar %}
+    {% include "_topbar.html" %}
+    {{ navbar }}
+    {% endblock %}
+</header>
+<main class="container-lg flex-grow-1 mb-5">
+    {% block main %}{% endblock %}
+</main>
+{% endblock %}
+
+{% block footer %}
+<div class="container-fluid mt-auto">
+    {% include "_footer.html" %}
+</div>
+{% endblock %}

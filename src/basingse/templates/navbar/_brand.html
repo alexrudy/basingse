@@ -1,0 +1,8 @@
+<a class="navbar-brand {{ brand.class_ | join(' ') }}" href="{{ brand.url }}">
+    <img src={{ brand.src }} alt="{{ site_settings.title }} Logo" {% if site_settings.logo.has_text_logo() %}
+        class="img-fluid" style="max-width: 260px; max-height: 52px; display: block;" {% else %}
+        class="d-inline-block align-text-top" style="max-width: 260px; max-height: 24px;" {% endif %}>
+    {%- if not site_settings.logo.has_text_logo() -%}
+    {{ site_settings.title }}
+    {%- endif -%}
+</a>

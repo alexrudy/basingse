@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}
+Not Found | {{ site_settings.title }}
+{% endblock %}
+
+{% block main %}
+<article class="container pt-4 clearfix">
+    <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item "><a class="text-reset" href="{{ url_for('core.home') }}">Home</a>
+            </li>
+        </ol>
+    </nav>
+    <div class="row">
+        <div class="col-md-8">
+            <h2>Oops! Something went wrong!</h2>
+            <p>We're sorry, something has gone wrong. This has been reported to the maintaniers. You might want to go
+                home, or refresh to try again.</p>
+
+        </div>
+        <div class="col-md-4">
+        </div>
+    </div>
+</article>
+{% endblock %}

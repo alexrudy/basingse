@@ -1,12 +1,15 @@
+attrs
 Flask-BCrypt
 Flask-Login
 Flask-WTF
 Flask!=3.0.1,>=2
 flask-attachments @ git+https://github.com/alexrudy/flask-attachments.git@main
+humanize
 itsdangerous
 marshmallow
 markdown-it-py[plugins]
 pytz
+rich
 SQLAlchemy>=1.4
 structlog
 svcs

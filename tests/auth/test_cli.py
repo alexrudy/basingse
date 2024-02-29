@@ -11,8 +11,6 @@ from flask.testing import FlaskCliRunner
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-pytestmark = pytest.mark.usefixtures("extension", "engine")
-
 
 @pytest.fixture
 def runner(app: Flask) -> FlaskCliRunner:

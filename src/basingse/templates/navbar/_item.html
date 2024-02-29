@@ -1,0 +1,8 @@
+<li class="nav-item me-3 {{ item.class_ | join(' ') }}" id="nav-item-{{ index }}">
+    <div class="visually-hidden page-slug">
+        <input type="hidden" name='item' value='{{ item.arguments|tojson }}' />
+    </div>
+    <a class="nav-link{% if item.active %} active{% endif %}{% if not item.enabled %} disabled{% endif %}"
+        aria-current="page" href="{{ url_for(item.endpoint, **item.arguments) }}" style="white-space: nowrap;">
+        {{ item.title }}</a>
+</li>

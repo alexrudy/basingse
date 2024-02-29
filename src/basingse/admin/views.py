@@ -10,9 +10,15 @@ from flask.typing import ResponseReturnValue as IntoResponse
 from flask_login import login_required
 from werkzeug.exceptions import HTTPException
 
+from .extension import Portal
+
+__all__ = ["bp", "portal"]
 
 bp = Blueprint("admin", __name__, url_prefix="/admin/", template_folder="templates")
 log = structlog.get_logger(__name__)
+portal = Portal(bp)
+
+bp.context_processor(portal.context)
 
 
 @bp.context_processor
@@ -47,7 +53,7 @@ def bad_request(exception: BaseException) -> IntoResponse:
 
 @bp.route("/")
 def home() -> IntoResponse:
-    """The base dashboard for admin things"""
+    """Admin portal homepage"""
 
     return render_template("admin/home.html")
 

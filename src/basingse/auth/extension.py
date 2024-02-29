@@ -1,42 +1,20 @@
-from typing import TypeVar
+import dataclasses as dc
 
 import structlog
+from basingse.utils.settings import BlueprintOptions
 from flask import current_app
 from flask import Flask
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from itsdangerous import URLSafeTimedSerializer
-from sqlalchemy.orm import registry as Registry
 
-from .models import User
-from .permissions import PermissionGrant
-from .permissions import Role
-from .permissions import RoleGrant
+from .admin import UserAdmin  # noqa: F401
 
 log = structlog.get_logger(__name__)
 
 
 EXTENSION_KEY = "bss-authentication"
-
-M = TypeVar("M")
-
-
-def map_with_registry(registry: Registry, model: type[M]) -> None:
-    """Map a model with the given registry"""
-    if not hasattr(model, "__mapper__"):
-        registry.map_declaratively(model)
-    elif model.__table__ not in registry.metadata:  # type: ignore
-        raise ConfigurationError(
-            f"Model {model.__name__} has already been mapped to a different metadata"
-            "\nConsider providing a custom registry to the extension"
-            "\nor only intializing the extension once"
-        )
-
-
-def register_models(registry: Registry) -> None:
-    for model in (User, Role, RoleGrant, PermissionGrant):
-        map_with_registry(registry, model)
 
 
 class ConfigurationError(Exception):
@@ -59,11 +37,9 @@ class Authentication:
     home: str = "/"
     logged_in: str = "/"
     profile: str = "/"
+    blueprint: BlueprintOptions = BlueprintOptions()
 
-    def __init__(self, app: Flask | None = None, registry: Registry | None = None) -> None:
-        if registry is None:
-            registry = Registry()
-        register_models(registry)
+    def __init__(self, app: Flask | None = None) -> None:
 
         if app is not None:
             self.init_app(app)
@@ -84,6 +60,8 @@ class Authentication:
         if not hasattr(app, "login_manager"):  # pragma: nocover
             manager = LoginManager()
             manager.init_app(app)
+        else:
+            manager = app.login_manager
 
         self._bcrypt = Bcrypt()
         self._bcrypt.init_app(app)
@@ -95,7 +73,10 @@ class Authentication:
         app.extensions[EXTENSION_KEY] = self
 
         manager_module.init_extension(manager)
-        views.init_app(app)
+        manager.blueprint_login_views[views.bp.name] = f"{views.bp.name}.login"
+        manager.login_view = f"{views.bp.name}.login"
+        app.register_blueprint(views.bp, **dc.asdict(self.blueprint))
+
         utils.init_app(app)
 
     @property

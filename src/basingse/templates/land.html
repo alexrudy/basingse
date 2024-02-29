@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}
+{{ land.title }} | {{ site_settings.title }}
+{% endblock %}
+
+{% block main %}
+<article class="container pt-4 clearfix">
+    <div class="row my-4">
+        <div class="col-md-8">
+            {{ land.contents | markdown }}
+        </div>
+        <div class="col-md-4">
+        </div>
+    </div>
+</article>
+{% endblock %}

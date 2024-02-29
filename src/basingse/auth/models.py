@@ -1,11 +1,10 @@
 import datetime as dt
 import secrets
-import uuid
 from typing import Any
-from typing import TYPE_CHECKING
 
 import pytz
 import structlog
+from basingse.models import Model
 from flask import current_app
 from flask import url_for
 from flask_login import AnonymousUserMixin
@@ -18,7 +17,6 @@ from sqlalchemy import Boolean
 from sqlalchemy import DateTime
 from sqlalchemy import select
 from sqlalchemy import String
-from sqlalchemy import Uuid
 from sqlalchemy.orm import deferred
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
@@ -47,12 +45,9 @@ class UserSchema(Schema):
         return User(**data)
 
 
-class User:
-    __tablename__ = "users"
+class User(Model):
 
     __schema__ = UserSchema
-
-    id: Mapped[uuid.UUID] = mapped_column(Uuid(), primary_key=True, doc="User ID", default=uuid.uuid4)
 
     email: Mapped[str] = deferred(mapped_column(String(), nullable=False, unique=True, doc="Email"))
     password: Mapped[str | None] = mapped_column(String(), nullable=True, doc="Password")
@@ -62,17 +57,6 @@ class User:
     )
     last_login: Mapped[dt.datetime | None] = mapped_column(DateTime, default=None, nullable=True)
     roles: Mapped[list[Role]] = relationship("Role", secondary="role_grants", back_populates="users", lazy="selectin")
-
-    if TYPE_CHECKING:
-
-        def __init__(
-            self,
-            email: str | None = None,
-            password: str | None = None,
-            active: bool | None = None,
-            token: str | None = None,
-            role: Role | None = None,
-        ) -> None: ...
 
     def get_id(self) -> str:
         return self.token
@@ -162,7 +146,7 @@ class User:
         return False
 
 
-class AnonymousUser(AnonymousUserMixin):  # type: ignore
+class AnonymousUser(AnonymousUserMixin):
     def can(self, action: str) -> bool:
         if current_app.config.get("LOGIN_DISABLED", False):
             return True

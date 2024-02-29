@@ -1,0 +1,7 @@
+{% extends "admin/portal/list.html" %}
+
+{% block breadcrumbs %}
+{% call bread.trail() %}
+{{ bread.crust('Users') }}
+{% endcall %}
+{% endblock %}

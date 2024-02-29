@@ -1,36 +1,19 @@
 import logging
 from collections.abc import Iterator
-from typing import Any
 from typing import cast
 
 import pytest
 from basingse import svcs
+from basingse.app import configure_app
+from basingse.app import log_queries
 from basingse.auth.testing import LoginClient
+from basingse.models import Model
+from basingse.settings import BaSingSe
 from flask import Flask
 from jinja2 import FileSystemLoader
-from sqlalchemy import create_engine
 from sqlalchemy import event
-from sqlalchemy import text
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import registry as Registry
-from sqlalchemy.orm import Session
 from structlog.types import EventDict
-
-
-#: Global registry for SQLAlchemy models.
-global_registry = Registry()
-
-
-@pytest.fixture(autouse=True, scope="session")
-def log_engine_queries() -> None:
-    logger = logging.getLogger(__name__)
-
-    def log_queries(
-        conn: Any, cursor: Any, statement: str, parameters: dict[str, Any], context: Any, executemany: Any
-    ) -> None:
-        logger.debug("%s parameters=%r", statement, parameters)
-
-    event.listen(Engine, "before_cursor_execute", log_queries)
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -40,37 +23,9 @@ def setup_svcs_logging() -> None:
     svcs_logger.propagate = False
 
 
-#: Global registry for SQLAlchemy models.
-global_registry = Registry()
-
-
-@pytest.fixture
-def registry(app: Flask) -> Iterator[Registry]:
-    yield global_registry
-
-
-@pytest.fixture()
-def engine(app: Flask, registry: Registry) -> Iterator[Engine]:
-    engine = create_engine(app.config["SQLALCHEMY_DATABASE_URI"])
-
-    has_setup_run = False
-
-    def get_session() -> Session:
-        nonlocal has_setup_run
-        if not has_setup_run:
-            registry.metadata.create_all(engine)
-            has_setup_run = True
-        return Session(bind=engine)
-
-    svcs.register_factory(
-        app,
-        Session,
-        get_session,
-        ping=lambda session: session.execute(text("SELECT 1")).scalar_one(),
-        on_registry_close=engine.dispose,
-    )
-
-    yield engine
+@pytest.fixture(autouse=True, scope="session")
+def setup_query_logging() -> None:
+    event.listen(Engine, "before_cursor_execute", log_queries)
 
 
 @pytest.fixture
@@ -90,24 +45,13 @@ def app() -> Iterator[Flask]:
 
     app = TestingFlask(__name__)
     app.test_client_class = LoginClient
-    app.config.update(
-        {
-            "TESTING": True,
-            "DEBUG": False,
-            "LOGIN_DISABLED": True,
-            "WTF_CSRF_ENABLED": False,
-            "BCRYPT_LOG_ROUNDS": 4,  # Make passwords less secure
-            "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
-            "SERVER_NAME": "basingse.test",
-            "SECRET_KEY": "lake laogai",
-        }
-    )
+    configure_app(app, config={"ENV": "test"})
+    bss = BaSingSe(logging=None)
+    bss.init_app(app)
 
-    svcs.init_app(app)
-
-    @app.route("/")
-    def home() -> str:
-        return "Hello, world!"
+    with app.app_context():
+        engine = svcs.get(Engine)
+        Model.metadata.create_all(engine)
 
     yield app
 

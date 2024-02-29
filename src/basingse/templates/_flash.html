@@ -1,0 +1,33 @@
+{% with messages = get_flashed_messages(category_filter=["error"]) %}
+{% if messages %}
+<div class="alert alert-danger">
+    <h6 class="alert-heading d-inline-flex align-items-center">{{ icon('exclamation-triangle')
+        }} <span class="ps-1">Something went wrong:</span></h6>
+    {% for message in messages %}
+    <p>{{ message }}</p>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+{% with messages = get_flashed_messages(category_filter=["info"]) %}
+{% if messages %}
+<div class="alert alert-primary">
+    {% for message in messages %}
+    <p>{{ message }}</p>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+{% with messages = get_flashed_messages(category_filter=["message"]) %}
+{% if messages %}
+<div class="alert alert-warning">
+    <h6 class="alert-heading d-inline-flex align-items-center">{{ icon('exclamation-triangle')
+        }} <span class="ps-1">Warning:</span></h6>
+    {% for message in messages %}
+    <p>{{ message }}</p>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}

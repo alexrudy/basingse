@@ -1,0 +1,112 @@
+{% extends "admin/base.html" %}
+
+{% from "bootstrap/_form.html" import errors %}
+{% from "admin/_link_form_field.html" import link_input_field %}
+
+{% block navbar %}
+{% set active_endpoint = 'customize.admin.edit' %}
+{% include "admin/_sidebar.html" %}
+{% endblock %}
+
+{% block title %}
+Settings | {{ site_settings.title }}
+{% endblock %}
+
+
+{% block main %}
+<div class="p-3 pe-5">
+    <div class="my-3">
+        <h1>Site Settings</h1>
+
+    </div>
+
+    <h2>General Settings</h2>
+    <form action="" method="post" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            <div class="d-flex my-2">
+                <div class="flex-grow-1 me-auto">
+                    {{ form.title.label(class_="visually-hidden")}}
+                    <div class="input-group">
+                        <div class="input-group-text">Title</div>
+                        {{ form.title(size=64, class_="form-control") }}
+                    </div>
+                    {{ errors(form.title.errors) }}
+                </div>
+                <div class="ms-2">
+                    {{ form.homepage.label(class_="visually-hidden") }}
+                    <div class="input-group">
+                        <div class="input-group-text">Homepage</div>
+                        {{ form.homepage(class_="form-select") }}
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex my-2">
+                <div class="flex-grow-1 me-auto">
+                    {{ form.subtitle.label(class_="visually-hidden")}}
+                    <div class="input-group">
+                        <div class="input-group-text">Subtitle</div>
+                        {{ form.subtitle(size=64, class_="form-control") }}
+                    </div>
+                    {{ errors(form.subtitle.errors) }}
+                </div>
+            </div>
+            <div class="d-flex my-2">
+                <div class="me-2">
+                    {{ form.contactpage.label(class_="visually-hidden") }}
+                    <div class="input-group">
+                        <div class="input-group-text">Contact Us Page</div>
+                        {{ form.contactpage(class_="form-select") }}
+                    </div>
+                </div>
+                <div class="flex-grow-1 ms-2">
+                    {{ form.contact_message.label(class_="visually-hidden") }}
+                    <div class="input-group">
+                        <div class="input-group-text">Contact Us Title</div>
+                        {{ form.contact_message(class_="form-control") }}
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div>
+                    {{ form.footer_message.label(class_="form-label") }}
+                    {{ form.footer_message(class_="form-control") }}
+                    <div class="form-text">This is shown in the bottom right of pages, and uses markdown</div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <div class="form-group py-3">
+            <h2>Logo Images</h2>
+            {% set logo = form.logo %}
+            {% include "admin/settings/_logo.html" %}
+        </div>
+        <div class="form group py-3">
+            <h2>Social Links</h2>
+            {% set links = form.links %}
+            {% include "admin/settings/_social.html" %}
+        </div>
+        <div class="form-group py-3">
+            <div class="form-check form-switch">
+                {{ form.active(class_="form-check-input", role="switch") }}
+                {{ form.active.label(class_="form-check-label")}}
+            </div>
+        </div>
+        <div class="ms-auto mt-auto d-flex mb-4">
+            <div class="px-1">
+                <a class="btn btn-secondary" href="{{ url_for('customize.admin.edit') }}">
+                    Discard
+                </a>
+            </div>
+            <div class="px-1">
+                <div class="btn-group">
+                    {{ form.submit(class_="btn btn-primary", formaction=url_for_next(request.endpoint,
+                    next=request.path, **request.view_args)) }}
+                    {{ form.submit(class_="btn btn-outline-primary", value="and Close") }}
+                </div>
+            </div>
+    </form>
+</div>
+{% endblock %}

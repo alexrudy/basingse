@@ -195,7 +195,6 @@ def test_change_password(app: Flask, author: User, client: LoginClient) -> None:
         assert author.compare_password("worsepassword")
 
 
-@pytest.mark.usefixtures("extension", "engine")
 def test_user_not_found(client: LoginClient) -> None:
     with client.get(f"/auth/user/{uuid.uuid4()!s}/activate") as resp:
         assert resp.status_code == 404
@@ -370,7 +369,6 @@ def test_login_link(author: User, client: LoginClient, app: Flask) -> None:
             assert not current_user.is_active, "User should be inactive"
 
 
-@pytest.mark.usefixtures("extension", "engine")
 @pytest.mark.parametrize(
     "email, password, success",
     [

@@ -13,6 +13,7 @@ from typing import TypeVar
 import flask_login.config
 import structlog
 from basingse import svcs
+from basingse.models import Model
 from flask import current_app
 from flask import request
 from flask.typing import ResponseReturnValue
@@ -114,10 +115,8 @@ def permissionable(func: Callable[[S, Permission], R]) -> Permissionable[S, R]:
     return cast(Permissionable[S, R], inner_permissionable)
 
 
-class PermissionGrant:
+class PermissionGrant(Model):
     """A specific permission granted to a role"""
-
-    __tablename__ = "permission_grants"
 
     if TYPE_CHECKING:
 
@@ -133,7 +132,6 @@ class PermissionGrant:
         def __init__(self, **kwargs):  # type: ignore
             ...
 
-    id: Mapped[uuid.UUID] = mapped_column(Uuid(), primary_key=True, doc="Grant ID", default=uuid.uuid4)
     role_id: Mapped[uuid.UUID] = mapped_column(Uuid(), ForeignKey("roles.id"), nullable=False, doc="Role ID")
     role: Mapped["Role"] = relationship("Role", back_populates="grants")
     model: Mapped[str] = mapped_column(String(), nullable=False, doc="Model")
@@ -151,16 +149,13 @@ class PermissionGrant:
         return cls(model=permission.model, action=permission.action)
 
 
-class Role:
+class Role(Model):
     """A role that can be granted to a user"""
-
-    __tablename__ = "roles"
 
     if TYPE_CHECKING:
 
         def __init__(self, *, name: str | None = None, administrator: bool | None = None) -> None: ...
 
-    id: Mapped[uuid.UUID] = mapped_column(Uuid(), primary_key=True, doc="Role ID", default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(), nullable=False, unique=True, doc="Role name")
     administrator: Mapped[bool] = mapped_column(Boolean, default=False, doc="Is this an administrator grant?")
 
@@ -204,16 +199,13 @@ class Role:
         self.permissions.discard(permission)
 
 
-class RoleGrant:
+class RoleGrant(Model):
     """A specific role granted to a user"""
-
-    __tablename__ = "role_grants"
 
     if TYPE_CHECKING:
 
         def __init__(self, *, user_id: uuid.UUID, role_id: uuid.UUID) -> None: ...
 
-    id: Mapped[uuid.UUID] = mapped_column(Uuid(), primary_key=True, doc="Grant ID", default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid(), ForeignKey("users.id"), nullable=False, doc="User ID")
     role_id: Mapped[uuid.UUID] = mapped_column(Uuid(), ForeignKey("roles.id"), nullable=False, doc="Role ID")
 

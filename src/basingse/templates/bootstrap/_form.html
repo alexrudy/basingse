@@ -1,0 +1,12 @@
+{% macro errors(items) %}
+{% for error in items %}
+<span class="text-danger">{{ error }}</span>
+{% endfor %}
+{% endmacro %}
+
+{% macro field(entity, class='form-control') %}
+{{ entity.label(class_="form-label")}}
+{{ entity(class_="form-control", **kwargs) }}
+{% if entity.description %}<div class="form-text">{{ entity.description }}</div>{% endif %}
+{{ errors(entity.errors) }}
+{% endmacro %}

@@ -1,0 +1,11 @@
+{% from "_icon.html" import icon %}
+{% macro env_pill() %}
+{% if config['ENV'].lower() == 'development' %}
+{% set color = 'secondary' %}
+{% elif config['ENV'].lower() == 'preview' %}
+{% set color = 'primary' %}
+{% else %}
+{% set color = 'danger' %}
+{% endif %}
+<span class="badge rounded-pill text-bg-{{color}}">{{ config['ENV'] | upper }}</span>
+{% endmacro %}

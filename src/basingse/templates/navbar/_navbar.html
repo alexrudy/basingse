@@ -1,0 +1,33 @@
+<nav class="navbar navbar-expand-xl bg-light px-3 {{ navbar.class_ | join(' ') }}">
+    <div class="container-fluid my-3">
+        {% if navbar.brand %}
+        {{ navbar.brand }}
+        {% endif %}
+
+        {% if navbar.collapsible %}
+        <div class="d-flex">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#{{ navbar.id }}Content" aria-controls="{{ navbar.id }}Content" aria-expanded="false"
+                aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
+        {% endif %}
+
+        <div class="collapse navbar-collapse" id="{{ navbar.id }}Content">
+            <ul class="navbar-nav">
+                {% for item in navbar.left_items %}
+                {% set index = loop.index %}
+                {% include "navbar/_item.html" %}
+                {% endfor %}
+            </ul>
+            {% if navbar.search %}
+            <form class="d-flex" role="search">
+                <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+                <button class="btn btn-outline-primary" type="submit">Search</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+</nav>

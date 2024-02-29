@@ -1,0 +1,23 @@
+{% if current_user.is_authenticated %}
+<div class="dropdown mb-3">
+    <a href="#" class="d-flex align-items-center link-dark text-decoration-none dropdown-toggle " id="dropdownUser2"
+        data-bs-toggle="dropdown" aria-expanded="false">
+        {{ icon("person-circle", height=32, width=32, classes="me-2")}}
+        <strong>{{ current_user.displayname }}</strong>
+    </a>
+    <ul class="dropdown-menu text-small shadow" aria-labelledby="dropdownUser2">
+        <li><a class="dropdown-item" href="{{ url_for('auth.password') }}">Password</a></li>
+        <li>
+            <hr class="dropdown-divider">
+        </li>
+        <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Sign out</a></li>
+    </ul>
+</div>
+{% else %}
+<div class="mb-3">
+    <a href="{{ url_for('auth.login') }}" class="d-flex align-items-center link-dark text-decoration-none">
+        {{ icon("lock", height=32, width=32, classes="me-2")}}
+        <strong>Login</strong>
+    </a>
+</div>
+{% endif %}

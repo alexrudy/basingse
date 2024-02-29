@@ -1,0 +1,12 @@
+<li class="nav-item dropdown {{ item.class_ | join(' ') }}">
+    <a class="nav-link dropdown-toggle" href="#" id="{{ item.id }}" role="button" data-bs-toggle="dropdown"
+        aria-expanded="false">
+        {{ item.title }}
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="{{ item.id }}">
+        {% for subitem in item.items %}
+        <li><a class="dropdown-item" href="{{ url_for(subitem.endpoint, **subitem.arguments) }}">{{
+                subitem.title }}</a></li>
+        {% endfor %}
+    </ul>
+</li>

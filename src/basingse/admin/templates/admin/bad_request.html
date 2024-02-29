@@ -2,7 +2,7 @@
 
 
 {% block title %}
-Not Found | Admin | {{ site_settings.title }}
+Bad Request | Admin | {{ site_settings.title }}
 {% endblock %}
 
 {% block main %}
@@ -11,6 +11,7 @@ Not Found | Admin | {{ site_settings.title }}
         <h2>Bad Request (400)</h2>
         <p>Something went wrong with your request to {{ request.path }}</p>
         <p>{{ message }}</p>
+        <p>Request ID:</p>
         <pre>{{ g.get('request_info').id|default('') }}</pre>
     </div>
 </div>

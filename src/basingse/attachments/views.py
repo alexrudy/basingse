@@ -3,7 +3,8 @@ from typing import Any
 import structlog
 from basingse import svcs
 from basingse.admin.extension import AdminView
-from basingse.admin.views import bp
+from basingse.admin.nav import Item
+from basingse.admin.views import portal
 from flask_attachments import Attachment
 from flask_attachments.extension import settings
 from sqlalchemy.orm import Session
@@ -13,12 +14,13 @@ from .forms import AttachmentForm
 log = structlog.get_logger(__name__)
 
 
-class AttachmentsAdmin(AdminView, blueprint=bp):
+class AttachmentsAdmin(AdminView, portal=portal):
     url = "attachment"
     key = "<uuid:id>"
     name = "attachment"
     form = AttachmentForm
     model = Attachment
+    nav = Item("Attachments", "admin.attachment.list", "person-badge", "attachment.view")
 
     def blank(self, **kwargs: Any) -> Any:
         obj = super().blank(**kwargs)

@@ -14,7 +14,7 @@ iniconfig==2.0.0
     # via pytest
 pluggy==1.4.0
     # via pytest
-pytest==8.0.1
+pytest==8.0.2
     # via
     #   -r requirements/tests.in
     #   pytest-cov

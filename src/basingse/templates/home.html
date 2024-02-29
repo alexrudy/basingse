@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}
+{{ site_settings.title }} | {{ site_settings.subtitle }}
+{% endblock %}
+
+{% block main %}
+<article class="container">
+    <!-- <div class="row my-5 d-none d-lg-inline-flex">
+        <div class="col">
+            {% include "_carousel.html" %}
+        </div>
+    </div> -->
+    <div class="row gx-4 mt-3">
+        <div class="col-md-8">
+            <div class="row">
+                <div class="col">
+                    {% if home %}
+                    {{ home.contents | markdown }}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="row">
+                {% for episode in episodes %}
+                <div class="col-md-12">
+                    {% include "_episode_card.html" %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="col-md-4">
+            {% include "_content_cta.html" %}
+        </div>
+    </div>
+
+</article>
+{% endblock %}

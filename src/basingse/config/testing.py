@@ -1,0 +1,10 @@
+SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+ATTACHMENTS_DATABASE_URI = "sqlite:///:memory:"
+SECRET_KEY = "lake laogai"
+FEATUREFLAG_CACHE = "NullCache"
+LOGIN_DISABLED = True
+WTF_CSRF_ENABLED = False
+BCRYPT_LOG_ROUNDS = 4
+SERVER_NAME = "basingse.test"
+TESTING = True
+DEBUG = True

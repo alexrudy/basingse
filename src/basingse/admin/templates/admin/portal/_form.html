@@ -1,0 +1,10 @@
+{% from "bootstrap/_form.html" import errors, field %}
+{% from "admin/_link_form_field.html" import link_input_field %}
+<form action="" method="post">
+    {{ form.hidden_tag() }}
+    <div class="form-group container">
+        {% for formfield in form %}
+        <div class="my-2">{{ field(formfield) }}</div>
+        {% endfor %}
+    </div>
+</form>

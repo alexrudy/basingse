@@ -1,0 +1,21 @@
+{% set active_endpoint = active_endpoint | default(request.endpoint) %}
+<ul class="nav nav-pills flex-column mb-auto" data-endpoint="{{ active_endpoint }}">
+    {% macro nav_item(title, endpoint, iconname, capability) %}
+    {% if (not capability) or current_user.can(capability) %}
+    <li class="nav-item">
+        <a href="{{ url_for(endpoint) }}"
+            class="nav-link {% if active_endpoint == endpoint %}active{% else %}link-dark{% endif %}" {% if
+            active_endpoint==endpoint %}aria-current="page" {% endif %}>
+            <div class="pe-2 d-inline-flex align-items-center">
+                {{ icon(iconname, classes="me-2") }}
+                {{ title }}
+            </div>
+        </a>
+    </li>
+    {% endif %}
+    {% endmacro %}
+
+    {% for item in nav.items %}
+    {{ nav_item(item.name, item.endpoint, item.icon, item.capability) }}
+    {% endfor %}
+</ul>

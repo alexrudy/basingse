@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}
+{{ page.title }} | {{ site_settings.title }}
+{% endblock %}
+
+{% block main %}
+<div class="container page">
+    {% set blk = page.root %}
+    {% include blk.render() %}
+</div>
+{% endblock %}

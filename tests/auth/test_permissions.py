@@ -3,6 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 from basingse import svcs
+from basingse.auth.extension import get_extension
 from basingse.auth.models import User
 from basingse.auth.permissions import Action
 from basingse.auth.permissions import create_administrator
@@ -16,7 +17,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 
-@pytest.mark.usefixtures("extension", "engine")
 def test_setup_administrator(app: Flask) -> None:
     with app.app_context():
         user = create_administrator("admin@basingse.test", "password")
@@ -26,7 +26,6 @@ def test_setup_administrator(app: Flask) -> None:
         assert user.is_administrator
 
 
-@pytest.mark.usefixtures("extension", "engine")
 def test_setup_existing_user_administrator(app: Flask, author: User) -> None:
     with app.app_context():
         user = create_administrator(author.email, "password")  # type: ignore
@@ -36,7 +35,6 @@ def test_setup_existing_user_administrator(app: Flask, author: User) -> None:
         assert user.is_administrator
 
 
-@pytest.mark.usefixtures("extension", "engine")
 def test_setup_existing_role_administrator(app: Flask, author: User) -> None:
     with app.app_context():
         session = svcs.get(Session)
@@ -53,7 +51,6 @@ def test_setup_existing_role_administrator(app: Flask, author: User) -> None:
         assert "admin" in {role.name for role in user.roles}
 
 
-@pytest.mark.usefixtures("extension", "engine")
 def test_setup_existing_administrator(app: Flask, author: User) -> None:
     with app.app_context():
         session = svcs.get(Session)
@@ -70,7 +67,6 @@ def test_setup_existing_administrator(app: Flask, author: User) -> None:
         assert not user.is_administrator
 
 
-@pytest.mark.usefixtures("extension", "engine")
 def test_grant_permissions(app: Flask) -> None:
     with app.app_context():
         editor = Role(name="editor")
@@ -112,17 +108,18 @@ class Unauthorized(Exception):
 
 
 @pytest.fixture
-def login_manager(app: Flask, extension: Any) -> LoginManager:
+def login_manager(app: Flask) -> LoginManager:
     def unauthorized() -> None:
         raise Unauthorized()
 
     with app.app_context():
+        extension = get_extension()
         extension.login_manager.unauthorized_handler(unauthorized)  # type: ignore
         return extension.login_manager
 
 
 @pytest.fixture
-def author(app: Flask, engine: Any, user: Any) -> User:
+def author(app: Flask, user: Any) -> User:
     user = user("author")
     with app.app_context():
         session = svcs.get(Session)

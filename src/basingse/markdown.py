@@ -1,6 +1,8 @@
+import dataclasses as dc
 from typing import Any
 
 from flask import Flask
+from jinja2 import Undefined
 from markdown_it import MarkdownIt
 from markdown_it.renderer import RendererHTML
 from markupsafe import Markup
@@ -16,11 +18,14 @@ class BootstrapRender(RendererHTML):
 md = MarkdownIt(renderer_cls=BootstrapRender).use(front_matter_plugin).use(footnote_plugin)
 
 
-def render(text: str) -> Markup:
-    if not isinstance(text, str):
-        return Markup("")
+def render(text: str | None) -> Markup | Undefined:
+    if text is None:
+        return Undefined()
     return Markup(md.render(text))
 
 
-def init_app(app: Flask) -> None:
-    app.add_template_filter(render, "markdown")
+@dc.dataclass(frozen=True)
+class MarkdownOptions:
+
+    def init_app(self, app: Flask) -> None:
+        app.add_template_filter(render, "markdown")

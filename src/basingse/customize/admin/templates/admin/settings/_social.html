@@ -1,0 +1,88 @@
+{% from "bootstrap/_form.html" import errors %}
+{% from "admin/attachment/_field.html" import upload %}
+{% from "_icon.html" import icon %}
+<div id="social-links-settings" hx-target="#social-links-settings" hx-select="#social-links-settings"
+    hx-swap="outerHTML">
+    <ul class="list-group sortable" hx-post="{{ url_for('.social_link_order') }}" hx-trigger="end" hx-ext="json-enc">
+        {% for form in links %}
+        <li class="list-group-item py-3" id="socialForm-{{ form.name }}">
+            <div class="row align-items-center">
+                <div class="col-8">
+                    <input type="hidden" name="item" value="{{ form.data.id }}">
+                    {{ form['id']() }}
+                    <div class="row">
+                        <div class="col">
+                            {{ form['name'].label(class_="visually-hidden")}}
+                            <div class="input-group">
+                                <div class="input-group-text">{{ form['name'].label.text }}</div>
+                                {{ form['name'](size=24, class_="form-control") }}
+                            </div>
+                            {{ errors(form['name'].errors) }}
+                        </div>
+                        <div class="col">
+                            {{ form['url'].label(class_="visually-hidden")}}
+                            <div class="input-group">
+                                <div class="input-group-text">{{ form['url'].label.text }}</div>
+                                {{ form['url'](size=64, class_="form-control") }}
+                            </div>
+                            {{ errors(form['url'].errors) }}
+                        </div>
+                    </div>
+                    <div class="row py-2">
+                        <div class="col-4" id="social-icon-{{ form.name }}-box">
+                            {{ form['icon'].label(class_="visually-hidden") }}
+                            <div class="input-group">
+                                <div class="input-group-text">{{ form['icon'].label.text }}</div>
+                                {{ form['icon'](size=18, class_="form-control") }}
+                                <div class="input-group-text" id="social-icon-{{ form.name }}">{{
+                                    icon(form['icon'].data) }}
+                                </div>
+
+                            </div>
+                            {{ errors(form['icon'].errors) }}
+                        </div>
+                        <div class="col-8" id="social-icon-{{ form.name }}-upload" hx-swap="innerHTML"
+                            hx-select="#social-icon-{{ form.name }}-upload"
+                            hx-target="social-icon-{{ form.name }}-upload">
+                            {{ upload(form.image, delete=url_for('customize.admin.delete_social_image',
+                            id=form.image.data.id),
+                            label=false) }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-1">
+                    <div class="btn btn-danger" hx-get="{{ url_for('.social_link_delete', id=form['id'].data) }}"
+                        hx-ext="json-enc" hx-trigger="click">{{
+                        icon('trash')
+                        }}</div>
+                </div>
+                <div class="col">
+                    <div class="nav-item pe-2 text-lg-center">
+                        <a class="nav-link d-flex" href="{{ form.url.data }}">
+                            {% if form.image.data.id %}
+                            <div class="pe-2 d-inline-flex align-items-center opacity-50"><img
+                                    src=" {{ url_for('attachments.id', id=form.image.data.id ) }}" width="16" ,
+                                    height="16">
+                            </div>
+                            {% else %}
+                            <div class="pe-2 d-inline-flex align-items-center">{{ icon(form['icon'].data) }}</div>
+                            {% endif %}
+                            <div class="d-none d-md-inline-flex">{{ form['name'].data }}</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </li>
+        {% endfor %}
+        <li class="list-group-item py-3">
+            <div class="row align-items-center">
+                <div class="col">
+                    <div class="btn btn-primary" hx-get="{{ url_for('.social_link_append') }}" hx-ext="json-enc"
+                        hx-trigger="click">
+                        Add another link
+                    </div>
+                </div>
+            </div>
+        </li>
+    </ul>
+</div>

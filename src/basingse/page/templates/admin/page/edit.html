@@ -1,0 +1,21 @@
+{% extends "admin/base/edit.html" %}
+
+{% block navbar %}
+{% set active_endpoint = 'admin.pages' %}
+{% include "admin/_sidebar.html" %}
+{% endblock %}
+
+{% block title %}
+Edit Page {{ page.title }} | {{ super() }}
+{% endblock %}
+
+{% block breadcrumbs %}
+{% call bread.trail() %}
+{{ bread.crumb('Pages', url_for('.list')) }}
+{{ bread.crust('Edit ' + page.title) }}
+{% endcall %}
+{% endblock %}
+
+{% block form %}
+{% include "admin/page/_form.html" %}
+{% endblock %}

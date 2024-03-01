@@ -6,30 +6,26 @@ on:
   pull_request:
     branches:
       - main
+
+
 jobs:
-  tests:
-    name: ${{ matrix.name }}
-    runs-on: ${{ matrix.os }}
+  python:
+    name: tox ${{ matrix.tox }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - {name: '3.9', python: '3.9', os: ubuntu-latest, tox: py39}
-          - {name: '3.10', python: '3.10', os: ubuntu-latest, tox: py310}
-          - {name: Typing, python: '3.10', os: ubuntu-latest, tox: typing}
-          - {name: Style, python: '3.10', os: ubuntu-latest, tox: style}
-          - {name: Docs, python: '3.10', os: ubuntu-latest, tox: docs}
-          - {name: Minimal, python: '3.10', os: ubuntu-latest, tox: minimal}
+        tox: [py311, typing, style, docs, minimal]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
         with:
-          python-version: ${{ matrix.python }}
+          python-version: 3.11
           cache: 'pip'
           cache-dependency-path: 'requirements/*.txt'
       - name: Install dot
         run: sudo apt-get install -y graphviz
-        if: matrix.tox == 'docs' && matrix.os == 'ubuntu-latest'
+        if: matrix.tox == 'docs'
       - name: update pip
         run: |
           pip install -U wheel
@@ -39,13 +35,47 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/pre-commit
-          key: pre-commit|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
+          key: pre-commit|${{ hashFiles('.pre-commit-config.yaml') }}
         if: matrix.tox == 'style'
       - name: cache mypy
         uses: actions/cache@v3.0.3
         with:
           path: ./.mypy_cache
-          key: mypy|${{ matrix.python }}|${{ hashFiles('setup.cfg') }}
+          key: mypy|python3.11|${{ hashFiles('setup.cfg') }}
         if: matrix.tox == 'typing'
       - run: pip install tox
       - run: tox -e ${{ matrix.tox }}
+  check-dist:
+    name: Check distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+      - run: npm ci
+      - run: npm run build
+      - name: Compare the expected and actual dist/ directories
+        run: |
+          if [ "$(git diff --ignore-space-at-eol dist/ | wc -l)" -gt "0" ]; then
+            echo "Detected uncommitted changes after build.  See status below:"
+            git diff
+            exit 1
+          fi
+        id: diff
+      # If index.js was different than expected, upload the expected version as an artifact
+      - uses: actions/upload-artifact@v3
+        if: ${{ failure() && steps.diff.conclusion == 'failure' }}
+        with:
+          name: dist
+          path: src/basingse/assets/
+  javascript:
+    name: JavaScript tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+      - run: npm ci
+      - run: npm test

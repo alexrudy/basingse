@@ -26,11 +26,7 @@
         {% block footer %}
         {% endblock %}
         <script src="{{ url_for('static', filename='js/bootstrap/bootstrap.bundle.min.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/sortable.min.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/htmx.min.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/htmx.json-enc.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/init.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/htmx.sortable.js') }}"></script>
+        <script src="{{ url_for('assets', filename=asset.url('main.js')) }}"></script>
         {% block scripts %}{% endblock %}
     </footer>
 </body>

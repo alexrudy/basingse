@@ -46,7 +46,7 @@ class BlockDataField(fields.Field):
             raise ValidationError(messages, field_name="data", data=data)
 
         try:
-            kind = data["type"]
+            kind = data.pop("type")  # type: ignore
         except KeyError:
             messages = {"type": ["No type provided for block data"]}
             raise ValidationError(messages, field_name="data", data=data) from None
@@ -72,7 +72,7 @@ class Block:
     class Schema(BaseSchema):
         id = fields.String()
         data = BlockDataField()
-        type = fields.Function(lambda obj: obj.data.__kind__, dump_only=True)
+        type = fields.Function(lambda obj: obj.data.__kind__)
 
         @post_load
         def make_block(self, data: dict[str, Any], **kwargs: Any) -> "Block":

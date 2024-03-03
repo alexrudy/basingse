@@ -1,0 +1,17 @@
+<button class="btn btn-link nav-link dropdown-toggle" id="color-theme-switcher" data-bs-toggle="dropdown"
+    aria-expanded="false" aria-label="Toggle theme (light)">
+    <span id="color-theme-icon">{{ icon('sun-fill') }}</span>
+    <span class="d-lg-none" id="colot-theme-text">Toggle theme</span>
+</button>
+<ul class="dropdown-menu" id="color-theme-menu" aria-labelledby="color-theme-text">
+    <li>
+        <button type="button" class="dropdown-item" id="lighttheme" data-bs-theme-value="light" aria-pressed="false">
+            {{ icon('sun-fill') }}Light
+        </button>
+    </li>
+    <li>
+        <button type="button" class="dropdown-item" id="darktheme" data-bs-theme-value="dark" aria-pressed="false">
+            {{ icon('moon-stars-fill') }}Dark
+        </button>
+    </li>
+</ul>

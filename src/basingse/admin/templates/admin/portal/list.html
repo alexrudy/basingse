@@ -8,6 +8,9 @@
         {% endif %}
         <div class="px-2">
             {% block controls %}
+            <a href="{{ url_for('.new') }}" class="btn btn-secondary">
+                New
+            </a>
             {% endblock %}
         </div>
     </div>

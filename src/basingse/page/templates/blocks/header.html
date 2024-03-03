@@ -1,0 +1,15 @@
+{% if blk.data.level == 1 %}
+<h1>{{ blk.data.text }}</h1>
+{% elif blk.data.level == 2 %}
+<h2>{{ blk.data.text }}</h2>
+{% elif blk.data.level == 3 %}
+<h3>{{ blk.data.text }}</h3>
+{% elif blk.data.level == 4 %}
+<h4>{{ blk.data.text }}</h4>
+{% elif blk.data.level == 5 %}
+<h5>{{ blk.data.text }}</h5>
+{% elif blk.data.level == 6 %}
+<h6>{{ blk.data.text }}</h6>
+{% else %}
+<h1>{{ blk.data.text }}</h1>
+{% endif %}

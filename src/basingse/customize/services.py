@@ -4,7 +4,6 @@ from collections.abc import Iterable
 
 import structlog
 from basingse import svcs
-from basingse.page.models import Markdown
 from basingse.page.models import Page
 from basingse.utils.cache import cached
 from flask import Flask
@@ -76,11 +75,6 @@ def default_settings(session: Session) -> SiteSettings:
     """Create a default settings object"""
 
     homepage = session.scalar(select(Page).where(Page.slug == "home"))
-    if homepage is None:
-        root = Markdown(content="Welcome to the homepage")
-        session.add(root)
-        homepage = Page(title="Home", slug="home", root=root)
-        session.add(homepage)
 
     default_settings = SiteSettings(active=False, title="Website", homepage=homepage)
 

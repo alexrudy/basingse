@@ -10,8 +10,6 @@ mypy==1.8.0
     # via
     #   -r requirements/typing.in
     #   sqlalchemy
-mypy-extensions==1.0.0
-    # via mypy
 sqlalchemy[mypy]==2.0.27
     # via
     #   -r requirements/base.in

@@ -29,3 +29,7 @@ mypy:
 # Run the application
 serve:
     {{virtual_env}}/flask run
+
+# Watch for changes and run the application
+watch:
+    {{virtual_env}}/python -m watch

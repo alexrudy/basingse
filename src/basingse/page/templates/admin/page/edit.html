@@ -6,13 +6,21 @@
 {% endblock %}
 
 {% block title %}
+{% if page.title %}
 Edit Page {{ page.title }} | {{ super() }}
+{% else %}
+New Page | {{ super() }}
+{% endif %}
 {% endblock %}
 
 {% block breadcrumbs %}
 {% call bread.trail() %}
 {{ bread.crumb('Pages', url_for('.list')) }}
+{% if page.title %}
 {{ bread.crust('Edit ' + page.title) }}
+{% else %}
+{{ bread.crust('New Page') }}
+{% endif %}
 {% endcall %}
 {% endblock %}
 

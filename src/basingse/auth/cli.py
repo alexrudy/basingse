@@ -1,6 +1,5 @@
 import click
 import structlog
-from basingse import svcs
 from flask.cli import AppGroup
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
@@ -10,6 +9,7 @@ from .models import User
 from .permissions import Action
 from .permissions import create_administrator
 from .permissions import Role
+from basingse import svcs
 
 auth_cli = AppGroup("auth", help="Tools for authentication")
 

@@ -1,7 +1,7 @@
 import inspect
+from collections.abc import Callable
 from collections.abc import Mapping
 from typing import Any
-from typing import Callable
 from typing import ClassVar
 from typing import TypeVar
 

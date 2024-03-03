@@ -4,7 +4,6 @@ from typing import Any
 
 import pytz
 import structlog
-from basingse.models import Model
 from flask import current_app
 from flask import url_for
 from flask_login import AnonymousUserMixin
@@ -27,6 +26,7 @@ from sqlalchemy.orm import validates
 from .permissions import Permission
 from .permissions import permissionable
 from .permissions import Role
+from basingse.models import Model
 
 __all__ = ["User"]
 

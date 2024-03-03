@@ -1,5 +1,4 @@
 import structlog
-from basingse import svcs
 from flask import abort
 from flask import Blueprint
 from flask.typing import ResponseReturnValue as IntoResponse
@@ -8,6 +7,7 @@ from sqlalchemy.orm import Session
 from .admin.views import admin
 from .models import LogoSize
 from .services import get_site_settings
+from basingse import svcs
 
 bp = Blueprint("customize", __name__, template_folder="templates")
 bp.register_blueprint(admin)

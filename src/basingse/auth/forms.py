@@ -1,8 +1,6 @@
 from collections.abc import Iterable
 from typing import Any
 
-from basingse import svcs
-from basingse.models import Session
 from flask_wtf import FlaskForm
 from markupsafe import Markup
 from sqlalchemy import select
@@ -22,6 +20,8 @@ from wtforms.widgets import html_params
 from wtforms_sqlalchemy.fields import QueryCheckboxField
 
 from .permissions import Role
+from basingse import svcs
+from basingse.models import Session
 
 PASSWORD_MINIMUM_LENGTH = 6
 PASSWORD_VALIDATOR = Length(

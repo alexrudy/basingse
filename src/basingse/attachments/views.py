@@ -1,15 +1,15 @@
 from typing import Any
 
 import structlog
-from basingse import svcs
-from basingse.admin.extension import AdminView
-from basingse.admin.nav import Item
-from basingse.admin.views import portal
 from flask_attachments import Attachment
 from flask_attachments.extension import settings
 from sqlalchemy.orm import Session
 
 from .forms import AttachmentForm
+from basingse import svcs
+from basingse.admin.extension import AdminView
+from basingse.admin.nav import Item
+from basingse.admin.views import portal
 
 log = structlog.get_logger(__name__)
 

@@ -1,4 +1,3 @@
-from basingse import svcs
 from flask import Flask
 from flask.cli import AppGroup
 from sqlalchemy import select
@@ -7,6 +6,7 @@ from sqlalchemy.orm import Session
 from .models import SiteSettings
 from .models import SocialLink
 from .services import default_settings
+from basingse import svcs
 
 
 customize = AppGroup("customize", help="Manage site customization setup")

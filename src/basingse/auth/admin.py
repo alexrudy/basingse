@@ -1,5 +1,10 @@
 from typing import Any
 
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from .forms import UserEditForm
+from .models import User
 from basingse import svcs
 from basingse.admin.extension import AdminView
 from basingse.admin.nav import Item
@@ -10,11 +15,6 @@ from basingse.admin.table.columns import Column
 from basingse.admin.table.columns import Datetime
 from basingse.admin.table.columns import EditColumn
 from basingse.admin.views import portal
-from sqlalchemy import select
-from sqlalchemy.orm import Session
-
-from .forms import UserEditForm
-from .models import User
 
 
 class UserTable(Table):

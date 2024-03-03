@@ -1,10 +1,10 @@
 import dataclasses as dc
 
-from basingse.utils.settings import BlueprintOptions
 from flask import Blueprint
 from flask import Flask
 
 from . import admin  # noqa: F401
+from basingse.utils.settings import BlueprintOptions
 
 
 @dc.dataclass(frozen=True)

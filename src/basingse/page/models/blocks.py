@@ -1,4 +1,7 @@
 import dataclasses as dc
+import datetime as dt
+from collections.abc import Mapping
+from typing import Any
 from typing import ClassVar
 from typing import Protocol
 from typing import Type
@@ -6,31 +9,74 @@ from typing import TypeVar
 
 import marshmallow_dataclass
 from jinja2 import Template
-from marshmallow.schema import Schema
+from marshmallow import fields
+from marshmallow import post_load
+from marshmallow.exceptions import ValidationError
+from marshmallow.schema import Schema as BaseSchema
 
 
-class BlockKind(Protocol):
+class BlockData(Protocol):
     __kind__: ClassVar[str]
 
     def render(self) -> str | Template: ...
 
 
-B = TypeVar("B", bound=BlockKind)
+B = TypeVar("B", bound=BlockData)
+
+
+class BlockDataField(fields.Field):
+
+    __registry__: ClassVar[dict[str, Type[BaseSchema]]] = {}
+
+    def _serialize(self, value: BlockData | None, attr: Any, obj: Any, **kwargs: Any) -> Any:
+        if value is None:
+            return None
+
+        schema = self.__registry__[value.__kind__]()
+        return schema.dump(value)
+
+    def _deserialize(
+        self, value: dict[str, Any] | None, attr: str | None, data: Mapping[str, Any] | None, **kwargs: Any
+    ) -> BlockData | None:
+        if value is None:
+            return None
+
+        if not data:
+            messages = {"data": ["No data provided for block"]}
+            raise ValidationError(messages, field_name="data", data=data)
+
+        try:
+            kind = data["type"]
+        except KeyError:
+            messages = {"type": ["No type provided for block data"]}
+            raise ValidationError(messages, field_name="data", data=data) from None
+
+        try:
+            schema = self.__registry__[kind]()
+        except KeyError:
+            messages = {"type": [f"Unknown block type {kind!r}"]}
+            raise ValidationError(messages, field_name="data", data=data) from None
+
+        return schema.load(value)
 
 
 @dc.dataclass
 class Block:
-    id: str
-    type: str
-    data: BlockKind
+    data: BlockData
+    id: str | None = None
 
-    __registry__: ClassVar[dict[str, Type[Schema]]] = {}
+    @property
+    def type(self) -> str:
+        return self.data.__kind__
 
-    @classmethod
-    def deserialize(cls, data: dict) -> "Block":
-        schema = cls.__registry__[data["type"]]()
-        content = schema.load(data["data"])
-        return cls(data["id"], data["type"], content)
+    class Schema(BaseSchema):
+        id = fields.String()
+        data = BlockDataField()
+        type = fields.Function(lambda obj: obj.data.__kind__, dump_only=True)
+
+        @post_load
+        def make_block(self, data: dict[str, Any], **kwargs: Any) -> "Block":
+            return Block(**data)
 
     def render(self) -> str | Template:
         return self.data.render()
@@ -38,7 +84,7 @@ class Block:
 
 def block(datatype: type[B]) -> type[B]:
     cls = dc.dataclass(datatype)
-    Block.__registry__[datatype.__kind__] = marshmallow_dataclass.class_schema(cls)
+    BlockDataField.__registry__[datatype.__kind__] = marshmallow_dataclass.class_schema(cls)
     return cls
 
 
@@ -64,5 +110,14 @@ class Paragraph:
 @dc.dataclass
 class BlockContent:
     blocks: list[Block]
-    version: str
-    time: int
+    version: str | None = None
+    time: dt.datetime | None = None
+
+    class Schema(BaseSchema):
+        blocks = fields.Nested(Block.Schema, many=True)
+        version = fields.String()
+        time = fields.DateTime(format="timestamp")
+
+        @post_load
+        def make(self, data: dict[str, Any], **kwargs: Any) -> "BlockContent":
+            return BlockContent(**data)

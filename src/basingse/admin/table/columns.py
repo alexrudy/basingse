@@ -1,7 +1,8 @@
 import attrs
+from jinja2 import Template
+
 from basingse.admin.table.base import ColumnBase
 from basingse.admin.table.base import maybe
-from jinja2 import Template
 
 
 @attrs.define

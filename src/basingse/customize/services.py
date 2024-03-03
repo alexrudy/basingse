@@ -1,11 +1,10 @@
 import importlib.resources
+import json
 import os.path
 from collections.abc import Iterable
+from typing import Any
 
 import structlog
-from basingse import svcs
-from basingse.page.models import Page
-from basingse.utils.cache import cached
 from flask import Flask
 from flask import g
 from flask_attachments import Attachment
@@ -17,9 +16,16 @@ from sqlalchemy.orm import Session
 
 from .models import SiteSettings
 from .models import SocialLink
-
+from basingse import svcs
+from basingse.page.models import Page
+from basingse.utils.cache import cached
 
 logger = structlog.get_logger()
+
+
+def default_homepage() -> dict[str, Any]:
+    resource = importlib.resources.files("basingse.customize") / "homepage.json"
+    return json.loads(resource.read_text())
 
 
 def get_session() -> Session:
@@ -75,14 +81,20 @@ def default_settings(session: Session) -> SiteSettings:
     """Create a default settings object"""
 
     homepage = session.scalar(select(Page).where(Page.slug == "home"))
+    if homepage is None:
+        contents = json.dumps(default_homepage())
+        homepage = Page(slug="home", title="Home", contents=contents)
+        session.add(homepage)
+        session.commit()
 
     default_settings = SiteSettings(active=False, title="Website", homepage=homepage)
 
-    path = importlib.resources.files("basingse") / "static/img/defaults/logo.png"
-    if os.path.isfile(path):  # type: ignore[arg-type]
-        logo = Attachment.from_file(path)  # type: ignore[arg-type]
-        session.add(logo)
-        default_settings.logo.large = logo
+    resource = importlib.resources.files("basingse") / "static/img/defaults/logo.png"
+    with importlib.resources.as_file(resource) as path:
+        if os.path.isfile(path):
+            logo = Attachment.from_file(path)
+            session.add(logo)
+            default_settings.logo.large = logo
 
     session.add(default_settings)
     session.commit()

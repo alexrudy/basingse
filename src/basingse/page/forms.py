@@ -1,13 +1,14 @@
 from typing import Any
 
-from basingse.forms import Form
-from basingse.forms import SLUG_VALIDATOR
 from markupsafe import Markup
 from wtforms import StringField
 from wtforms import SubmitField
 from wtforms.fields import Field
 from wtforms.validators import DataRequired
 from wtforms.widgets import html_params
+
+from basingse.forms import Form
+from basingse.forms import SLUG_VALIDATOR
 
 
 class EditorWidget:

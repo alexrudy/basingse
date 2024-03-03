@@ -1,6 +1,6 @@
 import atexit
 from collections.abc import Awaitable
-from typing import Callable
+from collections.abc import Callable
 from typing import overload
 
 from flask import current_app

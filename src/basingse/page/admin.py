@@ -1,5 +1,10 @@
 from typing import Any
 
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from .forms import PageEditForm
+from .models import Page
 from basingse import svcs
 from basingse.admin.extension import AdminView
 from basingse.admin.nav import Item
@@ -7,11 +12,6 @@ from basingse.admin.table import Column
 from basingse.admin.table import Table
 from basingse.admin.table.columns import EditColumn
 from basingse.admin.views import portal
-from sqlalchemy import select
-from sqlalchemy.orm import Session
-
-from .forms import PageEditForm
-from .models import Page
 
 
 class PageTable(Table):

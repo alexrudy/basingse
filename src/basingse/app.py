@@ -2,11 +2,12 @@ import os
 from typing import Any
 
 import structlog
-from basingse.settings import BaSingSe
 from flask import Flask
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
 from werkzeug.middleware.proxy_fix import ProxyFix
+
+from basingse.settings import BaSingSe
 
 logger = structlog.get_logger()
 

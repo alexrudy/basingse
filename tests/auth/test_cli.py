@@ -1,15 +1,16 @@
 from typing import Any
 
 import pytest
+from flask import Flask
+from flask.testing import FlaskCliRunner
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
 from basingse import svcs
 from basingse.auth.cli import auth_cli
 from basingse.auth.models import User
 from basingse.auth.permissions import Permission
 from basingse.auth.permissions import Role
-from flask import Flask
-from flask.testing import FlaskCliRunner
-from sqlalchemy import select
-from sqlalchemy.orm import Session
 
 
 @pytest.fixture

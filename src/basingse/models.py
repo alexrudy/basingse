@@ -7,7 +7,6 @@ import uuid
 from typing import ClassVar
 
 import structlog
-from basingse import svcs
 from flask import abort
 from flask import flash
 from flask import Flask
@@ -27,6 +26,8 @@ from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import Session as BaseSession
 from sqlalchemy.pool import ConnectionPoolEntry
+
+from basingse import svcs
 
 CONVENTION = {
     "ix": "ix_%(column_0_label)s",

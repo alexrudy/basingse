@@ -1,9 +1,4 @@
 import structlog
-from basingse import svcs
-from basingse.admin.extension import AdminBlueprint
-from basingse.admin.nav import Item
-from basingse.admin.views import portal
-from basingse.models import Session
 from flask import flash
 from flask import redirect
 from flask import render_template
@@ -19,6 +14,11 @@ from ..models import Logo
 from ..models import SiteSettings
 from ..models import SocialLink
 from .forms import SettingsForm
+from basingse import svcs
+from basingse.admin.extension import AdminBlueprint
+from basingse.admin.nav import Item
+from basingse.admin.views import portal
+from basingse.models import Session
 
 log = structlog.get_logger(__name__)
 

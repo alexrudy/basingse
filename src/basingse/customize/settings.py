@@ -1,7 +1,8 @@
 import dataclasses as dc
 
-from basingse.utils.settings import BlueprintOptions
 from flask import Flask
+
+from basingse.utils.settings import BlueprintOptions
 
 
 @dc.dataclass(frozen=True)

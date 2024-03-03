@@ -1,9 +1,9 @@
 import dataclasses as dc
 import enum
 import uuid
+from collections.abc import Callable
 from functools import wraps
 from typing import Any
-from typing import Callable
 from typing import cast
 from typing import overload
 from typing import Protocol
@@ -12,8 +12,6 @@ from typing import TypeVar
 
 import flask_login.config
 import structlog
-from basingse import svcs
-from basingse.models import Model
 from flask import current_app
 from flask import request
 from flask.typing import ResponseReturnValue
@@ -31,6 +29,9 @@ from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session
+
+from basingse import svcs
+from basingse.models import Model
 
 if TYPE_CHECKING:
     from .models import User

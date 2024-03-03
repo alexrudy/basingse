@@ -1,0 +1,17 @@
+{
+    "blocks": [
+        {
+            "type": "header",
+            "data": {
+                "text": "Welcome Home!",
+                "level": 2
+            }
+        },
+        {
+            "type": "paragraph",
+            "data": {
+                "text": "Change up this text in the editor!"
+            }
+        }
+    ]
+}

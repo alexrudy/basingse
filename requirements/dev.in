@@ -8,3 +8,4 @@ flake8
 bump2version
 build
 twine
+watchdog

@@ -1,92 +1,123 @@
-import uuid
+import dataclasses as dc
+import datetime as dt
+from collections.abc import Mapping
 from typing import Any
-from uuid import UUID
+from typing import ClassVar
+from typing import Protocol
+from typing import Type
+from typing import TypeVar
 
-from basingse.models import Model
-from basingse.models import tablename
+import marshmallow_dataclass
 from jinja2 import Template
-from sqlalchemy import ForeignKey
-from sqlalchemy import Integer
-from sqlalchemy import String
-from sqlalchemy import Text
-from sqlalchemy import Uuid
-from sqlalchemy.orm import declared_attr
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
-from sqlalchemy.orm import relationship
-from sqlalchemy.orm import validates
+from marshmallow import fields
+from marshmallow import post_load
+from marshmallow.exceptions import ValidationError
+from marshmallow.schema import Schema as BaseSchema
 
 
-class Block(Model):
+class BlockData(Protocol):
+    __kind__: ClassVar[str]
 
-    @declared_attr.directive
-    def __tablename__(cls) -> str:  # noqa: B902
-        name = tablename(cls.__name__)
-        if "block" not in name:
-            return f"block_{name}"
-        return name
-
-    id: Mapped[UUID] = mapped_column(Uuid(), primary_key=True, default=uuid.uuid4)
-
-    kind = mapped_column(String(), nullable=False, doc="Kind of block")
-    order: Mapped[int] = mapped_column(
-        Integer(), nullable=False, default=0, doc="Order of the block in the parent blocks"
-    )
-    parent_id = mapped_column(Uuid(), ForeignKey("block_containers.id"), nullable=True, doc="Parent block")
-
-    @declared_attr
-    def parent(cls) -> Mapped["Container"]:
-        return relationship(
-            "Container",
-            foreign_keys=[cls.parent_id],
-            cascade="all",
-            back_populates="children",
-        )
-
-    @declared_attr.directive
-    def __mapper_args__(cls) -> dict[str, Any]:  # noqa: B902
-        if cls.__name__ == "Block":
-            return {"polymorphic_on": cls.kind, "polymorphic_identity": "block"}
-        return {"polymorphic_identity": cls.__name__.lower()}
-
-    def __repr__(self) -> str:
-        return f"<{self.__class__.__name__} {self.kind}: {self.id}>"
-
-    def render(self) -> Template | str:
-        raise NotImplementedError("Block subclasses must implement render")
+    def render(self) -> str | Template: ...
 
 
-class Container(Block):
-    id: Mapped[UUID] = mapped_column(Uuid(), ForeignKey("blocks.id"), primary_key=True, default=uuid.uuid4)
+B = TypeVar("B", bound=BlockData)
 
-    children = relationship(
-        "Block",
-        back_populates="parent",
-        order_by="Block.order",
-        cascade="all",
-        remote_side="Block.parent_id",
-        foreign_keys=[Block.parent_id],
-    )
 
-    @declared_attr.directive
-    def __mapper_args__(cls) -> dict[str, Any]:  # noqa: B902
-        return {"polymorphic_identity": "container", "inherit_condition": cls.id == Block.id}
+class BlockDataField(fields.Field):
 
-    @validates("children")
-    def validate_children(self, key: str, child: Block) -> Block:
-        if child.parent is not None:
-            raise ValueError("Block already has a parent")
-        child.order = len(self.children)
-        return child
+    __registry__: ClassVar[dict[str, Type[BaseSchema]]] = {}
+
+    def _serialize(self, value: BlockData | None, attr: Any, obj: Any, **kwargs: Any) -> Any:
+        if value is None:
+            return None
+
+        schema = self.__registry__[value.__kind__]()
+        return schema.dump(value)
+
+    def _deserialize(
+        self, value: dict[str, Any] | None, attr: str | None, data: Mapping[str, Any] | None, **kwargs: Any
+    ) -> BlockData | None:
+        if value is None:
+            return None
+
+        if not data:
+            messages = {"data": ["No data provided for block"]}
+            raise ValidationError(messages, field_name="data", data=data)
+
+        try:
+            kind = data.pop("type")  # type: ignore
+        except KeyError:
+            messages = {"type": ["No type provided for block data"]}
+            raise ValidationError(messages, field_name="data", data=data) from None
+
+        try:
+            schema = self.__registry__[kind]()
+        except KeyError:
+            messages = {"type": [f"Unknown block type {kind!r}"]}
+            raise ValidationError(messages, field_name="data", data=data) from None
+
+        return schema.load(value)
+
+
+@dc.dataclass
+class Block:
+    data: BlockData
+    id: str | None = None
+
+    @property
+    def type(self) -> str:
+        return self.data.__kind__
+
+    class Schema(BaseSchema):
+        id = fields.String()
+        data = BlockDataField()
+        type = fields.Function(lambda obj: obj.data.__kind__)
+
+        @post_load
+        def make_block(self, data: dict[str, Any], **kwargs: Any) -> "Block":
+            return Block(**data)
+
+    def render(self) -> str | Template:
+        return self.data.render()
+
+
+def block(datatype: type[B]) -> type[B]:
+    cls = dc.dataclass(datatype)
+    BlockDataField.__registry__[datatype.__kind__] = marshmallow_dataclass.class_schema(cls)
+    return cls
+
+
+@block
+class Header:
+    text: str
+    level: int
+    __kind__: ClassVar[str] = "header"
 
     def render(self) -> str:
-        return "blocks/container.html"
+        return "blocks/header.html"
 
 
-class Markdown(Block):
-    id: Mapped[UUID] = mapped_column(Uuid(), ForeignKey("blocks.id"), primary_key=True, default=uuid.uuid4)
-
-    content: Mapped[str] = mapped_column(Text(), nullable=False, doc="Markdown content")
+@block
+class Paragraph:
+    text: str
+    __kind__: ClassVar[str] = "paragraph"
 
     def render(self) -> str:
-        return "blocks/markdown.html"
+        return "blocks/paragraph.html"
+
+
+@dc.dataclass
+class BlockContent:
+    blocks: list[Block]
+    version: str | None = None
+    time: dt.datetime | None = None
+
+    class Schema(BaseSchema):
+        blocks = fields.Nested(Block.Schema, many=True)
+        version = fields.String()
+        time = fields.DateTime(format="timestamp")
+
+        @post_load
+        def make(self, data: dict[str, Any], **kwargs: Any) -> "BlockContent":
+            return BlockContent(**data)

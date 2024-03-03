@@ -1,7 +1,6 @@
 import dataclasses as dc
 
 import structlog
-from basingse.utils.settings import BlueprintOptions
 from flask import current_app
 from flask import Flask
 from flask_bcrypt import Bcrypt
@@ -10,6 +9,7 @@ from flask_wtf.csrf import CSRFProtect
 from itsdangerous import URLSafeTimedSerializer
 
 from .admin import UserAdmin  # noqa: F401
+from basingse.utils.settings import BlueprintOptions
 
 log = structlog.get_logger(__name__)
 

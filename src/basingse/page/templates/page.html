@@ -5,7 +5,8 @@
 
 {% block main %}
 <div class="container page">
-    {% set blk = page.root %}
+    {% for blk in page.blocks.blocks %}
     {% include blk.render() %}
+    {% endfor %}
 </div>
 {% endblock %}

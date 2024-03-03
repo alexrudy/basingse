@@ -3,17 +3,18 @@ from collections.abc import Iterator
 from typing import cast
 
 import pytest
+from flask import Flask
+from jinja2 import FileSystemLoader
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
+from structlog.types import EventDict
+
 from basingse import svcs
 from basingse.app import configure_app
 from basingse.app import log_queries
 from basingse.auth.testing import LoginClient
 from basingse.models import Model
 from basingse.settings import BaSingSe
-from flask import Flask
-from jinja2 import FileSystemLoader
-from sqlalchemy import event
-from sqlalchemy.engine import Engine
-from structlog.types import EventDict
 
 
 @pytest.fixture(autouse=True, scope="session")

@@ -1,13 +1,7 @@
 import uuid
-from typing import Callable
+from collections.abc import Callable
 from typing import TypeVar
 
-from basingse import svcs
-from basingse.attachments.forms import AttachmentField
-from basingse.forms import Form as FlaskForm
-from basingse.forms import MarkdownField
-from basingse.models import Session
-from basingse.page.models import Page
 from sqlalchemy import select
 from wtforms import BooleanField
 from wtforms import FieldList
@@ -21,6 +15,12 @@ from wtforms.validators import DataRequired
 from wtforms_sqlalchemy.fields import QuerySelectField
 
 from ..models import SocialLink
+from basingse import svcs
+from basingse.attachments.forms import AttachmentField
+from basingse.forms import Form as FlaskForm
+from basingse.forms import MarkdownField
+from basingse.models import Session
+from basingse.page.models import Page
 
 T = TypeVar("T")
 

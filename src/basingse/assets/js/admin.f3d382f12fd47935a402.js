@@ -1,6 +1,161 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ "./src/frontend/ts/csrf.ts":
+/*!*********************************!*\
+  !*** ./src/frontend/ts/csrf.ts ***!
+  \*********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   get_csrf: () => (/* binding */ get_csrf)
+/* harmony export */ });
+/* harmony import */ var htmx_org__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! htmx.org */ "./node_modules/htmx.org/dist/htmx.min.js");
+/* harmony import */ var htmx_org__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(htmx_org__WEBPACK_IMPORTED_MODULE_0__);
+
+function get_csrf() {
+    var csrf = document.querySelector('meta[name="csrf"]');
+    return csrf === null || csrf === void 0 ? void 0 : csrf.content;
+}
+
+
+/***/ }),
+
+/***/ "./src/frontend/ts/editor.ts":
+/*!***********************************!*\
+  !*** ./src/frontend/ts/editor.ts ***!
+  \***********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   createEditor: () => (/* binding */ createEditor)
+/* harmony export */ });
+/* harmony import */ var _editorjs_editorjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @editorjs/editorjs */ "./node_modules/@editorjs/editorjs/dist/editorjs.mjs");
+/* harmony import */ var _editorjs_header__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @editorjs/header */ "./node_modules/@editorjs/header/dist/header.mjs");
+/* harmony import */ var _editorjs_paragraph__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @editorjs/paragraph */ "./node_modules/@editorjs/paragraph/dist/paragraph.mjs");
+
+
+
+function createEditor() {
+    document.querySelectorAll(".editor-js").forEach(function (element) {
+        var input = element.querySelector("input");
+        var editorId = input === null || input === void 0 ? void 0 : input.id;
+        console.log("Editor setup for ", editorId);
+        var editor = new _editorjs_editorjs__WEBPACK_IMPORTED_MODULE_0__["default"]({
+            holder: element,
+            inlineToolbar: true,
+            data: (input === null || input === void 0 ? void 0 : input.value) ? JSON.parse(input.value) : undefined,
+            tools: {
+                header: _editorjs_header__WEBPACK_IMPORTED_MODULE_1__["default"],
+                paragraph: {
+                    class: _editorjs_paragraph__WEBPACK_IMPORTED_MODULE_2__["default"],
+                    inlineToolbar: true,
+                },
+            },
+            placeholder: "Write your page here!"
+        });
+        var form = findParentBySelector(element, "form");
+        var submit = form === null || form === void 0 ? void 0 : form.querySelector("input[name='submit']");
+        submit === null || submit === void 0 ? void 0 : submit.addEventListener("click", function (event) {
+            event.preventDefault();
+            editor
+                .save()
+                .then(function (output) {
+                input === null || input === void 0 ? void 0 : input.setAttribute("value", JSON.stringify(output));
+                HTMLFormElement.prototype.submit.call(form);
+            })
+                .catch(console.error);
+        });
+    });
+}
+function findParentBySelector(element, selector) {
+    while (element.parentElement) {
+        if (element.parentElement.matches(selector)) {
+            return element.parentElement;
+        }
+        element = element.parentElement;
+    }
+    return null;
+}
+
+
+/***/ }),
+
+/***/ "./src/frontend/ts/htmx.ts":
+/*!*********************************!*\
+  !*** ./src/frontend/ts/htmx.ts ***!
+  \*********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   connect: () => (/* binding */ connect)
+/* harmony export */ });
+/* harmony import */ var htmx_org__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! htmx.org */ "./node_modules/htmx.org/dist/htmx.min.js");
+/* harmony import */ var htmx_org__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(htmx_org__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _csrf__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./csrf */ "./src/frontend/ts/csrf.ts");
+/* harmony import */ var sortablejs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! sortablejs */ "./node_modules/sortablejs/modular/sortable.esm.js");
+
+
+
+function connect() {
+    htmx_org__WEBPACK_IMPORTED_MODULE_0___default().onLoad(function (content) {
+        var csrf_token = (0,_csrf__WEBPACK_IMPORTED_MODULE_1__.get_csrf)();
+        if (!csrf_token) {
+            console.error("No CSRF token found");
+            return;
+        }
+        document.body.addEventListener("htmx:configRequest", function (evt) {
+            evt.detail.headers["X-CSRFToken"] = csrf_token; // add the CSRF token
+        });
+    });
+    htmx_org__WEBPACK_IMPORTED_MODULE_0___default().defineExtension("json-enc", {
+        onEvent: function (name, evt) {
+            if (name === "htmx:configRequest") {
+                evt.detail.headers["Content-Type"] = "application/json";
+                var token = (0,_csrf__WEBPACK_IMPORTED_MODULE_1__.get_csrf)();
+                if (token) {
+                    evt.detail.headers["X-CSRFToken"] = token;
+                }
+            }
+        },
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        encodeParameters: function (xhr, parameters, elt) {
+            xhr.overrideMimeType("text/json");
+            return JSON.stringify(parameters);
+        },
+    });
+    htmx_org__WEBPACK_IMPORTED_MODULE_0___default().onLoad(function (content) {
+        var sortables = content.querySelectorAll(".sortable");
+        for (var i = 0; i < sortables.length; i++) {
+            var sortable = sortables[i];
+            new sortablejs__WEBPACK_IMPORTED_MODULE_2__["default"](sortable, {
+                animation: 150,
+                ghostClass: "blue-background-class",
+            });
+        }
+    });
+    htmx_org__WEBPACK_IMPORTED_MODULE_0___default().onLoad(function (content) {
+        var sortables = content.querySelectorAll(".nav-sortable-admin .navbar-nav");
+        for (var i = 0; i < sortables.length; i++) {
+            var sortable = sortables[i];
+            new sortablejs__WEBPACK_IMPORTED_MODULE_2__["default"](sortable, {
+                animation: 150,
+                draggable: ".nav-item",
+                ghostClass: "blue-background-class",
+            });
+        }
+    });
+}
+
+
+/***/ }),
+
 /***/ "./node_modules/htmx.org/dist/htmx.min.js":
 /*!************************************************!*\
   !*** ./node_modules/htmx.org/dist/htmx.min.js ***!
@@ -3380,149 +3535,6 @@ Sortable.mount(Remove, Revert);
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Sortable);
 
-
-
-/***/ }),
-
-/***/ "./src/frontend/csrf.ts":
-/*!******************************!*\
-  !*** ./src/frontend/csrf.ts ***!
-  \******************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   get_csrf: () => (/* binding */ get_csrf)
-/* harmony export */ });
-/* harmony import */ var htmx_org__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! htmx.org */ "./node_modules/htmx.org/dist/htmx.min.js");
-/* harmony import */ var htmx_org__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(htmx_org__WEBPACK_IMPORTED_MODULE_0__);
-
-function get_csrf() {
-    var csrf = document.querySelector('meta[name="csrf"]');
-    return csrf === null || csrf === void 0 ? void 0 : csrf.content;
-}
-
-
-/***/ }),
-
-/***/ "./src/frontend/editor.ts":
-/*!********************************!*\
-  !*** ./src/frontend/editor.ts ***!
-  \********************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   createEditor: () => (/* binding */ createEditor)
-/* harmony export */ });
-/* harmony import */ var _editorjs_editorjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @editorjs/editorjs */ "./node_modules/@editorjs/editorjs/dist/editorjs.mjs");
-/* harmony import */ var _editorjs_header__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @editorjs/header */ "./node_modules/@editorjs/header/dist/header.mjs");
-/* harmony import */ var _editorjs_paragraph__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @editorjs/paragraph */ "./node_modules/@editorjs/paragraph/dist/paragraph.mjs");
-
-
-
-function createEditor() {
-    console.log("Creating editors");
-    document.querySelectorAll(".editor-js").forEach(function (element) {
-        var _a;
-        console.log("Setting up editor for ", element);
-        var editorId = (_a = element.querySelector("input")) === null || _a === void 0 ? void 0 : _a.id;
-        console.log("Editor setup for ", editorId);
-        var editor = new _editorjs_editorjs__WEBPACK_IMPORTED_MODULE_0__["default"]({
-            holder: element,
-            inlineToolbar: true,
-            tools: {
-                header: _editorjs_header__WEBPACK_IMPORTED_MODULE_1__["default"],
-                paragraph: {
-                    class: _editorjs_paragraph__WEBPACK_IMPORTED_MODULE_2__["default"],
-                    inlineToolbar: true,
-                },
-            },
-        });
-        // editor
-        //     .save()
-        //     .then((output: object) => {
-        //         saveData(output, editorId!);
-        //     })
-        //     .catch(console.error);
-    });
-}
-function saveData(output, id) {
-    console.log("Saving ", id, "data: ", output);
-}
-
-
-/***/ }),
-
-/***/ "./src/frontend/htmx.ts":
-/*!******************************!*\
-  !*** ./src/frontend/htmx.ts ***!
-  \******************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   connect: () => (/* binding */ connect)
-/* harmony export */ });
-/* harmony import */ var htmx_org__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! htmx.org */ "./node_modules/htmx.org/dist/htmx.min.js");
-/* harmony import */ var htmx_org__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(htmx_org__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _csrf__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./csrf */ "./src/frontend/csrf.ts");
-/* harmony import */ var sortablejs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! sortablejs */ "./node_modules/sortablejs/modular/sortable.esm.js");
-
-
-
-function connect() {
-    htmx_org__WEBPACK_IMPORTED_MODULE_0___default().onLoad(function (content) {
-        var csrf_token = (0,_csrf__WEBPACK_IMPORTED_MODULE_1__.get_csrf)();
-        if (!csrf_token) {
-            console.error("No CSRF token found");
-            return;
-        }
-        document.body.addEventListener("htmx:configRequest", function (evt) {
-            evt.detail.headers["X-CSRFToken"] = csrf_token; // add the CSRF token
-        });
-    });
-    htmx_org__WEBPACK_IMPORTED_MODULE_0___default().defineExtension("json-enc", {
-        onEvent: function (name, evt) {
-            if (name === "htmx:configRequest") {
-                evt.detail.headers["Content-Type"] = "application/json";
-                var token = (0,_csrf__WEBPACK_IMPORTED_MODULE_1__.get_csrf)();
-                if (token) {
-                    evt.detail.headers["X-CSRFToken"] = token;
-                }
-            }
-        },
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        encodeParameters: function (xhr, parameters, elt) {
-            xhr.overrideMimeType("text/json");
-            return JSON.stringify(parameters);
-        },
-    });
-    htmx_org__WEBPACK_IMPORTED_MODULE_0___default().onLoad(function (content) {
-        var sortables = content.querySelectorAll(".sortable");
-        for (var i = 0; i < sortables.length; i++) {
-            var sortable = sortables[i];
-            new sortablejs__WEBPACK_IMPORTED_MODULE_2__["default"](sortable, {
-                animation: 150,
-                ghostClass: "blue-background-class",
-            });
-        }
-    });
-    htmx_org__WEBPACK_IMPORTED_MODULE_0___default().onLoad(function (content) {
-        var sortables = content.querySelectorAll(".nav-sortable-admin .navbar-nav");
-        for (var i = 0; i < sortables.length; i++) {
-            var sortable = sortables[i];
-            new sortablejs__WEBPACK_IMPORTED_MODULE_2__["default"](sortable, {
-                animation: 150,
-                draggable: ".nav-item",
-                ghostClass: "blue-background-class",
-            });
-        }
-    });
-}
 
 
 /***/ }),
@@ -13711,24 +13723,21 @@ var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be in strict mode.
 (() => {
 "use strict";
-/*!******************************!*\
-  !*** ./src/frontend/main.ts ***!
-  \******************************/
+/*!**********************************!*\
+  !*** ./src/frontend/ts/admin.ts ***!
+  \**********************************/
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _editor__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./editor */ "./src/frontend/editor.ts");
-/* harmony import */ var _htmx__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./htmx */ "./src/frontend/htmx.ts");
+/* harmony import */ var _editor__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./editor */ "./src/frontend/ts/editor.ts");
+/* harmony import */ var _htmx__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./htmx */ "./src/frontend/ts/htmx.ts");
 
 
 function main() {
-    console.log("Loading frontend");
     (0,_htmx__WEBPACK_IMPORTED_MODULE_1__.connect)();
     (0,_editor__WEBPACK_IMPORTED_MODULE_0__.createEditor)();
 }
 main();
-console.log("Loaded frontend");
 
 })();
 
 /******/ })()
-;
-//# sourceMappingURL=main.0cb5f405a7614971434b.js.map
+;//# sourceMappingURL=/assets/js/admin.js.map

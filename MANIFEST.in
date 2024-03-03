@@ -13,6 +13,7 @@ recursive-include src/basingse/ templates/**/*.html
 recursive-include src/basingse/ data/*
 recursive-include src/basingse/ *.py
 recursive-include src/basingse/ *.cfg
+recursive-include src/basingse/ *.json
 include src/basingse/py.typed
 
 recursive-include tests *

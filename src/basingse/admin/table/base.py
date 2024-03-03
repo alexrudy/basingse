@@ -1,7 +1,7 @@
 import inspect
+from collections.abc import Callable
 from collections.abc import Mapping
 from typing import Any
-from typing import Callable
 from typing import ClassVar
 from typing import TypeVar
 
@@ -18,11 +18,11 @@ class Heading:
         if self.icon is None:
             return Template(source=self.text)
         return Template(
-            source=f"""  # noqa: B907
+            source=f"""
 <a href="#" data-bs-toggle="tooltip" data-bs-title="{self.text}" class="link-dark">
     [! icon('{self.icon}', height=12, width=12) !]
 </a>
-""".strip(),
+""".strip(),  # noqa: B907
             block_start_string="[%",
             block_end_string="%]",
             variable_end_string="!]",

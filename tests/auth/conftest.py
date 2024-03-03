@@ -5,15 +5,16 @@ from typing import Any
 from urllib.parse import urlsplit as url_parse
 
 import pytest
+from flask import Flask
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+from werkzeug import Response as WerkzeugResponse
+
 from basingse.auth.models import User
 from basingse.auth.testing import Ok
 from basingse.auth.testing import Redirect
 from basingse.auth.testing import Response
 from basingse.auth.testing import Unauthorized
-from flask import Flask
-from sqlalchemy import select
-from sqlalchemy.orm import Session
-from werkzeug import Response as WerkzeugResponse
 
 
 @pytest.fixture

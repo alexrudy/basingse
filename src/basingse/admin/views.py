@@ -1,8 +1,6 @@
 from typing import Any
 
-import basingse.markdown
 import structlog
-from basingse.htmx import HtmxProperties
 from flask import Blueprint
 from flask import render_template
 from flask import request
@@ -10,7 +8,9 @@ from flask.typing import ResponseReturnValue as IntoResponse
 from flask_login import login_required
 from werkzeug.exceptions import HTTPException
 
+import basingse.markdown
 from .extension import Portal
+from basingse.htmx import HtmxProperties
 
 __all__ = ["bp", "portal"]
 

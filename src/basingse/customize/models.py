@@ -3,7 +3,6 @@ from typing import Any
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from basingse.models import Model
 from flask import url_for
 from flask_attachments import Attachment
 from marshmallow import fields
@@ -18,6 +17,8 @@ from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import object_session
 from sqlalchemy.orm import relationship
+
+from basingse.models import Model
 
 if TYPE_CHECKING:
     from basingse.page.models import Page  # noqa: F401

@@ -3,13 +3,14 @@ from uuid import UUID
 
 import pytest
 import structlog
+from flask import Flask
+from sqlalchemy.orm import Session
+
 from basingse import svcs
 from basingse.auth.models import User
 from basingse.auth.testing import LoginClient
 from basingse.auth.testing import Ok
 from basingse.auth.testing import Redirect
-from flask import Flask
-from sqlalchemy.orm import Session
 
 log = structlog.get_logger(__name__)
 

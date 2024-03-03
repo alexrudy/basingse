@@ -1,7 +1,6 @@
 import functools
 
 import structlog
-from basingse import svcs
 from flask import abort
 from flask import flash
 from flask import redirect
@@ -14,6 +13,7 @@ from sqlalchemy.orm import Session
 from .models import AnonymousUser
 from .models import User
 from .utils import url_for_next
+from basingse import svcs
 
 IntoResponse = typing.ResponseReturnValue
 

@@ -1,4 +1,10 @@
 {
-  "main.js": "main.0cb5f405a7614971434b.js",
-  "main.js.map": "main.0cb5f405a7614971434b.js.map"
+  "js/admin.js": "js/admin.f3d382f12fd47935a402.js",
+  "css/main.css": "css/main.e2c0087464bfdb0237c5.css",
+  "js/main.js": "js/main.74edc2e3df5eef81254c.js",
+  "js/debug.js": "js/debug.7350a662fe7a8ac49ef0.js",
+  "js/admin.js.map": "js/admin.f3d382f12fd47935a402.js.map",
+  "css/main.css.map": "css/main.e2c0087464bfdb0237c5.css.map",
+  "js/main.js.map": "js/main.74edc2e3df5eef81254c.js.map",
+  "js/debug.js.map": "js/debug.7350a662fe7a8ac49ef0.js.map"
 }

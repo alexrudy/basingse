@@ -11,6 +11,7 @@ from rich.traceback import install
 from . import attachments as attmod  # noqa: F401
 from . import svcs
 from .admin.settings import AdminSettings
+from .assets import Assets
 from .auth.extension import Authentication
 from .customize.settings import CustomizeSettings
 from .markdown import MarkdownOptions
@@ -61,6 +62,7 @@ def context() -> dict[str, Any]:
 class BaSingSe:
 
     admin: AdminSettings | None = AdminSettings()
+    assets: Assets | None = Assets()
     auth: Authentication | None = Authentication()
     attachments: Attachments | None = Attachments(registry=Model.registry)
     customize: CustomizeSettings | None = CustomizeSettings()

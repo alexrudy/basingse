@@ -11,11 +11,6 @@ from typing import TypeVar
 
 import click
 import structlog
-from basingse.auth.permissions import require_permission
-from basingse.auth.utils import redirect_next
-from basingse.forms import Form as FormBase
-from basingse.models import Model as ModelBase
-from basingse.svcs import get
 from blinker import signal
 from flask import abort
 from flask import Blueprint
@@ -37,6 +32,11 @@ from sqlalchemy.orm import Session
 from .nav import Item
 from .nav import Nav
 from .table import Table
+from basingse.auth.permissions import require_permission
+from basingse.auth.utils import redirect_next
+from basingse.forms import Form as FormBase
+from basingse.models import Model as ModelBase
+from basingse.svcs import get
 
 
 log = structlog.get_logger(__name__)

@@ -3,10 +3,11 @@ from urllib.parse import parse_qs
 from urllib.parse import urlsplit as url_parse
 
 import pytest
-from basingse.auth import utils
-from basingse.auth.testing import Redirect
 from flask import Flask
 from itsdangerous import BadSignature
+
+from basingse.auth import utils
+from basingse.auth.testing import Redirect
 
 
 @pytest.mark.parametrize(

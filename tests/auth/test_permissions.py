@@ -2,6 +2,11 @@ from typing import Any
 from unittest.mock import Mock
 
 import pytest
+from flask import Flask
+from flask_login import LoginManager
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
 from basingse import svcs
 from basingse.auth.extension import get_extension
 from basingse.auth.models import User
@@ -11,10 +16,6 @@ from basingse.auth.permissions import Permission
 from basingse.auth.permissions import PermissionGrant
 from basingse.auth.permissions import require_permission
 from basingse.auth.permissions import Role
-from flask import Flask
-from flask_login import LoginManager
-from sqlalchemy import select
-from sqlalchemy.orm import Session
 
 
 def test_setup_administrator(app: Flask) -> None:

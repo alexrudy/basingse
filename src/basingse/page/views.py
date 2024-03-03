@@ -1,5 +1,3 @@
-from basingse import svcs
-from basingse.models import Session
 from flask import abort
 from flask import Blueprint
 from flask import flash
@@ -7,6 +5,8 @@ from flask import render_template
 from sqlalchemy import select
 
 from .models import Page
+from basingse import svcs
+from basingse.models import Session
 
 bp = Blueprint("page", __name__, template_folder="templates")
 

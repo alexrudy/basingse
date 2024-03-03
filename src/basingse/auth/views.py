@@ -3,7 +3,6 @@ import uuid
 from typing import Any
 
 import structlog
-from basingse import svcs
 from flask import abort
 from flask import Blueprint
 from flask import current_app
@@ -29,6 +28,7 @@ from .models import User
 from .permissions import require_permission
 from .utils import redirect
 from .utils import redirect_next
+from basingse import svcs
 
 
 bp = Blueprint("auth", __name__, url_prefix="/auth/", template_folder="templates")

@@ -1,0 +1,77 @@
+@import "bootstrap/scss/functions";
+
+$link-color: black;
+$link-color-dark: white;
+
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/maps";
+@import "bootstrap/scss/mixins";
+
+@import "bootstrap/scss/variables-dark";
+@import "bootstrap/scss/root";
+
+
+// 6. Optionally include any other parts as needed
+@import "bootstrap/scss/utilities";
+@import "bootstrap/scss/reboot";
+@import "bootstrap/scss/type";
+@import "bootstrap/scss/images";
+@import "bootstrap/scss/containers";
+@import "bootstrap/scss/grid";
+@import "bootstrap/scss/helpers";
+
+// 7. Individual components
+@import "bootstrap/scss/tables";
+@import "bootstrap/scss/forms";
+@import "bootstrap/scss/buttons";
+@import "bootstrap/scss/transitions";
+@import "bootstrap/scss/dropdown";
+@import "bootstrap/scss/button-group";
+@import "bootstrap/scss/nav";
+@import "bootstrap/scss/navbar";
+@import "bootstrap/scss/card";
+@import "bootstrap/scss/breadcrumb";
+@import "bootstrap/scss/badge";
+@import "bootstrap/scss/list-group";
+@import "bootstrap/scss/pagination";
+@import "bootstrap/scss/accordion";
+
+@import "bootstrap/scss/utilities/api";
+
+.bss-devbar {
+    @include color-scheme(light) {
+        background-color: #d2a7f2;
+    }
+
+    @include color-scheme(dark) {
+        background-color: #611885;
+    }
+}
+
+.codex-editor {
+    border-radius: $border-radius;
+    border-color: var(--bs-border-color);
+    border-style: solid;
+    border-width: 1px;
+    margin: 0 auto;
+}
+
+blockquote.blockquote {
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    font-style: italic;
+}
+
+figcaption.blockquote-footer {
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    font-style: italic;
+    font-size: large;
+}
+
+// Form fields for uploading
+div.upload-group img {
+    object-fit: scale-down;
+    height: 38px;
+    display: block;
+    padding: 0px;
+    width: unset;
+}

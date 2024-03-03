@@ -1,12 +1,14 @@
 attrs
 Flask-BCrypt
 Flask-Login
+Flask-SocketIO
 Flask-WTF
 Flask!=3.0.1,>=2
 flask-attachments @ git+https://github.com/alexrudy/flask-attachments.git@main
 humanize
 itsdangerous
 marshmallow
+marshmallow-dataclass
 markdown-it-py[plugins]
 pytz
 rich

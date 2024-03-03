@@ -1,9 +1,9 @@
 import contextlib
 import datetime as dt
 import uuid
+from collections.abc import Callable
 from collections.abc import Iterator
 from typing import Any
-from typing import Callable
 from typing import ContextManager
 from urllib.parse import parse_qs
 from urllib.parse import urlsplit as url_parse
@@ -12,6 +12,11 @@ import freezegun
 import pytest
 import pytz
 import structlog
+from flask import Flask
+from flask import get_flashed_messages
+from flask_login import current_user
+from sqlalchemy.orm import Session
+
 from basingse import svcs
 from basingse.auth.models import User
 from basingse.auth.models import UserSchema
@@ -20,10 +25,6 @@ from basingse.auth.testing import Ok
 from basingse.auth.testing import Redirect
 from basingse.auth.testing import Unauthorized
 from basingse.auth.utils import serializer
-from flask import Flask
-from flask import get_flashed_messages
-from flask_login import current_user
-from sqlalchemy.orm import Session
 
 log = structlog.get_logger(__name__)
 

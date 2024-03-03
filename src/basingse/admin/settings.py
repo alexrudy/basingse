@@ -1,11 +1,11 @@
 import dataclasses as dc
 
-from basingse.utils.settings import BlueprintOptions
 from flask import Blueprint
 from flask import Flask
 
 from .extension import AdminView
 from .views import bp
+from basingse.utils.settings import BlueprintOptions
 
 
 @dc.dataclass(frozen=True)

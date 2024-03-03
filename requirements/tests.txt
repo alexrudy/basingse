@@ -20,7 +20,7 @@ pytest==8.0.2
     #   pytest-cov
 pytest-cov==4.1.0
     # via -r requirements/tests.in
-python-dateutil==2.8.2
+python-dateutil==2.9.0.post0
     # via freezegun
 six==1.16.0
     # via python-dateutil

@@ -1,20 +1,23 @@
 {% from "_env.html" import env_pill %}
 
-<div class="m-1 rounded py-1 px-3" style="background-color: #d2a7f2;" id="devbar">
+<div class="m-1 rounded py-1 px-3 bss-devbar" id="devbar">
     <!-- DevBar -->
     <ul class="navbar-nav d-flex flex-row">
         <li class="nav-item pe-2 d-inline-flex align-items-center">
             {{ env_pill() }}
         </li>
         <li class="nav-item pe-2 d-inline-flex align-items-center">
-            <a href="/" class="link-dark d-inline-flex align-items-center">{{ icon('house-fill') }}</a>
+            <a href="/" class="nav-link d-inline-flex align-items-center">{{ icon('house-fill') }}</a>
         </li>
         <li class="nav-item pe-2 d-inline-flex align-items-center">
-            <a href="{{ url_for('admin.home') }}" class="link-dark d-inline-flex align-items-center">{{
+            <a href="{{ url_for('admin.home') }}" class="nav-link d-inline-flex align-items-center">{{
                 icon('gear') }}</a>
         </li>
-        <li class="nav-item d-inline-flex align-items-center link-dark">
+        <li class="nav-item pe-2 d-inline-flex align-items-center">
             {% include "_lock.html" %}
+        </li>
+        <li class="nav-item dropdown">
+            {% include "_colormode.html" %}
         </li>
     </ul>
     <!-- DevBar -->

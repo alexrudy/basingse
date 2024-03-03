@@ -1,8 +1,0 @@
-{%- for child in blk.children %}
-<div class="block">
-    {% with %}
-    {% set blk = child %}
-    {% include blk.render() %}
-    {% endwith %}
-</div>
-{% endfor -%}

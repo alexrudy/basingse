@@ -1,9 +1,7 @@
 import { createEditor } from "./editor";
 import { connect } from "./htmx";
 
-function main() {
+export function init(blocks: object) {
     connect();
-    createEditor({});
+    createEditor(blocks);
 }
-
-main();

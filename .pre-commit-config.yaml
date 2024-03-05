@@ -24,9 +24,10 @@ repos:
         args: ["--django"]
       - id: trailing-whitespace
         language_version: python3
-        exclude: "setup.cfg"
+        exclude: "setup.cfg|^src/basingse/assets/"
       - id: end-of-file-fixer
         language_version: python3
+        exclude: "^src/basingse/assets/"
       - id: fix-encoding-pragma
         language_version: python3
         args: [--remove]

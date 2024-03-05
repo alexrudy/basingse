@@ -6,9 +6,13 @@ const { SourceMapDevToolPlugin } = require('webpack');
 
 module.exports = {
     entry: {
-        admin: './src/frontend/ts/admin.ts',
-        main: './src/frontend/ts/main.ts',
-        debug: './src/frontend/ts/debug.ts',
+        admin: {
+            import: './src/frontend/ts/admin.ts',
+        },
+        main: {
+            import: './src/frontend/ts/main.ts'
+        },
+        debug: { import: './src/frontend/ts/debug.ts' },
     },
     devtool: false,
     module: {
@@ -83,5 +87,6 @@ module.exports = {
         publicPath: '',
         path: path.resolve(__dirname, 'src/basingse/assets/'),
         clean: true,
+        library: ["Basingse", "[name]"],
     },
 };

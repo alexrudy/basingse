@@ -1,3 +1,4 @@
+var Basingse;
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
@@ -6529,13 +6530,13 @@ var Ne = {}, Co = {
 };
 /*!
  * CodeX.Tooltips
- *
+ * 
  * @version 1.0.5
- *
+ * 
  * @licence MIT
  * @author CodeX <https://codex.so>
- *
- *
+ * 
+ * 
  */
 (function(s, e) {
   (function(t, o) {
@@ -13663,7 +13664,7 @@ class a {
 /************************************************************************/
 /******/ 	// The module cache
 /******/ 	var __webpack_module_cache__ = {};
-/******/
+/******/ 	
 /******/ 	// The require function
 /******/ 	function __webpack_require__(moduleId) {
 /******/ 		// Check if module is in cache
@@ -13677,14 +13678,14 @@ class a {
 /******/ 			// no module.loaded needed
 /******/ 			exports: {}
 /******/ 		};
-/******/
+/******/ 	
 /******/ 		// Execute the module function
 /******/ 		__webpack_modules__[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-/******/
+/******/ 	
 /******/ 		// Return the exports of the module
 /******/ 		return module.exports;
 /******/ 	}
-/******/
+/******/ 	
 /************************************************************************/
 /******/ 	/* webpack/runtime/compat get default export */
 /******/ 	(() => {
@@ -13697,7 +13698,7 @@ class a {
 /******/ 			return getter;
 /******/ 		};
 /******/ 	})();
-/******/
+/******/ 	
 /******/ 	/* webpack/runtime/define property getters */
 /******/ 	(() => {
 /******/ 		// define getter functions for harmony exports
@@ -13709,12 +13710,12 @@ class a {
 /******/ 			}
 /******/ 		};
 /******/ 	})();
-/******/
+/******/ 	
 /******/ 	/* webpack/runtime/hasOwnProperty shorthand */
 /******/ 	(() => {
 /******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
 /******/ 	})();
-/******/
+/******/ 	
 /******/ 	/* webpack/runtime/make namespace object */
 /******/ 	(() => {
 /******/ 		// define __esModule on exports
@@ -13725,7 +13726,7 @@ class a {
 /******/ 			Object.defineProperty(exports, '__esModule', { value: true });
 /******/ 		};
 /******/ 	})();
-/******/
+/******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be in strict mode.
@@ -13735,17 +13736,20 @@ var __webpack_exports__ = {};
   !*** ./src/frontend/ts/admin.ts ***!
   \**********************************/
 __webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   init: () => (/* binding */ init)
+/* harmony export */ });
 /* harmony import */ var _editor__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./editor */ "./src/frontend/ts/editor.ts");
 /* harmony import */ var _htmx__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./htmx */ "./src/frontend/ts/htmx.ts");
 
 
-function main() {
+function init(blocks) {
     (0,_htmx__WEBPACK_IMPORTED_MODULE_1__.connect)();
-    (0,_editor__WEBPACK_IMPORTED_MODULE_0__.createEditor)({});
+    (0,_editor__WEBPACK_IMPORTED_MODULE_0__.createEditor)(blocks);
 }
-main();
 
 })();
 
+(Basingse = typeof Basingse === "undefined" ? {} : Basingse).admin = __webpack_exports__;
 /******/ })()
 ;//# sourceMappingURL=/assets/js/admin.js.map

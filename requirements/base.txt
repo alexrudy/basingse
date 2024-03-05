@@ -61,7 +61,7 @@ markupsafe==2.1.5
     #   jinja2
     #   werkzeug
     #   wtforms
-marshmallow==3.21.0
+marshmallow==3.21.1
     # via
     #   -r requirements/base.in
     #   marshmallow-dataclass
@@ -87,7 +87,7 @@ rich==13.7.1
     # via -r requirements/base.in
 simple-websocket==1.0.0
     # via python-engineio
-sqlalchemy==2.0.27
+sqlalchemy==2.0.28
     # via
     #   -r requirements/base.in
     #   wtforms-sqlalchemy

@@ -62,7 +62,7 @@ def context() -> dict[str, Any]:
 class BaSingSe:
 
     admin: AdminSettings | None = AdminSettings()
-    assets: Assets | None = Assets()
+    assets: Assets | None = dc.field(default_factory=Assets)
     auth: Authentication | None = Authentication()
     attachments: Attachments | None = Attachments(registry=Model.registry)
     customize: CustomizeSettings | None = CustomizeSettings()

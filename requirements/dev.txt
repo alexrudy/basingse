@@ -61,7 +61,7 @@ pip-compile-multi==2.6.3
     # via -r requirements/dev.in
 pip-tools==7.4.0
     # via pip-compile-multi
-pkginfo==1.9.6
+pkginfo==1.10.0
     # via twine
 platformdirs==4.2.0
     # via

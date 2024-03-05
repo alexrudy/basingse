@@ -1,5 +1,6 @@
 import logging
 from collections.abc import Iterator
+from pathlib import Path
 from typing import cast
 
 import pytest
@@ -12,6 +13,7 @@ from structlog.types import EventDict
 from basingse import svcs
 from basingse.app import configure_app
 from basingse.app import log_queries
+from basingse.assets import AssetCollection
 from basingse.auth.testing import LoginClient
 from basingse.models import Model
 from basingse.settings import BaSingSe
@@ -46,9 +48,11 @@ def app() -> Iterator[Flask]:
 
     app = TestingFlask(__name__)
     app.test_client_class = LoginClient
-    configure_app(app, config={"ENV": "test"})
+    configure_app(app, config={"ENV": "test", "ASSETS_FOLDER": None})
     bss = BaSingSe(logging=None)
     bss.init_app(app)
+    assert bss.assets
+    bss.assets.collection.append(AssetCollection("tests", Path("manifest.json"), Path("assets")))
 
     with app.app_context():
         engine = svcs.get(Engine)

@@ -18,6 +18,9 @@ jobs:
         tox: [py311, typing, style, docs, minimal]
     steps:
       - uses: actions/checkout@v3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '21'
       - uses: actions/setup-python@v3
         with:
           python-version: 3.11
@@ -45,30 +48,6 @@ jobs:
         if: matrix.tox == 'typing'
       - run: pip install tox
       - run: tox -e ${{ matrix.tox }}
-  check-dist:
-    name: Check distribution
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '21'
-      - run: npm ci
-      - run: npm run build
-      - name: Compare the expected and actual dist/ directories
-        run: |
-          if [ "$(git diff --ignore-space-at-eol dist/ | wc -l)" -gt "0" ]; then
-            echo "Detected uncommitted changes after build.  See status below:"
-            git diff
-            exit 1
-          fi
-        id: diff
-      # If index.js was different than expected, upload the expected version as an artifact
-      - uses: actions/upload-artifact@v3
-        if: ${{ failure() && steps.diff.conclusion == 'failure' }}
-        with:
-          name: dist
-          path: src/basingse/assets/
   javascript:
     name: JavaScript tests
     runs-on: ubuntu-latest

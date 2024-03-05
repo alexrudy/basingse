@@ -16,7 +16,7 @@ class Page(Model):
     @property
     def url(self) -> str:
         """URL for this page"""
-        return url_for("page.view", slug=self.slug)
+        return url_for("page.page", slug=self.slug)
 
     @property
     def blocks(self) -> BlockContent:

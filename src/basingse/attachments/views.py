@@ -20,7 +20,7 @@ class AttachmentsAdmin(AdminView, portal=portal):
     name = "attachment"
     form = AttachmentForm
     model = Attachment
-    nav = Item("Attachments", "admin.attachment.list", "person-badge", "attachment.view")
+    nav = Item("Attachments", "admin.attachment.list", "file-earmark", "attachment.view")
 
     def blank(self, **kwargs: Any) -> Any:
         obj = super().blank(**kwargs)

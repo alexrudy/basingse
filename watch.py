@@ -1,10 +1,14 @@
+import contextlib
 import dataclasses as dc
 import logging
 import queue
 import subprocess
 import threading
 import time
+from collections.abc import Iterator
 from pathlib import Path
+from typing import Protocol
+from typing import TypeVar
 
 import click
 import structlog
@@ -14,7 +18,25 @@ from watchdog.events import FileSystemEvent
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
+
 logger = structlog.get_logger()
+
+
+class Stoppable(Protocol):
+    def stop(self) -> None: ...
+    def join(self) -> None: ...
+
+
+S = TypeVar("S", bound=Stoppable)
+
+
+@contextlib.contextmanager
+def stopping(target: S) -> Iterator[S]:
+    try:
+        yield target
+    finally:
+        target.stop()
+        target.join()
 
 
 def configure_structlog() -> None:
@@ -147,37 +169,37 @@ def main() -> int:
     src = root / "src"
     requirements = root / "requirements"
 
-    app, socketio = create_socketio_app()
-
+    (app, socketio) = create_socketio_app()
     threading.Thread(
         target=socketio.run, args=(app, "localhost", 5010), kwargs=dict(use_reloader=False), daemon=True
     ).start()
 
-    shell_manager = ShellCommandDebouncer()
+    with contextlib.ExitStack() as stack:
 
-    socketio_handler = SocketIOHandler(socketio, patterns=["*.js", "*.css"])
-    webpack = ShellCommandHandler(["npm", "run", "build"], shell_manager.queue, patterns=["*.ts", "*.scss"])
-    webpack_config = ShellCommandHandler(
-        ["npm", "run", "build"], shell_manager.queue, patterns=["webpack.config.js", "tsconfig.json", "package.json"]
-    )
-    sync_and_install = ShellCommandHandler(["just", "sync"], shell_manager.queue, patterns=["*.in"])
+        stack.enter_context(subprocess.Popen(["just", "serve"]))
+        shell_manager = ShellCommandDebouncer()
+        stack.enter_context(stopping(shell_manager))
+        shell_manager.start()
 
-    observer.schedule(webpack, path=src / "frontend", recursive=True)
-    observer.schedule(webpack_config, path=root, recursive=False)
-    observer.schedule(sync_and_install, path=requirements, recursive=True)
-    observer.schedule(socketio_handler, path=src / "basingse" / "assets", recursive=True)
+        socketio_handler = SocketIOHandler(socketio, patterns=["*.js", "*.css"])
+        webpack = ShellCommandHandler(["npm", "run", "build"], shell_manager.queue, patterns=["*.ts", "*.scss"])
+        webpack_config = ShellCommandHandler(
+            ["npm", "run", "build"],
+            shell_manager.queue,
+            patterns=["webpack.config.js", "tsconfig.json", "package.json"],
+        )
+        sync_and_install = ShellCommandHandler(["just", "sync"], shell_manager.queue, patterns=["*.in"])
 
-    observer.start()
-    shell_manager.start()
+        observer.schedule(webpack, path=src / "frontend", recursive=True)
+        observer.schedule(webpack_config, path=root, recursive=False)
+        observer.schedule(sync_and_install, path=requirements, recursive=True)
+        observer.schedule(socketio_handler, path=src / "basingse" / "assets", recursive=True)
 
-    try:
+        stack.enter_context(stopping(observer))
+        observer.start()
+
         while observer.is_alive():
             observer.join(1)
-    except KeyboardInterrupt:
-        observer.stop()
-        shell_manager.stop()
-        observer.join()
-        shell_manager.join()
 
     return 0
 

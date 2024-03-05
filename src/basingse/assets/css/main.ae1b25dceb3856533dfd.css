@@ -10328,6 +10328,14 @@ textarea.form-control-lg {
     display: none !important;
   }
 }
+[data-bs-theme=light] .bss-devbar {
+  background-color: #d2a7f2;
+}
+
+[data-bs-theme=dark] .bss-devbar {
+  background-color: #611885;
+}
+
 @media (prefers-color-scheme: light) {
   .bss-devbar {
     background-color: #d2a7f2;
@@ -10345,6 +10353,12 @@ textarea.form-control-lg {
   border-style: solid;
   border-width: 1px;
   margin: 0 auto;
+}
+
+.ce-block > div {
+  border-bottom-color: var(--bs-border-color);
+  border-bottom-style: solid;
+  border-bottom-width: 1px;
 }
 
 blockquote.blockquote {

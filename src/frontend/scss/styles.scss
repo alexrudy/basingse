@@ -38,13 +38,24 @@ $link-color-dark: white;
 
 @import "bootstrap/scss/utilities/api";
 
+$dev-bar-color: #d2a7f2;
+$dev-bar-color-dark: #611885;
+
+[data-bs-theme="light"] .bss-devbar {
+    background-color: $dev-bar-color;
+}
+
+[data-bs-theme="dark"] .bss-devbar {
+    background-color: $dev-bar-color-dark;
+}
+
 .bss-devbar {
     @include color-scheme(light) {
-        background-color: #d2a7f2;
+        background-color: $dev-bar-color;
     }
 
     @include color-scheme(dark) {
-        background-color: #611885;
+        background-color: $dev-bar-color-dark;
     }
 }
 
@@ -54,6 +65,12 @@ $link-color-dark: white;
     border-style: solid;
     border-width: 1px;
     margin: 0 auto;
+}
+
+.ce-block>div {
+    border-bottom-color: var(--bs-border-color);
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
 }
 
 blockquote.blockquote {

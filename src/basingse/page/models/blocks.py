@@ -70,7 +70,7 @@ class Block:
         return self.data.__kind__
 
     class Schema(BaseSchema):
-        id = fields.String()
+        id = fields.String(default=None, missing=None)
         data = BlockDataField()
         type = fields.Function(lambda obj: obj.data.__kind__)
 
@@ -115,8 +115,8 @@ class BlockContent:
 
     class Schema(BaseSchema):
         blocks = fields.Nested(Block.Schema, many=True)
-        version = fields.String()
-        time = fields.DateTime(format="timestamp")
+        version = fields.String(default=None, missing=None)
+        time = fields.DateTime(format="timestamp_ms", default=None, missing=None)
 
         @post_load
         def make(self, data: dict[str, Any], **kwargs: Any) -> "BlockContent":

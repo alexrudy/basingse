@@ -3,7 +3,7 @@ import { connect } from "./htmx";
 
 function main() {
     connect();
-    createEditor();
+    createEditor({});
 }
 
 main();

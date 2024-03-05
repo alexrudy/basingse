@@ -2,7 +2,7 @@ import EditorJS from "@editorjs/editorjs";
 import Header from "@editorjs/header";
 import Paragraph from "@editorjs/paragraph";
 
-export function createEditor() {
+export function createEditor(tools: object) {
     document.querySelectorAll<HTMLElement>(".editor-js").forEach((element) => {
         const input = element.querySelector("input");
         const editorId = input?.id;
@@ -19,6 +19,7 @@ export function createEditor() {
                     class: Paragraph,
                     inlineToolbar: true,
                 },
+                ...tools
             },
             placeholder: "Write your page here!"
         });

@@ -37,10 +37,21 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _editorjs_editorjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @editorjs/editorjs */ "./node_modules/@editorjs/editorjs/dist/editorjs.mjs");
 /* harmony import */ var _editorjs_header__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @editorjs/header */ "./node_modules/@editorjs/header/dist/header.mjs");
 /* harmony import */ var _editorjs_paragraph__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @editorjs/paragraph */ "./node_modules/@editorjs/paragraph/dist/paragraph.mjs");
+var __assign = (undefined && undefined.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 
 
 
-function createEditor() {
+function createEditor(tools) {
     document.querySelectorAll(".editor-js").forEach(function (element) {
         var input = element.querySelector("input");
         var editorId = input === null || input === void 0 ? void 0 : input.id;
@@ -49,13 +60,10 @@ function createEditor() {
             holder: element,
             inlineToolbar: true,
             data: (input === null || input === void 0 ? void 0 : input.value) ? JSON.parse(input.value) : undefined,
-            tools: {
-                header: _editorjs_header__WEBPACK_IMPORTED_MODULE_1__["default"],
-                paragraph: {
+            tools: __assign({ header: _editorjs_header__WEBPACK_IMPORTED_MODULE_1__["default"], paragraph: {
                     class: _editorjs_paragraph__WEBPACK_IMPORTED_MODULE_2__["default"],
                     inlineToolbar: true,
-                },
-            },
+                } }, tools),
             placeholder: "Write your page here!"
         });
         var form = findParentBySelector(element, "form");
@@ -13733,7 +13741,7 @@ __webpack_require__.r(__webpack_exports__);
 
 function main() {
     (0,_htmx__WEBPACK_IMPORTED_MODULE_1__.connect)();
-    (0,_editor__WEBPACK_IMPORTED_MODULE_0__.createEditor)();
+    (0,_editor__WEBPACK_IMPORTED_MODULE_0__.createEditor)({});
 }
 main();
 

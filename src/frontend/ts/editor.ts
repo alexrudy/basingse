@@ -19,9 +19,9 @@ export function createEditor(tools: object) {
                     class: Paragraph,
                     inlineToolbar: true,
                 },
-                ...tools
+                ...tools,
             },
-            placeholder: "Write your page here!"
+            placeholder: "Write your page here!",
         });
 
         const form = findParentBySelector<HTMLFormElement>(element, "form");
@@ -37,14 +37,16 @@ export function createEditor(tools: object) {
                 })
                 .catch(console.error);
         });
-
     });
 }
 
-function findParentBySelector<K extends HTMLElement>(element: HTMLElement, selector: string): K | null {
+function findParentBySelector<K extends HTMLElement>(
+    element: HTMLElement,
+    selector: string,
+): K | null {
     while (element.parentElement) {
         if (element.parentElement.matches(selector)) {
-            return (element.parentElement as K);
+            return element.parentElement as K;
         }
         element = element.parentElement;
     }

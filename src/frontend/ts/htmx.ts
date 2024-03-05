@@ -10,22 +10,20 @@ interface HTMXEvent extends Event {
     };
 }
 
-
-
-
 export function connect() {
-
     htmx.onLoad(function (content: Element) {
         const csrf_token = get_csrf();
         if (!csrf_token) {
             console.error("No CSRF token found");
             return;
         }
-        document.body.addEventListener("htmx:configRequest", function (evt: Event) {
-            (evt as HTMXEvent).detail.headers["X-CSRFToken"] = csrf_token; // add the CSRF token
-        });
+        document.body.addEventListener(
+            "htmx:configRequest",
+            function (evt: Event) {
+                (evt as HTMXEvent).detail.headers["X-CSRFToken"] = csrf_token; // add the CSRF token
+            },
+        );
     });
-
 
     htmx.defineExtension("json-enc", {
         onEvent: function (name: string, evt: HTMXEvent) {

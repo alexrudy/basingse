@@ -10,7 +10,6 @@ $link-color-dark: white;
 @import "bootstrap/scss/variables-dark";
 @import "bootstrap/scss/root";
 
-
 // 6. Optionally include any other parts as needed
 @import "bootstrap/scss/utilities";
 @import "bootstrap/scss/reboot";
@@ -67,19 +66,19 @@ $dev-bar-color-dark: #611885;
     margin: 0 auto;
 }
 
-.ce-block>div {
+.ce-block > div {
     border-bottom-color: var(--bs-border-color);
     border-bottom-style: solid;
     border-bottom-width: 1px;
 }
 
 blockquote.blockquote {
-    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
     font-style: italic;
 }
 
 figcaption.blockquote-footer {
-    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
     font-style: italic;
     font-size: large;
 }

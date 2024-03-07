@@ -94,7 +94,7 @@ rfc3986==2.0.0
     # via twine
 toposort==1.10
     # via pip-compile-multi
-tox==4.13.0
+tox==4.14.0
     # via -r requirements/dev.in
 twine==5.0.0
     # via -r requirements/dev.in

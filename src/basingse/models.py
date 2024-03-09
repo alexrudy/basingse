@@ -11,6 +11,7 @@ from flask import abort
 from flask import flash
 from flask import Flask
 from flask.cli import AppGroup
+from flask_alembic import Alembic
 from sqlalchemy import create_engine
 from sqlalchemy import DateTime
 from sqlalchemy import event
@@ -28,6 +29,8 @@ from sqlalchemy.orm import Session as BaseSession
 from sqlalchemy.pool import ConnectionPoolEntry
 
 from basingse import svcs
+
+alembic = Alembic()
 
 CONVENTION = {
     "ix": "ix_%(column_0_label)s",
@@ -127,3 +130,4 @@ class SQLAlchemy:
         )
 
         app.cli.add_command(group)
+        alembic.init_app(app)

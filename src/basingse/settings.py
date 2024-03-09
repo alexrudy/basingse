@@ -24,34 +24,44 @@ from .utils.urls import rewrite_url
 from .views import CoreSettings
 
 
+logger = structlog.get_logger()
+
+
+def configure_structlog() -> None:
+    structlog.configure(
+        processors=[
+            structlog.contextvars.merge_contextvars,
+            structlog.processors.add_log_level,
+            structlog.processors.StackInfoRenderer(),
+            structlog.dev.set_exc_info,
+            structlog.processors.TimeStamper(),
+            structlog.dev.ConsoleRenderer(),
+        ],
+        wrapper_class=structlog.make_filtering_bound_logger(logging.NOTSET),
+        context_class=dict,
+        logger_factory=structlog.PrintLoggerFactory(),
+        cache_logger_on_first_use=False,
+    )
+
+    # formatter = structlog.stdlib.ProcessorFormatter(
+    #     processors=[structlog.dev.ConsoleRenderer()],
+    # )
+
+    install(show_locals=True)
+
+
 @dc.dataclass(frozen=True)
 class Logging:
 
     def init_app(self, app: Flask) -> None:
-        structlog.configure(
-            processors=[
-                structlog.contextvars.merge_contextvars,
-                structlog.processors.add_log_level,
-                structlog.processors.StackInfoRenderer(),
-                structlog.dev.set_exc_info,
-                structlog.processors.TimeStamper(),
-                structlog.dev.ConsoleRenderer(),
-            ],
-            wrapper_class=structlog.make_filtering_bound_logger(logging.NOTSET),
-            context_class=dict,
-            logger_factory=structlog.PrintLoggerFactory(),
-            cache_logger_on_first_use=False,
-        )
+        configure_structlog()
 
-        # formatter = structlog.stdlib.ProcessorFormatter(
-        #     processors=[structlog.dev.ConsoleRenderer()],
-        # )
 
-        install(show_locals=True)
+@dc.dataclass(frozen=True)
+class Context:
+
+    def init_app(self, app: Flask) -> None:
         app.context_processor(context)
-
-
-logger = structlog.get_logger()
 
 
 def context() -> dict[str, Any]:
@@ -71,6 +81,7 @@ class BaSingSe:
     sqlalchemy: SQLAlchemy | None = SQLAlchemy()
     logging: Logging | None = Logging()
     markdown: MarkdownOptions | None = MarkdownOptions()
+    context: Context | None = Context()
 
     def init_app(self, app: Flask) -> None:
         svcs.init_app(app)

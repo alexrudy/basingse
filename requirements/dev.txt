@@ -39,7 +39,7 @@ flake8==7.0.0
     # via -r requirements/dev.in
 identify==2.5.35
     # via pre-commit
-importlib-metadata==7.0.1
+importlib-metadata==7.0.2
     # via
     #   keyring
     #   twine
@@ -59,7 +59,7 @@ pathspec==0.12.1
     # via black
 pip-compile-multi==2.6.3
     # via -r requirements/dev.in
-pip-tools==7.4.0
+pip-tools==7.4.1
     # via pip-compile-multi
 pkginfo==1.10.0
     # via twine
@@ -94,7 +94,7 @@ rfc3986==2.0.0
     # via twine
 toposort==1.10
     # via pip-compile-multi
-tox==4.14.0
+tox==4.14.1
     # via -r requirements/dev.in
 twine==5.0.0
     # via -r requirements/dev.in

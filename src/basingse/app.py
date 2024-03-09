@@ -3,8 +3,6 @@ from typing import Any
 
 import structlog
 from flask import Flask
-from sqlalchemy import event
-from sqlalchemy.engine import Engine
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from basingse.settings import BaSingSe
@@ -49,9 +47,6 @@ def create_app(config: dict[str, Any] | None = None, prefix: str | None = None) 
     app = Flask(__name__, instance_relative_config=True, instance_path=os.path.join(os.getcwd(), "instance"))
 
     configure_app(app, config, prefix)
-
-    if app.config["ENV"] == "dev":
-        event.listen(Engine, "before_cursor_execute", log_queries)
 
     # Initialize the application
     BaSingSe().init_app(app)

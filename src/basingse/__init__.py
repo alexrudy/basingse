@@ -2,4 +2,4 @@
 
 __author__ = """Alex Rudy"""
 __email__ = "opensource@alexrudy.net"
-__version__ = "0.1.0"
+from ._version import __version__  # noqa: F401

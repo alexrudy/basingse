@@ -1,6 +1,9 @@
 [build-system]
-requires = ["setuptools>=42"]
+requires = ["setuptools>=42", "setuptools_scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [tool.black]
 line-length = 120
+
+[tool.setuptools_scm]
+version_file = "src/basingse/_version.py"

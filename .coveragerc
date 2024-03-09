@@ -1,0 +1,20 @@
+[coverage:run]
+branch = True
+source =
+    src/basingse
+    tests/
+
+[coverage:paths]
+source =
+    src
+    */site-packages
+
+[coverage:report]
+exclude_lines =
+    pragma: nocover
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if TYPE_CHECKING:
+    if __name__ == .__main__.:
+    except BaseException:

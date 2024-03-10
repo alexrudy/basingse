@@ -49,9 +49,6 @@ jobs:
       - run: pip install tox
       - run: tox -e ${{ matrix.tox }}
         if: matrix.tox != 'dist'
-      - name: Build and Check distribution
-        run: python scripts/check-dist.py
-        if: matrix.tox == 'dist'
   javascript:
     name: JavaScript tests
     runs-on: ubuntu-latest

@@ -9,3 +9,4 @@ bump2version
 build
 twine
 watchdog
+hatchling

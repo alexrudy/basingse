@@ -33,6 +33,17 @@ Homepage = "https://github.com/alexrudy/basingse"
 [tool.hatch.version]
 source = "vcs"
 
+[tool.hatch.build.targets.sdist]
+only-include = [
+    "src/basingse",
+    "pyproject.toml",
+    "LICENSE",
+    "README.md",
+    "requirements",
+    "docs",
+]
+artifacts = ["src/basingse/_version.py", "src/basingse/assets/*"]
+
 [tool.hatch.build.hooks.vcs]
 version-file = "src/basingse/_version.py"
 

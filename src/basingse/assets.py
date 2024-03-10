@@ -113,3 +113,9 @@ class Assets:
             if filename in collection:
                 return collection.serve_asset(filename)
         return "Not Found", 404
+
+
+def check_dist() -> None:
+    """Check the dist directory for the presence of asset files."""
+    manifest = importlib.resources.files("basingse").joinpath("assets", "manifest.json").read_text()
+    print(f"{len(json.loads(manifest))} asset files found")

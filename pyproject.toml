@@ -49,6 +49,7 @@ version-file = "src/basingse/_version.py"
 
 [tool.hatch.build.hooks.custom]
 path = "hatch_build.py"
+assets = "src/basingse/assets"
 
 [tool.black]
 line-length = 120

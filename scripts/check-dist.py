@@ -20,6 +20,9 @@ def run(*args: str) -> None:
             "{} {} failed with returncode {}".format(click.style("!", fg="red", bold=True), cmd, process.returncode),
             err=True,
         )
+        if not run_verbose:
+            click.echo(process.stdout.decode())
+            click.echo(process.stderr.decode(), err=True)
         raise click.ClickException(f"Command failed with return code {process.returncode}")
 
 

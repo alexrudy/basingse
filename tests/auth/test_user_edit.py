@@ -58,5 +58,4 @@ def test_edit_user(app: Flask, author: User, client: LoginClient) -> None:
         assert resp == Ok()
 
     with client.post(f"/user/{author.id}/edit/", data={"email": "hello@bss.net"}) as resp:
-        print(resp.data.decode("utf-8"))
         assert resp == Redirect("/"), "Edit success should redirect to /"

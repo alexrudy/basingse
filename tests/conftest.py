@@ -1,9 +1,11 @@
 import logging
 from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 from typing import cast
 
 import pytest
+import structlog
 from flask import Flask
 from jinja2 import FileSystemLoader
 from sqlalchemy import event
@@ -19,6 +21,9 @@ from basingse.models import Model
 from basingse.settings import BaSingSe
 
 
+logger = structlog.get_logger()
+
+
 @pytest.fixture(autouse=True, scope="session")
 def setup_svcs_logging() -> None:
     svcs_logger = logging.getLogger("svcs")
@@ -29,6 +34,10 @@ def setup_svcs_logging() -> None:
 @pytest.fixture(autouse=True, scope="session")
 def setup_query_logging() -> None:
     event.listen(Engine, "before_cursor_execute", log_queries)
+
+    @event.listens_for(Engine, "commit")
+    def receive_commit(conn: Any) -> None:
+        logger.info("COMMIT")
 
 
 @pytest.fixture

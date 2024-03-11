@@ -33,7 +33,7 @@ def get_session() -> Session:
         return session
 
     engine = svcs.get(Engine)
-    session = Session(engine, expire_on_commit=False)
+    session = Session(engine, expire_on_commit=False, autobegin=False)
     g._customize_session = session
     return session
 
@@ -42,14 +42,15 @@ def get_session() -> Session:
 def get_site_settings() -> SiteSettings:
     """Get the site settings"""
     session = get_session()
-    settings: SiteSettings | None = session.execute(
-        select(SiteSettings).where(SiteSettings.active).limit(1)
-    ).scalar_one_or_none()
+    with session.begin():
+        settings: SiteSettings | None = session.execute(
+            select(SiteSettings).where(SiteSettings.active).limit(1)
+        ).scalar_one_or_none()
+
     if settings is None:
         settings = default_settings(session)
         logger.warning("No site settings found, created default settings")
-
-    make_transient(settings)
+        make_transient(settings)
     return settings
 
 
@@ -57,11 +58,12 @@ def get_site_settings() -> SiteSettings:
 def get_social_links() -> Iterable[SocialLink]:
     """Get the social links"""
     session = get_session()
-    query = select(SocialLink).order_by(SocialLink.order.asc())
-    links = []
-    for link in session.execute(query).scalars():
-        make_transient(link)
-        links.append(link)
+    with session.begin():
+        query = select(SocialLink).order_by(SocialLink.order.asc())
+        links = []
+        for link in session.execute(query).scalars():
+            make_transient(link)
+            links.append(link)
     return links
 
 
@@ -80,24 +82,23 @@ def _clear_social_links(*args: object) -> None:
 def default_settings(session: Session) -> SiteSettings:
     """Create a default settings object"""
 
-    homepage = session.scalar(select(Page).where(Page.slug == "home"))
-    if homepage is None:
-        contents = json.dumps(default_homepage())
-        homepage = Page(slug="home", title="Home", contents=contents)
-        session.add(homepage)
-        session.commit()
+    with session.begin():
 
-    default_settings = SiteSettings(active=False, title="Website", homepage=homepage)
+        homepage = session.scalar(select(Page).where(Page.slug == "home"))
+        if homepage is None:
+            contents = json.dumps(default_homepage())
+            homepage = Page(slug="home", title="Home", contents=contents)
+            session.add(homepage)
 
-    resource = importlib.resources.files("basingse") / "static/img/defaults/logo.png"
-    with importlib.resources.as_file(resource) as path:
-        if os.path.isfile(path):
-            logo = Attachment.from_file(path)
-            session.add(logo)
-            default_settings.logo.large = logo
+        default_settings = SiteSettings(active=True, title="Website", homepage=homepage)
 
-    session.add(default_settings)
-    session.commit()
+        resource = importlib.resources.files("basingse") / "static/img/logo/default-logo.png"
+        with importlib.resources.as_file(resource) as path:
+            if os.path.isfile(path):
+                logo = Attachment.from_file(path)
+                session.add(logo)
+                default_settings.logo.large = logo
+        session.add(default_settings)
 
     return default_settings
 

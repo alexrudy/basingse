@@ -10,7 +10,7 @@
     {% if site_settings.logo.favicon %}
     <link rel="icon" href="{{ url_for('customize.favicon') }}">
     {% else %}
-    <link rel="icon" href="{{ url_for('static', filename='img/logo/icon32.png') }}">
+    <link rel="icon" href="{{ url_for('core.static', filename='img/logo/icon32.png') }}">
     {% endif %}
     <link href="{{ url_for('assets', filename=asset.url('css/main.css')) }}" rel="stylesheet">
     {% block style %}{% endblock %}

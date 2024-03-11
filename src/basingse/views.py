@@ -3,6 +3,7 @@ from typing import Never
 
 import structlog
 from flask import abort
+from flask import Blueprint
 from flask import flash
 from flask import Flask
 from flask import render_template
@@ -16,6 +17,8 @@ from basingse.customize.services import get_site_settings
 from basingse.page.models import Page
 
 logger = structlog.get_logger()
+
+core = Blueprint("core", __name__, template_folder="templates")
 
 
 def no_homepage(settings: SiteSettings) -> Never:
@@ -42,3 +45,4 @@ def home() -> ResponseReturnValue:
 class CoreSettings:
     def init_app(self, app: Flask) -> None:
         app.add_url_rule("/", "home", home)
+        app.register_blueprint(core)

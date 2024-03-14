@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from .forms import AttachmentForm
 from basingse import svcs
 from basingse.admin.extension import AdminView
-from basingse.admin.nav import Item
+from basingse.admin.extension import PortalMenuItem
 from basingse.admin.views import portal
 
 log = structlog.get_logger(__name__)
@@ -20,7 +20,7 @@ class AttachmentsAdmin(AdminView, portal=portal):
     name = "attachment"
     form = AttachmentForm
     model = Attachment
-    nav = Item("Attachments", "admin.attachment.list", "file-earmark", "attachment.view")
+    nav = PortalMenuItem("Attachments", "admin.attachment.list", "file-earmark", "attachment.view")
 
     def blank(self, **kwargs: Any) -> Any:
         obj = super().blank(**kwargs)

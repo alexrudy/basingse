@@ -6,7 +6,7 @@
             {% include "_devbar.html" %}
         </div>
         <hr>
-        {% include "admin/sidebar/nav.html" %}
+        {{ nav | safe }}
         <hr>
         {% include "admin/sidebar/user.html" %}
     </div>

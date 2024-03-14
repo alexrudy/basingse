@@ -1,6 +1,6 @@
 {% macro icon(name, width=16, height=16, classes="") %}
 <svg class="bi pe-none align-self-center {{ classes }}" width="{{ width }}" height="{{ height }}" fill="currentColor">
-    <use xlink:href="{{ url_for('static', filename='icons/bootstrap-icons.svg') }}#{{ name }}" />
+    <use xlink:href="{{ url_for('core.static', filename='icons/bootstrap-icons.svg') }}#{{ name }}" />
 </svg>
 {% endmacro %}
 

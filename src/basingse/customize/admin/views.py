@@ -16,7 +16,7 @@ from ..models import SocialLink
 from .forms import SettingsForm
 from basingse import svcs
 from basingse.admin.extension import AdminBlueprint
-from basingse.admin.nav import Item
+from basingse.admin.extension import PortalMenuItem
 from basingse.admin.views import portal
 from basingse.models import Session
 
@@ -24,7 +24,7 @@ log = structlog.get_logger(__name__)
 
 
 admin = bp = AdminBlueprint("admin", __name__, url_prefix="/admin/", template_folder="templates")
-portal.add(Item("Settings", "customize.admin.edit", "gear", "customize.edit"))
+portal.add(PortalMenuItem("Settings", "customize.admin.edit", "gear", "customize.edit"))
 bp.context_processor(portal.context)
 
 

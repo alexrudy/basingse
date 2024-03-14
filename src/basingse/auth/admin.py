@@ -7,7 +7,7 @@ from .forms import UserEditForm
 from .models import User
 from basingse import svcs
 from basingse.admin.extension import AdminView
-from basingse.admin.nav import Item
+from basingse.admin.extension import PortalMenuItem
 from basingse.admin.table import Heading
 from basingse.admin.table import Table
 from basingse.admin.table.columns import CheckColumn
@@ -36,7 +36,7 @@ class UserAdmin(AdminView, portal=portal):
     form = UserEditForm
     model = User
     table = UserTable
-    nav = Item("Users", "admin.user.list", "person-badge", "user.view")
+    nav = PortalMenuItem("Users", "admin.user.list", "person-badge", "user.view")
 
     def query(self, **kwargs: Any) -> Any:
         session = svcs.get(Session)

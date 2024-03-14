@@ -20,5 +20,5 @@ sqlalchemy[mypy]==2.0.28
     #   wtforms-sqlalchemy
 types-pytz==2024.1.0.20240203
     # via -r requirements/typing.in
-types-pyyaml==6.0.12.12
+types-pyyaml==6.0.12.20240311
     # via -r requirements/typing.in

@@ -12,6 +12,7 @@ from typing import TypeVar
 import click
 import structlog
 from blinker import signal
+from dominate import tags
 from flask import abort
 from flask import Blueprint
 from flask import current_app
@@ -23,21 +24,26 @@ from flask.cli import with_appcontext
 from flask.typing import ResponseReturnValue as IntoResponse
 from flask.views import View
 from flask_attachments import Attachment
+from flask_login import current_user
 from jinja2 import FileSystemLoader
 from marshmallow import Schema
 from sqlalchemy import delete
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .nav import Item
-from .nav import Nav
 from .table import Table
 from basingse.auth.permissions import require_permission
 from basingse.auth.utils import redirect_next
 from basingse.forms import Form as FormBase
 from basingse.models import Model as ModelBase
+from basingse.nav.elements import Nav
+from basingse.nav.elements import NavStyle
+from basingse.nav.icons import Icon
+from basingse.nav.icons import IconNavRenderer
+from basingse.nav.icons import IconViewElement
 from basingse.svcs import get
-
+from basingse.utils.tags import add_cls
+from basingse.utils.visitor import register
 
 log = structlog.get_logger(__name__)
 
@@ -52,16 +58,49 @@ on_submit = signal("submit")
 
 
 @dc.dataclass
+class PortalMenuItem(IconViewElement):
+    """
+    A menu item for the admin portal
+    """
+
+    permissions: str | None = None
+
+    # This ordering is frozen for backwards compatibility
+    def __init__(self, label: str, view: str, icon: str | Icon, permissions: str) -> None:
+        if isinstance(icon, str):
+            icon = Icon(icon)
+        super().__init__(icon=icon, text=label, endpoint=view)
+        self.permissions = permissions
+
+    @property
+    def enabled(self) -> bool:
+        if self.permissions is None:
+            return True
+        return current_user.can(self.permissions)
+
+
+class PortalMenuRenderer(IconNavRenderer):
+    """Renders the admin portal menu items as a vertical list of icons and labels."""
+
+    @register(Nav)
+    def visit_nav(self, nav: Nav) -> tags.html_tag:
+        tag = super().visit_nav(nav)
+        return add_cls(tag, "flex-column", "mb-auto")
+
+
+@dc.dataclass
 class Portal:
 
     blueprint: Blueprint
-    items: list[Item] = dc.field(default_factory=list)
+    items: list[PortalMenuItem] = dc.field(default_factory=list)
 
-    def add(self, item: Item) -> None:
+    def add(self, item: PortalMenuItem) -> None:
         self.items.append(item)
 
     def context(self) -> dict[str, Any]:
-        return {"nav": Nav(self.items)}
+        return {
+            "nav": PortalMenuRenderer.render(Nav([item for item in self.items if item.enabled], style=NavStyle.PILLS))
+        }
 
 
 @dc.dataclass
@@ -156,7 +195,7 @@ class AdminView(View, Generic[M, F]):
     #: The CLI group to use for importers
     importer_group: ClassVar[click.Group] = click.Group("import", help="Import data from YAML files")
 
-    nav: ClassVar[Item | None] = None
+    nav: ClassVar[PortalMenuItem | None] = None
 
     @classmethod
     def sidebar(cls) -> Nav:

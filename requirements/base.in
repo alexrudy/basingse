@@ -1,4 +1,5 @@
 attrs
+bootlace @ git+https://github.com/alexrudy/bootlace.git@main
 dominate
 Flask-Alembic
 Flask-BCrypt

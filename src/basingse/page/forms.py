@@ -1,14 +1,13 @@
 from typing import Any
 
+from bootlace.forms.fields import SLUG_VALIDATOR
+from flask_wtf import FlaskForm as Form
 from markupsafe import Markup
 from wtforms import StringField
 from wtforms import SubmitField
 from wtforms.fields import Field
 from wtforms.validators import DataRequired
 from wtforms.widgets import html_params
-
-from basingse.forms import Form
-from basingse.forms import SLUG_VALIDATOR
 
 
 class EditorWidget:

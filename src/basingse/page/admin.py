@@ -1,5 +1,8 @@
 from typing import Any
 
+from bootlace.table import Column
+from bootlace.table import Table
+from bootlace.table.columns import EditColumn
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -8,9 +11,6 @@ from .models import Page
 from basingse import svcs
 from basingse.admin.extension import AdminView
 from basingse.admin.extension import PortalMenuItem
-from basingse.admin.table import Column
-from basingse.admin.table import Table
-from basingse.admin.table.columns import EditColumn
 from basingse.admin.views import portal
 
 

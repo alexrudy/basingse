@@ -2,6 +2,8 @@ import uuid
 from collections.abc import Callable
 from typing import TypeVar
 
+from bootlace.forms.fields import MarkdownField
+from flask_wtf import FlaskForm
 from sqlalchemy import select
 from wtforms import BooleanField
 from wtforms import FieldList
@@ -17,8 +19,6 @@ from wtforms_sqlalchemy.fields import QuerySelectField
 from ..models import SocialLink
 from basingse import svcs
 from basingse.attachments.forms import AttachmentField
-from basingse.forms import Form as FlaskForm
-from basingse.forms import MarkdownField
 from basingse.models import Session
 from basingse.page.models import Page
 

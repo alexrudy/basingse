@@ -9,10 +9,16 @@ from typing import IO
 from typing import overload
 from typing import TypeVar
 
+import attrs
 import click
 import structlog
 from blinker import signal
-from dominate import tags
+from bootlace.icon import Icon
+from bootlace.links import View as ViewLink
+from bootlace.nav import NavStyle
+from bootlace.nav.elements import Link
+from bootlace.nav.elements import Nav
+from bootlace.table import Table
 from flask import abort
 from flask import Blueprint
 from flask import current_app
@@ -25,25 +31,17 @@ from flask.typing import ResponseReturnValue as IntoResponse
 from flask.views import View
 from flask_attachments import Attachment
 from flask_login import current_user
+from flask_wtf import FlaskForm as FormBase
 from jinja2 import FileSystemLoader
 from marshmallow import Schema
 from sqlalchemy import delete
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .table import Table
 from basingse.auth.permissions import require_permission
 from basingse.auth.utils import redirect_next
-from basingse.forms import Form as FormBase
 from basingse.models import Model as ModelBase
-from basingse.nav.elements import Nav
-from basingse.nav.elements import NavStyle
-from basingse.nav.icons import Icon
-from basingse.nav.icons import IconNavRenderer
-from basingse.nav.icons import IconViewElement
 from basingse.svcs import get
-from basingse.utils.tags import add_cls
-from basingse.utils.visitor import register
 
 log = structlog.get_logger(__name__)
 
@@ -57,8 +55,8 @@ on_delete = signal("delete")
 on_submit = signal("submit")
 
 
-@dc.dataclass
-class PortalMenuItem(IconViewElement):
+@attrs.define(init=False)
+class PortalMenuItem(Link):
     """
     A menu item for the admin portal
     """
@@ -69,7 +67,10 @@ class PortalMenuItem(IconViewElement):
     def __init__(self, label: str, view: str, icon: str | Icon, permissions: str) -> None:
         if isinstance(icon, str):
             icon = Icon(icon)
-        super().__init__(icon=icon, text=label, endpoint=view)
+
+        link = ViewLink(endpoint=view, text=[icon, " ", label])
+
+        super().__init__(link=link)
         self.permissions = permissions
 
     @property
@@ -77,15 +78,6 @@ class PortalMenuItem(IconViewElement):
         if self.permissions is None:
             return True
         return current_user.can(self.permissions)
-
-
-class PortalMenuRenderer(IconNavRenderer):
-    """Renders the admin portal menu items as a vertical list of icons and labels."""
-
-    @register(Nav)
-    def visit_nav(self, nav: Nav) -> tags.html_tag:
-        tag = super().visit_nav(nav)
-        return add_cls(tag, "flex-column", "mb-auto")
 
 
 @dc.dataclass
@@ -98,9 +90,7 @@ class Portal:
         self.items.append(item)
 
     def context(self) -> dict[str, Any]:
-        return {
-            "nav": PortalMenuRenderer.render(Nav([item for item in self.items if item.enabled], style=NavStyle.PILLS))
-        }
+        return {"nav": Nav([item for item in self.items if item.enabled], style=NavStyle.PILLS)}
 
 
 @dc.dataclass

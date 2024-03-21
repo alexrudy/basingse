@@ -1,5 +1,11 @@
 from typing import Any
 
+from bootlace.table import Heading
+from bootlace.table import Table
+from bootlace.table.columns import CheckColumn
+from bootlace.table.columns import Column
+from bootlace.table.columns import Datetime
+from bootlace.table.columns import EditColumn
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -8,12 +14,6 @@ from .models import User
 from basingse import svcs
 from basingse.admin.extension import AdminView
 from basingse.admin.extension import PortalMenuItem
-from basingse.admin.table import Heading
-from basingse.admin.table import Table
-from basingse.admin.table.columns import CheckColumn
-from basingse.admin.table.columns import Column
-from basingse.admin.table.columns import Datetime
-from basingse.admin.table.columns import EditColumn
 from basingse.admin.views import portal
 
 
@@ -22,7 +22,7 @@ class UserTable(Table):
     username = EditColumn("Email", attribute="email")
     roles = Column(
         heading="Roles",
-        template="{% for role in row.roles %}{{ role.name }}{% if not loop.last %}, {% endif %}{% endfor %}",
+        attribute="roles",
     )
     active = CheckColumn(Heading("Active", icon="check"), "is_active")
     administrator = CheckColumn(Heading("Administrator", icon="person"), "is_administrator")

@@ -7,7 +7,7 @@
 #
 -r tests.txt
 -r typing.txt
-black==24.2.0
+black==24.3.0
     # via -r requirements/dev.in
 build==1.1.1
     # via
@@ -31,19 +31,17 @@ distlib==0.3.8
     # via virtualenv
 docutils==0.20.1
     # via readme-renderer
-editables==0.5
-    # via hatchling
 filelock==3.13.1
     # via
     #   tox
     #   virtualenv
 flake8==7.0.0
     # via -r requirements/dev.in
-hatchling==1.21.1
+hatchling==1.22.3
     # via -r requirements/dev.in
 identify==2.5.35
     # via pre-commit
-importlib-metadata==7.0.2
+importlib-metadata==7.1.0
     # via
     #   keyring
     #   twine
@@ -118,7 +116,7 @@ watchdog==4.0.0
     # via -r requirements/dev.in
 wheel==0.43.0
     # via pip-tools
-zipp==3.18.0
+zipp==3.18.1
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:

@@ -25,7 +25,7 @@
         {% block footer %}
         {% endblock %}
         <script src="{{ url_for('assets', filename=asset.url('js/main.js')) }}"></script>
-        {% if config.get("DEBUG") %}
+        {% if config.get("DEBUG") and config.get("DEBUG_SOCKETIO") %}
         <script src="{{ url_for('assets', filename=asset.url('js/debug.js')) }}"></script>
         {% endif %}
         {% block scripts %}{% endblock %}

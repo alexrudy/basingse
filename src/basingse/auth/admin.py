@@ -17,12 +17,16 @@ from basingse.admin.extension import PortalMenuItem
 from basingse.admin.views import portal
 
 
+class RoleColumn(Column):
+    def cell(self, item: Any) -> Any:
+        return ", ".join(role.name for role in getattr(item, self.attribute))
+
+
 class UserTable(Table):
 
     username = EditColumn("Email", attribute="email")
-    roles = Column(
+    roles = RoleColumn(
         heading="Roles",
-        attribute="roles",
     )
     active = CheckColumn(Heading("Active", icon="check"), "is_active")
     administrator = CheckColumn(Heading("Administrator", icon="person"), "is_administrator")

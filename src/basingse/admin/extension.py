@@ -19,6 +19,8 @@ from bootlace.nav import NavStyle
 from bootlace.nav.elements import Link
 from bootlace.nav.elements import Nav
 from bootlace.table import Table
+from bootlace.util import as_tag
+from bootlace.util import render
 from flask import abort
 from flask import Blueprint
 from flask import current_app
@@ -33,6 +35,7 @@ from flask_attachments import Attachment
 from flask_login import current_user
 from flask_wtf import FlaskForm as FormBase
 from jinja2 import FileSystemLoader
+from markupsafe import Markup
 from marshmallow import Schema
 from sqlalchemy import delete
 from sqlalchemy import select
@@ -89,8 +92,13 @@ class Portal:
     def add(self, item: PortalMenuItem) -> None:
         self.items.append(item)
 
+    def _render_nav(self) -> Markup:
+        ul = as_tag(Nav([item for item in self.items if item.enabled], style=NavStyle.PILLS))
+        ul.classes.add("flex-column", "mb-auto")
+        return render(ul)
+
     def context(self) -> dict[str, Any]:
-        return {"nav": Nav([item for item in self.items if item.enabled], style=NavStyle.PILLS)}
+        return {"nav": self._render_nav()}
 
 
 @dc.dataclass

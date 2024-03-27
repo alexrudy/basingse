@@ -31,13 +31,13 @@ distlib==0.3.8
     # via virtualenv
 docutils==0.20.1
     # via readme-renderer
-filelock==3.13.1
+filelock==3.13.3
     # via
     #   tox
     #   virtualenv
 flake8==7.0.0
     # via -r requirements/dev.in
-hatchling==1.22.3
+hatchling==1.22.4
     # via -r requirements/dev.in
 identify==2.5.35
     # via pre-commit
@@ -47,13 +47,19 @@ importlib-metadata==7.1.0
     #   twine
 jaraco-classes==3.3.1
     # via keyring
-keyring==24.3.1
+jaraco-context==4.3.0
+    # via keyring
+jaraco-functools==4.0.0
+    # via keyring
+keyring==25.0.0
     # via twine
 mccabe==0.7.0
     # via flake8
 more-itertools==10.2.0
-    # via jaraco-classes
-nh3==0.2.15
+    # via
+    #   jaraco-classes
+    #   jaraco-functools
+nh3==0.2.17
     # via readme-renderer
 nodeenv==1.8.0
     # via pre-commit
@@ -72,7 +78,7 @@ platformdirs==4.2.0
     #   black
     #   tox
     #   virtualenv
-pre-commit==3.6.2
+pre-commit==3.7.0
     # via -r requirements/dev.in
 pycodestyle==2.11.1
     # via flake8
@@ -98,9 +104,9 @@ rfc3986==2.0.0
     # via twine
 toposort==1.10
     # via pip-compile-multi
-tox==4.14.1
+tox==4.14.2
     # via -r requirements/dev.in
-trove-classifiers==2024.3.3
+trove-classifiers==2024.3.25
     # via hatchling
 twine==5.0.0
     # via -r requirements/dev.in

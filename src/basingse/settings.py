@@ -4,6 +4,8 @@ from typing import Any
 
 import humanize
 import structlog
+from bootlace import as_tag
+from bootlace import render
 from flask import Flask
 from flask_attachments import Attachments
 from rich.traceback import install
@@ -65,7 +67,14 @@ class Context:
 
 
 def context() -> dict[str, Any]:
-    return {"humanize": humanize, "rewrite": rewrite_url, "endpoint": rewrite_endpoint, "update": rewrite_update}
+    return {
+        "humanize": humanize,
+        "rewrite": rewrite_url,
+        "endpoint": rewrite_endpoint,
+        "update": rewrite_update,
+        "as_tag": as_tag,
+        "render": render,
+    }
 
 
 @dc.dataclass

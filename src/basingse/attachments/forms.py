@@ -3,18 +3,17 @@ from typing import Any
 from typing import cast
 
 import structlog
+from bootlace.forms.fields import EnumField
+from bootlace.forms.fields import KnownMIMEType
 from flask_attachments import Attachment
 from flask_attachments import CompressionAlgorithm
+from flask_wtf import Form as FlaskForm
 from flask_wtf.file import FileField
 from werkzeug.datastructures import FileStorage
 from wtforms import SelectField
 from wtforms import StringField
 from wtforms import SubmitField
 from wtforms.validators import Optional
-
-from basingse.forms import EnumField
-from basingse.forms import Form as FlaskForm
-from basingse.forms import KnownMIMEType
 
 log = structlog.get_logger(__name__)
 

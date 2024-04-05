@@ -18,7 +18,7 @@ from basingse.page.models import Page
 
 logger = structlog.get_logger()
 
-core = Blueprint("core", __name__, template_folder="templates", static_folder="static", url_prefix="/core/")
+core = Blueprint("bootstrap", __name__, template_folder="templates", static_folder="static", url_prefix="/bs/")
 
 
 def no_homepage(settings: SiteSettings) -> Never:

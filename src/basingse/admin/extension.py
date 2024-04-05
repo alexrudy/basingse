@@ -59,7 +59,7 @@ on_submit = signal("submit")
 
 
 class BIcon(Icon):
-    endpoint = "core.static"
+    endpoint = "bootstrap.static"
 
 
 @attrs.define(init=False)

@@ -25,7 +25,12 @@ export function createEditor(tools: object) {
         });
 
         const form = findParentBySelector<HTMLFormElement>(element, "form");
-        const submit = form?.querySelector("input[name='submit']");
+        const submit = form?.querySelector("input[type='submit']");
+
+        if (!form || !submit) {
+            console.error("Form or submit button not found");
+            return;
+        }
 
         submit?.addEventListener("click", (event) => {
             event.preventDefault();

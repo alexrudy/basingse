@@ -58,6 +58,10 @@ on_delete = signal("delete")
 on_submit = signal("submit")
 
 
+class BIcon(Icon):
+    endpoint = "core.static"
+
+
 @attrs.define(init=False)
 class PortalMenuItem(Link):
     """
@@ -69,7 +73,7 @@ class PortalMenuItem(Link):
     # This ordering is frozen for backwards compatibility
     def __init__(self, label: str, view: str, icon: str | Icon, permissions: str) -> None:
         if isinstance(icon, str):
-            icon = Icon(icon)
+            icon = BIcon(icon)
 
         link = ViewLink(endpoint=view, text=[icon, " ", label])
 

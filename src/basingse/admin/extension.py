@@ -197,6 +197,9 @@ class AdminView(View, Generic[M, F]):
     #: The CLI group to use for importers
     importer_group: ClassVar[click.Group] = click.Group("import", help="Import data from YAML files")
 
+    #: The CLI group to use for exporters
+    exporter_group: ClassVar[click.Group] = click.Group("export", help="Export data to YAML files")
+
     nav: ClassVar[PortalMenuItem | None] = None
 
     @classmethod
@@ -257,6 +260,29 @@ class AdminView(View, Generic[M, F]):
 
         import_command.help = f"Import {cls.name} data from a YAML file"
         return import_command
+
+    @classmethod
+    def exporter_command(cls) -> click.Command:
+        @click.command(name=cls.name)
+        @click.argument("filename", type=click.File("w"))
+        @with_appcontext
+        def export_command(filename: IO[str]) -> None:
+            import yaml
+
+            if not cls.schema:
+                click.echo(f"No schema defined for {cls.name}", err=True)
+                raise click.Abort()
+
+            session = get(Session)
+
+            items = session.scalars(select(cls.model)).all()
+            schema = cls.schema(many=True)
+            data = schema.dump(items)
+
+            yaml.safe_dump({cls.name: data}, filename)
+
+        export_command.help = f"Export {cls.name} data to a YAML file"
+        return export_command
 
     def dispatch_request(self, **kwargs: Any) -> IntoResponse:
         args = request.args.to_dict()
@@ -469,6 +495,27 @@ def import_all(filename: IO[str], clear: bool) -> None:
         else:
             schema = schema()
             session.add(schema.load(items))
+
+
+@AdminView.exporter_group.command(name="all")
+@click.argument("filename", type=click.File("w"))
+@with_appcontext
+def export_all(filename: IO[str]) -> None:
+    """Export all items known to a YAML file"""
+    import yaml
+
+    session = get(Session)
+    data = {}
+
+    for cls in iter_subclasses(AdminView):
+        if cls.schema is None:
+            continue
+
+        items = session.scalars(select(cls.model)).all()
+        schema = cls.schema(many=True)
+        data[cls.name] = schema.dump(items)
+
+    yaml.safe_dump(data, filename)
 
 
 class AdminBlueprint(Blueprint):

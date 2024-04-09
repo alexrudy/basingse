@@ -13,6 +13,8 @@ from basingse.utils.settings import BlueprintOptions
 
 log = structlog.get_logger(__name__)
 
+csrf = CSRFProtect()
+
 
 EXTENSION_KEY = "bss-authentication"
 
@@ -67,7 +69,7 @@ class Authentication:
         self._bcrypt.init_app(app)
 
         if "csrf" not in app.extensions:
-            CSRFProtect(app=app)
+            csrf.init_app(app=app)
 
         app.cli.add_command(auth_cli)
         app.extensions[EXTENSION_KEY] = self

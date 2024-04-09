@@ -1,5 +1,3 @@
-from typing import Any
-
 import structlog
 from flask import Blueprint
 from flask import render_template
@@ -10,20 +8,12 @@ from werkzeug.exceptions import HTTPException
 
 import basingse.markdown
 from .extension import Portal
-from basingse.htmx import HtmxProperties
 
 __all__ = ["bp", "portal"]
 
 bp = Blueprint("admin", __name__, url_prefix="/admin/", template_folder="templates")
 log = structlog.get_logger(__name__)
 portal = Portal(bp)
-
-bp.context_processor(portal.context)
-
-
-@bp.context_processor
-def _hx_context() -> dict[str, Any]:
-    return {"hx": HtmxProperties}
 
 
 @bp.before_request

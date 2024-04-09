@@ -1,6 +1,7 @@
 import dataclasses as dc
 import os.path
 from collections.abc import Callable
+from collections.abc import Iterable
 from collections.abc import Iterator
 from typing import Any
 from typing import ClassVar
@@ -25,6 +26,7 @@ from flask import abort
 from flask import Blueprint
 from flask import current_app
 from flask import Flask
+from flask import has_app_context
 from flask import render_template
 from flask import request
 from flask import url_for
@@ -35,18 +37,22 @@ from flask_attachments import Attachment
 from flask_login import current_user
 from flask_wtf import FlaskForm as FormBase
 from jinja2 import FileSystemLoader
+from jinja2 import Template
 from markupsafe import Markup
 from marshmallow import Schema
 from sqlalchemy import delete
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from wtforms import FileField
+from wtforms import Form
 
 from basingse.auth.permissions import require_permission
 from basingse.auth.utils import redirect_next
+from basingse.htmx import HtmxProperties
 from basingse.models import Model as ModelBase
 from basingse.svcs import get
 
-log = structlog.get_logger(__name__)
+log: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 M = TypeVar("M", bound=ModelBase)
 F = TypeVar("F", bound=FormBase)
@@ -56,10 +62,6 @@ on_new = signal("new")
 on_update = signal("update")
 on_delete = signal("delete")
 on_submit = signal("submit")
-
-
-class BIcon(Icon):
-    endpoint = "bootstrap.static"
 
 
 @attrs.define(init=False)
@@ -73,7 +75,7 @@ class PortalMenuItem(Link):
     # This ordering is frozen for backwards compatibility
     def __init__(self, label: str, view: str, icon: str | Icon, permissions: str) -> None:
         if isinstance(icon, str):
-            icon = BIcon(icon)
+            icon = Icon(icon)
 
         link = ViewLink(endpoint=view, text=[icon, " ", label])
 
@@ -93,6 +95,9 @@ class Portal:
     blueprint: Blueprint
     items: list[PortalMenuItem] = dc.field(default_factory=list)
 
+    def __post_init__(self) -> None:
+        self.blueprint.context_processor(self.context)
+
     def add(self, item: PortalMenuItem) -> None:
         self.items.append(item)
 
@@ -102,7 +107,28 @@ class Portal:
         return render(ul)
 
     def context(self) -> dict[str, Any]:
-        return {"nav": self._render_nav()}
+        return {
+            "nav": self._render_nav(),
+            "hx": HtmxProperties,
+            "base_template": base_template(),
+            "form_encoding": get_form_encoding,
+        }
+
+
+def get_form_encoding(form: Form) -> str:
+    """Get the form encoding type"""
+    for field in form:
+        if isinstance(field, FileField):
+            return "multipart/form-data"
+        if (widget := getattr(field, "widget", None)) is not None:
+            if getattr(widget, "input_type", None) == "file":
+                return "multipart/form-data"
+    return "application/x-www-form-urlencoded"
+
+
+def base_template() -> Template:
+    name = current_app.config.get("BASINGSE_ADMIN_BASE_TEMPLATE", ["admin/customize.html", "admin/base.html"])
+    return current_app.jinja_env.get_or_select_template(name)
 
 
 @dc.dataclass
@@ -156,7 +182,7 @@ def action(*args: Any, **options: Any) -> Callable[[Any], Callable[[Fn], Fn]]:
         return func
 
     if args:
-        if len(args) > 1:
+        if len(args) > 1:  # pragma: nocover
             raise TypeError(f"action() takes at most 1 positional argument ({len(args)} given)")
         return decorate(args[0])
 
@@ -200,7 +226,11 @@ class AdminView(View, Generic[M, F]):
     #: The CLI group to use for exporters
     exporter_group: ClassVar[click.Group] = click.Group("export", help="Export data to YAML files")
 
+    # The navigation item for this view
     nav: ClassVar[PortalMenuItem | None] = None
+
+    #: The logger to use for this view
+    logger: ClassVar[structlog.stdlib.BoundLogger]
 
     @classmethod
     def sidebar(cls) -> Nav:
@@ -210,6 +240,9 @@ class AdminView(View, Generic[M, F]):
         cls, /, blueprint: Blueprint | None = None, namespace: str | None = None, portal: Portal | None = None
     ) -> None:
         super().__init_subclass__()
+
+        cls.logger = log.bind(model=cls.name)
+
         if not hasattr(cls, "permission"):
             cls.permission = cls.name
 
@@ -223,7 +256,7 @@ class AdminView(View, Generic[M, F]):
     def dispatch_action(self, action: str, **kwargs: Any) -> IntoResponse:
         method = getattr(self, action, None)
         if method is None or not hasattr(method, "action"):
-            log.error(f"Unimplemented method {action!r}", path=request.path)
+            self.logger.error(f"Unimplemented method {action!r}", path=request.path)
             abort(400)
 
         return method(**kwargs)
@@ -241,18 +274,25 @@ class AdminView(View, Generic[M, F]):
 
     @classmethod
     def importer_command(cls) -> click.Command:
+
+        logger = cls.logger.bind(command="import")
+
         @click.command(name=cls.name)
         @click.option("--clear/--no-clear")
+        @click.option("--data-key", type=str, help="Key for data in the YAML file")
         @click.argument("filename", type=click.File("r"))
         @with_appcontext
-        def import_command(filename: IO[str], clear: bool) -> None:
+        def import_command(filename: IO[str], clear: bool, data_key: str | None) -> None:
             import yaml
 
             data = yaml.safe_load(filename)
+            if data_key is not None:
+                data = data[data_key]
+
             session = get(Session)
 
             if clear:
-                log.info(f"Clearing {cls.name}")
+                logger.info(f"Clearing {cls.name}")
                 session.execute(delete(cls.model))
 
             session.add_all(cls.importer(data))
@@ -295,15 +335,15 @@ class AdminView(View, Generic[M, F]):
             partial = kwargs.get("partial")
             if partial:
                 kwargs["action"] = partial
-                log.debug("Dispatching for partial", partial=partial)
+                self.logger.debug("Dispatching for partial", partial=partial)
                 return self.dispatch_action(**kwargs)
         return response
 
-    def query(self) -> Any:
+    def query(self) -> Iterable[M]:
         session = get(Session)
         return session.execute(select(self.model).order_by(self.model.created)).scalars()
 
-    def single(self, **kwargs: Any) -> Any:
+    def single(self, **kwargs: Any) -> M:
         session = get(Session)
         if (single := session.scalars(select(self.model).filter_by(**kwargs)).first()) is None:
             abort(404)
@@ -317,12 +357,18 @@ class AdminView(View, Generic[M, F]):
         return True
 
     def render_form(self, form: F, obj: M) -> IntoResponse:
+        self._log_form_errors(form)
         return render_template(
             [f"admin/{self.name}/edit.html", "admin/portal/edit.html"], **{self.name: obj, "form": form}
         )
 
+    def _log_form_errors(self, form: F) -> None:
+        if has_app_context():
+            if current_app.config["ENV"] not in ("production", "prd"):
+                self.logger.error("Errors", errors=form.errors, data=form.data)
+
     @action()
-    def edit(self, **kwargs: Any) -> Any:
+    def edit(self, **kwargs: Any) -> IntoResponse:
         obj = self.single(**kwargs)
         form = self.form(obj=obj)
 
@@ -334,34 +380,32 @@ class AdminView(View, Generic[M, F]):
         return self.render_form(form, obj)
 
     @action(url="/<key>/preview/")
-    def preview(self, **kwargs: Any) -> Any:
+    def preview(self, **kwargs: Any) -> IntoResponse:
         obj = self.single(**kwargs)
         return render_template(f"admin/{self.name}/preview.html", **{self.name: obj})
 
-    def blank(self, **kwargs: Any) -> Any:
+    def blank(self, **kwargs: Any) -> M:
         return self.model(**kwargs)
 
     @action(methods=["GET", "POST", "PUT"])
-    def new(self, **kwargs: Any) -> Any:
+    def new(self, **kwargs: Any) -> IntoResponse:
         obj = self.blank(**kwargs)
         form = self.form(obj=obj)
 
         if form.validate_on_submit():
             on_submit.send(self.__class__, **kwargs)
             if self.process(form, obj):
-                log.debug("Saved", name=self.name, obj=obj)
+                self.logger.debug("Saved", name=self.name, obj=obj)
                 kwargs["name"] = self.name
                 on_new.send(self.__class__, **kwargs)
                 return redirect_next(url_for(".list"))
 
-        if form.errors:
-            log.error("Errors", errors=form.errors, data=form.data)
         return self.render_form(form, obj)
 
     @action
     def list(self, **kwargs: Any) -> IntoResponse:
         items = self.query()
-        context = {f"{self.name}s": items, "rows": items}
+        context: dict[str, Any] = {f"{self.name}s": items, "rows": items}
         if self.table is not None:
             context["table"] = self.table()
         return render_template(
@@ -405,6 +449,7 @@ class AdminView(View, Generic[M, F]):
 
         if getattr(cls, "schema", None) is not None:
             cls.importer_group.add_command(cls.importer_command())
+            cls.exporter_group.add_command(cls.exporter_command())
 
         views = {}
         for name in dir(cls):
@@ -416,7 +461,7 @@ class AdminView(View, Generic[M, F]):
                     continue
                 action = getattr(attr, "action", None)
             except Exception:
-                log.exception("Error registering action", name=name)
+                cls.logger.exception("Error registering action", name=name)
             else:
                 if action is not None:
                     if action.attachments and not cls.attachments:
@@ -487,7 +532,7 @@ def import_all(filename: IO[str], clear: bool) -> None:
         items = data.get(cls.name, None)
         if items is None:
             continue
-        log.info(f"Importing {cls.name}", count=len(items))
+        cls.logger.info(f"Importing {cls.name}", count=len(items))
         if isinstance(items, list):
             schema = schema(many=True)
             for item in schema.load(items):
@@ -511,6 +556,7 @@ def export_all(filename: IO[str]) -> None:
         if cls.schema is None:
             continue
 
+        cls.logger.info(f"Exporting {cls.name}")
         items = session.scalars(select(cls.model)).all()
         schema = cls.schema(many=True)
         data[cls.name] = schema.dump(items)

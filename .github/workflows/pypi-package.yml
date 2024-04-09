@@ -31,12 +31,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set version
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          echo "Detected version as $(git describe --tags --abbrev=0)"
-          echo "SETUPTOOLS_SCM_PRETEND_VERSION=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
-
       - uses: hynek/build-and-inspect-python-package@v2
 
   # Upload to Test PyPI on every commit on main.

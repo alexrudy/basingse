@@ -51,7 +51,7 @@ class AttachmentsAdmin(AdminView, portal=portal):
                 form.digest.errors.append("Can't change existing file digest.")
                 form.digest.data = obj.digest
 
-        if form.is_valid:
+        if form.validate():
             form.populate_obj(obj=obj)
             session = svcs.get(Session)
             session.add(obj)

@@ -7,8 +7,8 @@ from bootlace.forms.fields import EnumField
 from bootlace.forms.fields import KnownMIMEType
 from flask_attachments import Attachment
 from flask_attachments import CompressionAlgorithm
-from flask_wtf import Form as FlaskForm
 from flask_wtf.file import FileField
+from flask_wtf.form import FlaskForm
 from werkzeug.datastructures import FileStorage
 from wtforms import SelectField
 from wtforms import StringField

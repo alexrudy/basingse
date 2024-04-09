@@ -30,7 +30,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('assets', filename=asset.url('js/admin.js')) }}"></script>
+<script src="{{ url_for('basingse.assets', filename=asset.url('js/admin.js')) }}"></script>
 {% block scripts_admin_init %}
 <script>
     Basingse.admin.init({});

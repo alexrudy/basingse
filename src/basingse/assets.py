@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import structlog
+from flask import Blueprint
 from flask import current_app
 from flask import Flask
 from flask import send_file
@@ -70,7 +71,12 @@ class AssetCollection:
 @dc.dataclass()
 class Assets:
 
+    folder: str | None = None
+    module: str | None = None
     collection: list[AssetCollection] = dc.field(default_factory=list)
+    blueprint: Blueprint | None = dc.field(
+        default=None,
+    )
     app: dc.InitVar[Flask | None] = dc.field(
         default=None,
         init=True,
@@ -81,15 +87,22 @@ class Assets:
             self.init_app(app)
 
     def init_app(self, app: Flask) -> None:
-        folder = app.config.get("ASSETS_FOLDER", None)
+        folder = self.folder or app.config.get("ASSETS_FOLDER", None)
+        module = self.module or app.config.get("ASSETS_MODULE", "basingse")
 
         # Always include local assets
-        self.collection.append(AssetCollection("basingse", Path("manifest.json"), Path("assets")))
+        self.collection.append(AssetCollection(module, Path("manifest.json"), Path("assets")))
 
         if folder:
             self.collection.append(AssetCollection(Path(app.root_path), Path("manifest.json"), Path(folder)))
 
-        app.add_url_rule("/assets/<path:filename>", "assets", self.serve_asset)
+        if self.blueprint is not None:
+            if not self.blueprint._got_registered_once:
+                self.blueprint.add_url_rule("/assets/<path:filename>", "assets", self.serve_asset)
+            app.register_blueprint(self.blueprint)
+            assert any(app.url_map.iter_rules(endpoint=f"{self.blueprint.name}.assets"))
+        else:
+            app.add_url_rule("/assets/<path:filename>", "assets", self.serve_asset)
 
         if app.config.get("DEBUG"):
             for collection in self.collection:

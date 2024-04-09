@@ -5,6 +5,7 @@ from typing import Any
 import humanize
 import structlog
 from bootlace import as_tag
+from bootlace import Bootlace
 from bootlace import render
 from flask import Flask
 from flask_attachments import Attachments
@@ -23,6 +24,7 @@ from .page.settings import PageSettings
 from .utils.urls import rewrite_endpoint
 from .utils.urls import rewrite_update
 from .utils.urls import rewrite_url
+from .views import core
 from .views import CoreSettings
 
 
@@ -81,7 +83,7 @@ def context() -> dict[str, Any]:
 class BaSingSe:
 
     admin: AdminSettings | None = AdminSettings()
-    assets: Assets | None = dc.field(default_factory=Assets)
+    assets: Assets | None = dc.field(default_factory=lambda: Assets(blueprint=core))
     auth: Authentication | None = Authentication()
     attachments: Attachments | None = Attachments(registry=Model.registry)
     customize: CustomizeSettings | None = CustomizeSettings()
@@ -91,6 +93,9 @@ class BaSingSe:
     logging: Logging | None = Logging()
     markdown: MarkdownOptions | None = MarkdownOptions()
     context: Context | None = Context()
+    bootlace: Bootlace | None = Bootlace()
+
+    initailized: dict[str, bool] = dc.field(default_factory=dict)
 
     def init_app(self, app: Flask) -> None:
         svcs.init_app(app)
@@ -107,4 +112,8 @@ class BaSingSe:
                 attr = dc.replace(attr, **cfg)
 
             if hasattr(attr, "init_app"):
+                if self.initailized.get(field.name, False):
+                    raise RuntimeError(f"{field.name} already initialized")
+
                 attr.init_app(app)
+                self.initailized[field.name] = True

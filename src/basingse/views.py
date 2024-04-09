@@ -18,7 +18,7 @@ from basingse.page.models import Page
 
 logger = structlog.get_logger()
 
-core = Blueprint("bootstrap", __name__, template_folder="templates", static_folder="static", url_prefix="/bs/")
+core = Blueprint("basingse", __name__, template_folder="templates", static_folder="static", url_prefix="/bss/")
 
 
 def no_homepage(settings: SiteSettings) -> Never:
@@ -45,4 +45,3 @@ def home() -> ResponseReturnValue:
 class CoreSettings:
     def init_app(self, app: Flask) -> None:
         app.add_url_rule("/", "home", home)
-        app.register_blueprint(core)

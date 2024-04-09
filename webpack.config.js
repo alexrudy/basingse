@@ -67,7 +67,7 @@ module.exports = {
         new MiniCssExtractPlugin({ filename: 'css/[name].[contenthash].css' }),
         new SourceMapDevToolPlugin({
             filename: '[file].map',
-            publicPath: 'assets/',
+            publicPath: 'bss/assets/',
             append: (pathData, assetInfo) => {
 
                 let parts = pathData.filename.split('.');
@@ -75,9 +75,9 @@ module.exports = {
                 const bareName = parts.join('.');
 
                 if (pathData.filename.endsWith('.css')) {
-                    return `/*# sourceMappingURL=/assets/${bareName}.map */`
+                    return `/*# sourceMappingURL=/bss/assets/${bareName}.map */`
                 }
-                return `//# sourceMappingURL=/assets/${bareName}.map`
+                return `//# sourceMappingURL=/bss/assets/${bareName}.map`
             }
         }),
     ],

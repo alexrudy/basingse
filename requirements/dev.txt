@@ -31,9 +31,9 @@ colorama==0.4.6
     # via tox
 distlib==0.3.8
     # via virtualenv
-docutils==0.20.1
+docutils==0.21.post1
     # via readme-renderer
-filelock==3.13.3
+filelock==3.13.4
     # via
     #   tox
     #   virtualenv

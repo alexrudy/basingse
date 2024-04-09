@@ -7,7 +7,7 @@ Flask-Login
 Flask-SocketIO
 Flask-WTF
 Flask!=3.0.1,>=2
-flask-attachments @ git+https://github.com/alexrudy/flask-attachments.git@main
+flask-attachments
 humanize
 itsdangerous
 marshmallow

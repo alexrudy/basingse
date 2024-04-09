@@ -16,6 +16,7 @@ sqlalchemy[mypy]==2.0.29
     #   -r requirements/typing.in
     #   alembic
     #   flask-alembic
+    #   flask-attachments
     #   flask-sqlalchemy
     #   wtforms-sqlalchemy
 types-pytz==2024.1.0.20240203

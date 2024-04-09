@@ -47,6 +47,9 @@ artifacts = ["src/basingse/_version.py", "src/basingse/assets/*"]
 [tool.hatch.build.hooks.vcs]
 version-file = "src/basingse/_version.py"
 
+[tool.hatch.version.raw-options]
+local_scheme = "no-local-version"
+
 [tool.hatch.build.hooks.custom]
 path = "hatch_build.py"
 assets = "src/basingse/assets"

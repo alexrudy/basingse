@@ -28,7 +28,7 @@ allow-direct-references = true
 files = ["requirements/base.in"]
 
 [project.urls]
-Homepage = "https://github.com/alexrudy/basingse"
+Repository = "https://github.com/alexrudy/basingse"
 
 [tool.hatch.version]
 source = "vcs"

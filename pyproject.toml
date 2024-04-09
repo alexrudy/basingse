@@ -7,7 +7,7 @@ name = "basingse"
 dynamic = ["version", "dependencies"]
 description = "Opinionated Authentication for Flask Apps"
 readme = "README.md"
-license.file = "LICENSE"
+license = "BSD-3-Clause"
 requires-python = ">= 3.11"
 authors = [{ name = "Alex Rudy", email = "opensource@alexrudy.net" }]
 classifiers = [

@@ -8,8 +8,10 @@ prepare:
     pip install --quiet --upgrade pip
     pip install --quiet pip-tools pip-compile-multi
 
-sync: prepare
+compile: prepare
     pip-compile-multi --use-cache
+
+sync: prepare
     pip-sync requirements/dev.txt
     pip install -e .
     tox --notest

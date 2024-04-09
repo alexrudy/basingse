@@ -113,6 +113,10 @@ class BlockContent:
     version: str | None = None
     time: dt.datetime | None = None
 
+    @property
+    def is_empty(self) -> bool:
+        return not self.blocks
+
     class Schema(BaseSchema):
         blocks = fields.Nested(Block.Schema, many=True)
         version = fields.String(dump_default=None, load_default=None)

@@ -27,6 +27,7 @@ class PageAdmin(AdminView, portal=portal):
     form = PageEditForm
     table = PageTable
     model = Page
+    schema = Page.Schema
     nav = PortalMenuItem("Pages", "admin.page.list", "file-text", "page.view")
 
     def query(self, **kwargs: Any) -> Any:

@@ -1,4 +1,6 @@
 from flask import url_for
+from marshmallow import fields
+from marshmallow import Schema as BaseSchema
 from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy.orm import Mapped
@@ -23,3 +25,14 @@ class Page(Model):
         """List of block types in the page"""
         schema = BlockContent.Schema()
         return schema.loads(self.contents)
+
+    @blocks.setter
+    def blocks(self, value: BlockContent) -> None:
+        """Set blocks from schema"""
+        schema = BlockContent.Schema()
+        self.contents = schema.dumps(value)
+
+    class Schema(BaseSchema):
+        title = fields.Str(required=True)
+        slug = fields.Str(required=True)
+        blocks = fields.Nested(BlockContent.Schema)

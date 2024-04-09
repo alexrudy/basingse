@@ -4,7 +4,7 @@
 {% endblock %}
 
 {% block main %}
-<div class="container page">
+<div class="container page {{page.slug}}">
     {% for blk in page.blocks.blocks %}
     {% include blk.render() %}
     {% endfor %}

@@ -84,7 +84,7 @@ def client(app: Flask) -> Iterator[LoginClient]:
         yield cast(LoginClient, client)
 
 
-_LOG_RECORD_KEYS = logging.LogRecord("name", 0, "pathname", 0, "msg", (), None).__dict__.keys()
+_LOG_RECORD_KEYS = set(logging.LogRecord("name", 0, "pathname", 0, "msg", (), None).__dict__.keys()) - {"name"}
 
 
 def render_to_log_kwargs(logger: logging.Logger, name: str, event_dict: EventDict) -> EventDict:

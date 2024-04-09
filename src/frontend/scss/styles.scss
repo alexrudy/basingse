@@ -66,21 +66,11 @@ $dev-bar-color-dark: #611885;
     margin: 0 auto;
 }
 
-.ce-block > div {
+
+.ce-block>div {
     border-bottom-color: var(--bs-border-color);
     border-bottom-style: solid;
     border-bottom-width: 1px;
-}
-
-blockquote.blockquote {
-    font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
-    font-style: italic;
-}
-
-figcaption.blockquote-footer {
-    font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
-    font-style: italic;
-    font-size: large;
 }
 
 // Form fields for uploading

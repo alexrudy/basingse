@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from .forms import UserEditForm
 from .models import User
+from .models import UserSchema
 from basingse import svcs
 from basingse.admin.extension import AdminView
 from basingse.admin.extension import PortalMenuItem
@@ -40,6 +41,7 @@ class UserAdmin(AdminView, portal=portal):
     form = UserEditForm
     model = User
     table = UserTable
+    schema = UserSchema
     nav = PortalMenuItem("Users", "admin.user.list", "person-badge", "user.view")
 
     def query(self, **kwargs: Any) -> Any:

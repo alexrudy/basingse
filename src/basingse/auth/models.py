@@ -36,7 +36,7 @@ logger = structlog.get_logger(__name__)
 class UserSchema(Schema):
     id = fields.Str(dump_only=True)
     email = fields.Str()
-    password = fields.Str(dump_only=True)
+    password = fields.Str(load_only=True)
     active = fields.Bool(load_default=False)
     roles = fields.Function(lambda obj: [role.name for role in obj.roles], dump_only=True)
 

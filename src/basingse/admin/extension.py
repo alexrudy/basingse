@@ -93,7 +93,6 @@ class Portal(Blueprint):
     """Blueprint customized for making admin portals with navigation menus"""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        print(("Portal.__init__", args, kwargs))
         super().__init__(*args, **kwargs)
         self.items: list[PortalMenuItem] = []
         self.context_processor(self.context)

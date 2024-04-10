@@ -12,7 +12,11 @@
     {% else %}
     <link rel="icon" href="{{ url_for('basingse.static', filename='img/logo/icon32.png') }}">
     {% endif %}
-    <link href="{{ url_for('basingse.assets', filename=asset.url('css/main.css')) }}" rel="stylesheet">
+
+    {% for css in assets.iter_assets('css') %}
+    <link href="{{ url_for('basingse.assets', filename=asset.url(css)) }}" rel="stylesheet">
+    {% endfor %}
+
     {% block style %}{% endblock %}
 </head>
 

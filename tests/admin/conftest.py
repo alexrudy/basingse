@@ -5,7 +5,6 @@ import pytest
 import structlog
 from bootlace.table import Column
 from bootlace.table import Table
-from flask import Blueprint
 from flask_wtf.form import FlaskForm as Form
 from marshmallow import fields
 from marshmallow import Schema as BaseSchema
@@ -51,13 +50,8 @@ class FakePostTable(Table):
 
 
 @pytest.fixture
-def admin_blueprint() -> Blueprint:
-    return Blueprint("test_admin", __name__, url_prefix="/tests/admin/", template_folder="templates")
-
-
-@pytest.fixture
-def portal(admin_blueprint: Blueprint) -> Portal:
-    portal = Portal(admin_blueprint)
+def portal() -> Portal:
+    portal = Portal("test_admin", __name__, url_prefix="/tests/admin/", template_folder="templates")
     return portal
 
 
@@ -69,7 +63,7 @@ def db() -> FakePostDb:
 @pytest.fixture
 def adminview(portal: Portal, db: FakePostDb) -> type[AdminView]:
 
-    class FakePostAdmin(AdminView, portal=portal):
+    class FakePostAdmin(AdminView, blueprint=portal):
         url = "posts"
         key = "<name>"
         name = "post"

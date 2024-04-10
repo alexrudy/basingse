@@ -9,7 +9,7 @@ from basingse.admin.extension import Portal
 @pytest.mark.usefixtures("adminview")
 def test_adminview_new(app: Flask, portal: Portal) -> None:
 
-    app.register_blueprint(portal.blueprint)
+    app.register_blueprint(portal)
 
     with app.test_client() as client:
 
@@ -25,7 +25,7 @@ def test_adminview_new(app: Flask, portal: Portal) -> None:
 @pytest.mark.usefixtures("adminview")
 def test_adminview_list(app: Flask, portal: Portal, db: FakePostDb) -> None:
 
-    app.register_blueprint(portal.blueprint)
+    app.register_blueprint(portal)
 
     db.posts["Hello"] = FakePost(title="Hello", content="World")
 
@@ -44,7 +44,7 @@ def test_adminview_list(app: Flask, portal: Portal, db: FakePostDb) -> None:
 @pytest.mark.usefixtures("adminview")
 def test_adminview_edit(app: Flask, portal: Portal, db: FakePostDb) -> None:
 
-    app.register_blueprint(portal.blueprint)
+    app.register_blueprint(portal)
 
     db.posts["Hello"] = FakePost(title="Hello", content="World")
 

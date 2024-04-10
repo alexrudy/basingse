@@ -89,16 +89,16 @@ class PortalMenuItem(Link):
         return current_user.can(self.permissions)
 
 
-@dc.dataclass
-class Portal:
+class Portal(Blueprint):
+    """Blueprint customized for making admin portals with navigation menus"""
 
-    blueprint: Blueprint
-    items: list[PortalMenuItem] = dc.field(default_factory=list)
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        print(("Portal.__init__", args, kwargs))
+        super().__init__(*args, **kwargs)
+        self.items: list[PortalMenuItem] = []
+        self.context_processor(self.context)
 
-    def __post_init__(self) -> None:
-        self.blueprint.context_processor(self.context)
-
-    def add(self, item: PortalMenuItem) -> None:
+    def add_menu_item(self, item: PortalMenuItem) -> None:
         self.items.append(item)
 
     def _render_nav(self) -> Markup:
@@ -236,19 +236,13 @@ class AdminView(View, Generic[M, F]):
     def sidebar(cls) -> Nav:
         return Nav([scls.nav for scls in iter_subclasses(cls) if scls.nav is not None])
 
-    def __init_subclass__(
-        cls, /, blueprint: Blueprint | None = None, namespace: str | None = None, portal: Portal | None = None
-    ) -> None:
+    def __init_subclass__(cls, /, blueprint: Blueprint | None = None, namespace: str | None = None) -> None:
         super().__init_subclass__()
 
         cls.logger = log.bind(model=cls.name)
 
         if not hasattr(cls, "permission"):
             cls.permission = cls.name
-
-        if portal is not None:
-            cls.register_portal(portal)
-            cls.register_blueprint(portal.blueprint, namespace, cls.url, cls.key)
 
         if blueprint is not None:
             cls.register_blueprint(blueprint, namespace, cls.url, cls.key)
@@ -445,11 +439,16 @@ class AdminView(View, Generic[M, F]):
 
     @classmethod
     def register_blueprint(cls, scaffold: Flask | Blueprint, namespace: str | None, url: str, key: str) -> None:
-        cls.bp = Blueprint(namespace or cls.name, cls.__module__, url_prefix=f"/{url}/", template_folder="templates/")
+        cls.bp = AdminBlueprint(
+            namespace or cls.name, cls.__module__, url_prefix=f"/{url}/", template_folder="templates/"
+        )
 
         if getattr(cls, "schema", None) is not None:
             cls.importer_group.add_command(cls.importer_command())
             cls.exporter_group.add_command(cls.exporter_command())
+
+        if isinstance(scaffold, Portal) and cls.nav is not None:
+            scaffold.add_menu_item(cls.nav)
 
         views = {}
         for name in dir(cls):
@@ -496,11 +495,6 @@ class AdminView(View, Generic[M, F]):
             defaults={"action": "edit"},
             methods=["GET"],
         )
-
-    @classmethod
-    def register_portal(cls, portal: "Portal") -> None:
-        if cls.nav is not None:
-            portal.add(cls.nav)
 
 
 C = TypeVar("C")

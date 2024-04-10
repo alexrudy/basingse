@@ -34,7 +34,7 @@ class UserTable(Table):
     last_login = Datetime(Heading("Last Login"), "last_login")
 
 
-class UserAdmin(AdminView, portal=portal):
+class UserAdmin(AdminView, blueprint=portal):
     url = "users"
     key = "<uuid:id>"
     name = "user"

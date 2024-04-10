@@ -1,5 +1,8 @@
+import dataclasses as dc
+
 import structlog
 from flask import flash
+from flask import Flask
 from flask import redirect
 from flask import render_template
 from flask import request
@@ -17,15 +20,22 @@ from .forms import SettingsForm
 from basingse import svcs
 from basingse.admin.extension import AdminBlueprint
 from basingse.admin.extension import PortalMenuItem
-from basingse.admin.views import portal
 from basingse.models import Session
+from basingse.utils.settings import BlueprintOptions
 
 log = structlog.get_logger(__name__)
 
 
-admin = bp = AdminBlueprint("admin", __name__, url_prefix="/admin/", template_folder="templates")
-portal.add(PortalMenuItem("Settings", "customize.admin.edit", "gear", "customize.edit"))
-bp.context_processor(portal.context)
+bp = AdminBlueprint("customize", __name__, template_folder="templates")
+menu = PortalMenuItem("Settings", "admin.customize.edit", "gear", "customize.edit")
+
+
+def init_app(app: Flask, options: BlueprintOptions) -> None:
+    from ...admin.views import portal
+
+    if not portal._got_registered_once:
+        portal.register_blueprint(bp, **dc.asdict(options))
+        portal.add_menu_item(menu)
 
 
 @bp.route("/settings/edit", methods=["GET", "POST"])
@@ -46,7 +56,7 @@ def edit() -> IntoResponse:
         form.populate_obj(settings)
         session.commit()
         flash("Settings saved", "success")
-        return redirect(url_for("customize.admin.edit"))
+        return redirect(url_for("admin.customize.edit"))
 
     return render_template("admin/settings/edit.html", form=form, settings=settings)
 

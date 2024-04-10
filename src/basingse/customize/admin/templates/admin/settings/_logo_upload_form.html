@@ -1,4 +1,4 @@
 {% from "admin/attachment/_field.html" import upload %}
 {% from "_icon.html" import icon %}
 
-{{ upload(attachment, url_for('customize.admin.delete_logo', attachment_id=attachment.data.id)) }}
+{{ upload(attachment, url_for('admin.customize.delete_logo', attachment_id=attachment.data.id)) }}

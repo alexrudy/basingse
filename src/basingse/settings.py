@@ -82,7 +82,6 @@ def context() -> dict[str, Any]:
 @dc.dataclass
 class BaSingSe:
 
-    admin: AdminSettings | None = AdminSettings()
     assets: Assets | None = dc.field(default_factory=lambda: Assets(blueprint=core))
     auth: Authentication | None = Authentication()
     attachments: Attachments | None = Attachments(registry=Model.registry)
@@ -94,6 +93,7 @@ class BaSingSe:
     markdown: MarkdownOptions | None = MarkdownOptions()
     context: Context | None = Context()
     bootlace: Bootlace | None = Bootlace()
+    admin: AdminSettings | None = AdminSettings()
 
     initailized: dict[str, bool] = dc.field(default_factory=dict)
 

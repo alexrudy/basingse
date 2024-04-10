@@ -4,7 +4,7 @@
 {% from "admin/_link_form_field.html" import link_input_field %}
 
 {% block navbar %}
-{% set active_endpoint = 'customize.admin.edit' %}
+{% set active_endpoint = 'admin.customize.edit' %}
 {% include "admin/_sidebar.html" %}
 {% endblock %}
 
@@ -96,7 +96,7 @@ Settings | {{ site_settings.title }}
         </div>
         <div class="ms-auto mt-auto d-flex mb-4">
             <div class="px-1">
-                <a class="btn btn-secondary" href="{{ url_for('customize.admin.edit') }}">
+                <a class="btn btn-secondary" href="{{ url_for('admin.customize.edit') }}">
                     Discard
                 </a>
             </div>

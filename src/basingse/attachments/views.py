@@ -14,7 +14,7 @@ from basingse.admin.views import portal
 log = structlog.get_logger(__name__)
 
 
-class AttachmentsAdmin(AdminView, portal=portal):
+class AttachmentsAdmin(AdminView, blueprint=portal):
     url = "attachment"
     key = "<uuid:id>"
     name = "attachment"

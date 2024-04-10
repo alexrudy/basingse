@@ -51,20 +51,24 @@ module.exports = {
 
         new WebpackManifestPlugin({
             map: (file) => {
-                let extension = path.extname(file.name).slice(1)
+                let extension = path.extname(file.name).slice(1);
+                let name = file.name;
+                if (['css', 'js'].includes(extension)) {
+                    name = `${extension}/basingse.${file.name}`;
+                }
+
                 if (extension === 'map') {
-                    extension = path.extname(file.name.slice(0, -4)).slice(1)
+                    extension = path.extname(file.name.slice(0, -4)).slice(1);
+                    name = `${extension}/${file.name}`;
                 }
 
                 return {
                     ...file,
-                    name: ['css', 'js'].includes(extension) ?
-                        `${extension}/${file.name}` :
-                        file.name
+                    name,
                 }
             }
         }),
-        new MiniCssExtractPlugin({ filename: 'css/[name].[contenthash].css' }),
+        new MiniCssExtractPlugin({ filename: 'css/basingse.[name].[contenthash].css' }),
         new SourceMapDevToolPlugin({
             filename: '[file].map',
             publicPath: 'bss/assets/',
@@ -83,7 +87,7 @@ module.exports = {
     ],
     mode: 'development',
     output: {
-        filename: 'js/[name].[contenthash].js',
+        filename: 'js/basingse.[name].[contenthash].js',
         publicPath: '',
         path: path.resolve(__dirname, 'src/basingse/assets/'),
         clean: true,

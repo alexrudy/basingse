@@ -44,7 +44,7 @@
                         <div class="col-8" id="social-icon-{{ form.name }}-upload" hx-swap="innerHTML"
                             hx-select="#social-icon-{{ form.name }}-upload"
                             hx-target="social-icon-{{ form.name }}-upload">
-                            {{ upload(form.image, delete=url_for('customize.admin.delete_social_image',
+                            {{ upload(form.image, delete=url_for('admin.customize.delete_social_image',
                             id=form.image.data.id),
                             label=false) }}
                         </div>

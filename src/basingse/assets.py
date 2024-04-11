@@ -2,6 +2,7 @@ import dataclasses as dc
 import importlib.resources
 import io
 import json
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
@@ -47,6 +48,11 @@ class AssetCollection:
         if current_app.config["DEBUG"]:
             return filename
         return self.assets[filename]
+
+    def iter_assets(self, extension: str | None) -> Iterator[str]:
+        for filename in self.assets:
+            if extension is None or filename.endswith(extension):
+                yield filename
 
     def serve_asset(self, filename: str) -> ResponseReturnValue:
         if not current_app.config["DEBUG"]:
@@ -110,8 +116,18 @@ class Assets:
 
         app.context_processor(self.context_processor)
 
+    def append(self, collection: AssetCollection) -> None:
+        self.collection.append(collection)
+
+    def add_assets_folder(self, location: str | Path) -> None:
+        self.collection.append(AssetCollection(location, Path("manifest.json"), Path("assets")))
+
     def context_processor(self) -> dict[str, Any]:
         return {"asset": self}
+
+    def iter_assets(self, extension: str | None) -> Iterator[str]:
+        for collection in self.collection:
+            yield from collection.iter_assets(extension)
 
     def url(self, filename: str) -> str:
         if current_app.config["DEBUG"]:

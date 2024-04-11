@@ -20,7 +20,7 @@ class PageTable(Table):
     slug = Column("Slug", "slug")
 
 
-class PageAdmin(AdminView, portal=portal):
+class PageAdmin(AdminView, blueprint=portal):
     url = "pages"
     key = "<uuid:id>"
     name = "page"

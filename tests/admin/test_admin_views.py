@@ -7,6 +7,20 @@ from basingse.admin.extension import Portal
 
 
 @pytest.mark.usefixtures("adminview")
+def test_adminview_unknown(app: Flask, portal: Portal) -> None:
+
+    app.register_blueprint(portal)
+
+    with app.test_client() as client:
+
+        response = client.get("/tests/admin/")
+        assert response.status_code == 404
+
+        response = client.get("/tests/admin/posts/list/?action=other")
+        assert response.status_code == 400
+
+
+@pytest.mark.usefixtures("adminview")
 def test_adminview_new(app: Flask, portal: Portal) -> None:
 
     app.register_blueprint(portal)

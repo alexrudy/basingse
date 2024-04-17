@@ -50,7 +50,7 @@ def app() -> Iterator[Flask]:
         @cached_property
         def jinja_loader(self) -> BaseLoader | None:
             """Override the jinja loader to look through all test folders"""
-            assert self.template_folder is not None
+            assert self.template_folder is not None, "Template folder must be set"
             return FileSystemLoader(
                 [str(self.template_folder)] + glob.glob(self.root_path + "/**/templates", recursive=True)
             )
@@ -60,7 +60,7 @@ def app() -> Iterator[Flask]:
     configure_app(app, config={"ENV": "test", "ASSETS_FOLDER": None})
     bss = BaSingSe(logging=None)
     bss.init_app(app)
-    assert bss.assets
+    assert bss.assets, "Assets should be initialized"
     bss.assets.collection.append(AssetCollection("tests", Path("manifest.json"), Path("assets")))
 
     with app.app_context():

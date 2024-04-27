@@ -49,7 +49,7 @@ class Authentication:
     def init_app(self, app: Flask) -> None:
         """Initialize the extension with a Flask app"""
         from .cli import auth_cli
-        from . import manager as manager_module  # noqa: F401
+        from . import manager as manager_module
         from . import views
         from . import utils
 

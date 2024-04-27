@@ -94,7 +94,7 @@ def login_link(link_token: str) -> Any:
         return redirect(url_for(".login"))
 
     if login_user(user):
-        user.last_login = dt.datetime.utcnow()
+        user.last_login = dt.datetime.now(dt.UTC)
         session.commit()
         log.info("Authenticated from login link", user=current_user)
         return redirect_next(extension.logged_in)

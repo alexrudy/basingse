@@ -22,15 +22,15 @@ def before_request() -> None:
 
 
 @portal.errorhandler(404)
-def not_found(exception: BaseException) -> IntoResponse:
+def not_found(exception: BaseException | int) -> IntoResponse:
     return render_template("admin/not_found.html")
 
 
 @portal.errorhandler(400)
-def bad_request(exception: BaseException) -> IntoResponse:
+def bad_request(exception: BaseException | int) -> IntoResponse:
     if isinstance(exception, HTTPException):
         if exception.response is not None:
-            message = exception.response.data  # type: ignore[attr-defined]
+            return exception.response
         else:
             message = exception.description
     else:

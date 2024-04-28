@@ -7,9 +7,9 @@
 #
 -r tests.txt
 -r typing.txt
-backports-tarfile==1.0.0
+backports-tarfile==1.1.1
     # via jaraco-context
-black==24.3.0
+black==24.4.2
     # via -r requirements/dev.in
 build==1.2.1
     # via
@@ -31,7 +31,7 @@ colorama==0.4.6
     # via tox
 distlib==0.3.8
     # via virtualenv
-docutils==0.21.post1
+docutils==0.21.2
     # via readme-renderer
 filelock==3.13.4
     # via
@@ -39,9 +39,9 @@ filelock==3.13.4
     #   virtualenv
 flake8==7.0.0
     # via -r requirements/dev.in
-hatchling==1.22.5
+hatchling==1.24.2
     # via -r requirements/dev.in
-identify==2.5.35
+identify==2.5.36
     # via pre-commit
 importlib-metadata==7.1.0
     # via
@@ -51,9 +51,9 @@ jaraco-classes==3.4.0
     # via keyring
 jaraco-context==5.3.0
     # via keyring
-jaraco-functools==4.0.0
+jaraco-functools==4.0.1
     # via keyring
-keyring==25.1.0
+keyring==25.2.0
     # via twine
 mccabe==0.7.0
     # via flake8
@@ -75,7 +75,7 @@ pip-tools==7.4.1
     # via pip-compile-multi
 pkginfo==1.10.0
     # via twine
-platformdirs==4.2.0
+platformdirs==4.2.1
     # via
     #   black
     #   tox
@@ -92,8 +92,6 @@ pyproject-hooks==1.0.0
     # via
     #   build
     #   pip-tools
-pyyaml==6.0.1
-    # via pre-commit
 readme-renderer==43.0
     # via twine
 requests==2.31.0
@@ -106,9 +104,9 @@ rfc3986==2.0.0
     # via twine
 toposort==1.10
     # via pip-compile-multi
-tox==4.14.2
+tox==4.15.0
     # via -r requirements/dev.in
-trove-classifiers==2024.3.25
+trove-classifiers==2024.4.10
     # via hatchling
 twine==5.0.0
     # via -r requirements/dev.in
@@ -116,7 +114,7 @@ urllib3==2.2.1
     # via
     #   requests
     #   twine
-virtualenv==20.25.1
+virtualenv==20.26.0
     # via
     #   pre-commit
     #   tox

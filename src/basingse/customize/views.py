@@ -18,7 +18,7 @@ def logo_endpoint(size: LogoSize) -> IntoResponse:
     settings = get_site_settings()
     logo = settings.logo.size(size)
     if logo is None:
-        logger.warning("No logo found for size", size=size)
+        logger.warning("No logo found for size", size=size, debug=True)
         abort(404)
 
     session = svcs.get(Session)

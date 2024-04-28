@@ -6,7 +6,7 @@
 #    pip-compile-multi
 #
 -r base.txt
-mypy==1.9.0
+mypy==1.10.0
     # via
     #   -r requirements/typing.in
     #   sqlalchemy
@@ -19,7 +19,7 @@ sqlalchemy[mypy]==2.0.29
     #   flask-attachments
     #   flask-sqlalchemy
     #   wtforms-sqlalchemy
-types-pytz==2024.1.0.20240203
+types-pytz==2024.1.0.20240417
     # via -r requirements/typing.in
 types-pyyaml==6.0.12.20240311
     # via -r requirements/typing.in

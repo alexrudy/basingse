@@ -34,12 +34,12 @@ def configure_app(app: Flask, config: dict[str, Any] | None = None, prefix: str 
     # Load the real configurations
     app.config.from_object("basingse.config.defaults")
 
-    if not app.config["ENV"] == "test":
+    if not app.config["ENV"] == "test":  # pragma: nocover
         app.config.from_pyfile(os.path.join(app.instance_path, app.config["ENV"].lower(), "config.py"))
     else:
         app.config.from_object("basingse.config.testing")
 
-    if not app.testing:
+    if not app.testing:  # pragma: nocover
         app.wsgi_app = ProxyFix(app.wsgi_app)  # type: ignore[method-assign]
 
 

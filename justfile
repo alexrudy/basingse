@@ -8,34 +8,37 @@ prepare:
     pip install --quiet --upgrade pip
     pip install --quiet pip-tools pip-compile-multi
 
+# lock the requirements files
 compile: prepare
     pip-compile-multi --use-cache
 
+# install dependencies into local virtual environment
 sync: prepare
     pip-sync requirements/dev.txt
     pip install -e .
     tox --notest
 
-# Run tests
+# run tests
 test:
     pytest
 
-# Run all tests
+# run all tests
 test-all:
     tox
 
-# Run lints
+# run lints
 lint:
     flake8
+    pre-commit run --all-files
 
-# Run mypy
+# run mypy
 mypy:
     mypy
 
-# Run the application
+# run the application
 serve:
     flask run
 
-# Watch for changes and run the application
+# watch for changes and run the application
 watch:
     python -m watch

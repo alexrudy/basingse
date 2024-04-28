@@ -35,7 +35,7 @@ def init_app(app: Flask, options: BlueprintOptions) -> None:
 
     if not portal._got_registered_once:
         portal.register_blueprint(bp, **dc.asdict(options))
-        portal.add_menu_item(menu)
+        portal.sidebar.append(menu)
 
 
 @bp.route("/settings/edit", methods=["GET", "POST"])
@@ -136,7 +136,7 @@ def social_link_order() -> IntoResponse:
     for i, id in enumerate(new_order, start=1):
         link = links.get(id)
         if link is None:
-            log.warning(f"Got an invalid link ID {id}")
+            log.warning(f"Got an invalid link ID {id}", debug=True)
             session.rollback()
             return (f"Invalid Link ID {id}", 400)
         link.order = i

@@ -7,9 +7,14 @@ from typing import cast
 import pytest
 import structlog
 from flask import Flask
+from flask import request
+from flask import request_finished
+from flask import request_started
 from jinja2 import FileSystemLoader
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
+from sqlalchemy.engine.interfaces import DBAPIConnection
+from sqlalchemy.pool import ConnectionPoolEntry
 from structlog.types import EventDict
 
 from basingse import svcs
@@ -22,6 +27,10 @@ from basingse.settings import BaSingSe
 
 
 logger = structlog.get_logger()
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    config.addinivalue_line("markers", "flask: mark test as flask utility")
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -37,10 +46,24 @@ def setup_query_logging() -> None:
 
     @event.listens_for(Engine, "commit")
     def receive_commit(conn: Any) -> None:
-        logger.info("COMMIT")
+        logger.debug("COMMIT", engine=conn.engine.url)
+
+    @event.listens_for(Engine, "connect")
+    def connect(dbapi_connection: DBAPIConnection, connection_record: ConnectionPoolEntry) -> None:
+        logger.debug("connecting")
 
 
-@pytest.fixture
+def setup_app_logging(app: Flask) -> None:
+    @request_started.connect_via(app)
+    def log_request_started(sender: Any, **kwargs: Any) -> None:
+        sender.logger.debug(request.method, path=request.path)
+
+    @request_finished.connect_via(app)
+    def log_request_finished(sender: Any, response: Any, **kwargs: Any) -> None:
+        sender.logger.debug(response.status_code, path=request.path)
+
+
+@pytest.fixture(scope="function")
 def app() -> Iterator[Flask]:
     import glob
     from werkzeug.utils import cached_property
@@ -55,6 +78,10 @@ def app() -> Iterator[Flask]:
                 [str(self.template_folder)] + glob.glob(self.root_path + "/**/templates", recursive=True)
             )
 
+        @property
+        def logger(self) -> logging.Logger:  # type: ignore
+            return structlog.get_logger("test.app")
+
     app = TestingFlask(__name__)
     app.test_client_class = LoginClient
     configure_app(app, config={"ENV": "test", "ASSETS_FOLDER": None})
@@ -62,6 +89,7 @@ def app() -> Iterator[Flask]:
     bss.init_app(app)
     assert bss.assets, "Assets should be initialized"
     bss.assets.collection.append(AssetCollection("tests", Path("manifest.json"), Path("assets")))
+    setup_app_logging(app)
 
     with app.app_context():
         engine = svcs.get(Engine)

@@ -1,7 +1,6 @@
 from functools import cache
 from functools import wraps
 from typing import Any
-from typing import cast
 from urllib import parse
 
 import flask
@@ -102,7 +101,7 @@ def url_for_next(endpoint: str, **kwargs: str) -> str:
     try:
         serializer().loads(next_token)
     except BadSignature:
-        kwargs["next"] = cast(str, serializer().dumps(next_token))
+        kwargs["next"] = serializer().dumps(next_token)
     else:
         kwargs["next"] = next_token
 

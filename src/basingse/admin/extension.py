@@ -33,7 +33,6 @@ from flask import url_for
 from flask.cli import with_appcontext
 from flask.typing import ResponseReturnValue as IntoResponse
 from flask.views import View
-from flask_attachments import Attachment
 from flask_login import current_user
 from flask_wtf import FlaskForm as FormBase
 from jinja2 import FileSystemLoader
@@ -52,7 +51,7 @@ from basingse.htmx import HtmxProperties
 from basingse.models import Model as ModelBase
 from basingse.svcs import get
 
-log: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+log: structlog.BoundLogger = structlog.get_logger(__name__)
 
 M = TypeVar("M", bound=ModelBase)
 F = TypeVar("F", bound=FormBase)
@@ -92,16 +91,39 @@ class PortalMenuItem(Link):
 class Portal(Blueprint):
     """Blueprint customized for making admin portals with navigation menus"""
 
+    #: The CLI group to use for importers
+    importer_group: click.Group
+
+    #: The CLI group to use for exporters
+    exporter_group: click.Group
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.items: list[PortalMenuItem] = []
+        self.sidebar: list[PortalMenuItem] = []
+        self.admins: list[type[AdminView]] = []
         self.context_processor(self.context)
+        self.importer_group = click.Group(
+            "import",
+            help="Import data from YAML files",
+        )
+        self.importer_group.add_command(import_all)
 
-    def add_menu_item(self, item: PortalMenuItem) -> None:
-        self.items.append(item)
+        self.exporter_group = click.Group(
+            "export",
+            help="Export data to YAML files",
+        )
+        self.exporter_group.add_command(export_all)
+
+    def register_admin(self, view: "type[AdminView]") -> None:
+        self.admins.append(view)
+        if view.schema is not None:
+            self.importer_group.add_command(view.importer_command())
+            self.exporter_group.add_command(view.exporter_command())
+        if view.nav is not None:
+            self.sidebar.append(view.nav)
 
     def _render_nav(self) -> Markup:
-        ul = as_tag(Nav([item for item in self.items if item.enabled], style=NavStyle.PILLS))
+        ul = as_tag(Nav([item for item in self.sidebar if item.enabled], style=NavStyle.PILLS))
         ul.classes.add("flex-column", "mb-auto")
         return render(ul)
 
@@ -201,11 +223,11 @@ class AdminView(View, Generic[M, F]):
     #: The model to use for this view
     model: type[M]
 
+    #: The table to use for rendering list views
+    table: type[Table]
+
     #: The schema to use for API responses
     schema: type[Schema] | None = None
-
-    #: The table to use for rendering list views
-    table: type[Table] | None = None
 
     #: The name of this view
     name: ClassVar[str]
@@ -216,49 +238,48 @@ class AdminView(View, Generic[M, F]):
     #: A class-specific blueprint, where this view's routes are registered.
     bp: ClassVar[Blueprint]
 
-    #: The template to use for attachments
-    attachments: ClassVar[str | None] = None
-
-    #: The CLI group to use for importers
-    importer_group: ClassVar[click.Group] = click.Group("import", help="Import data from YAML files")
-
-    #: The CLI group to use for exporters
-    exporter_group: ClassVar[click.Group] = click.Group("export", help="Export data to YAML files")
-
     # The navigation item for this view
     nav: ClassVar[PortalMenuItem | None] = None
 
-    #: The logger to use for this view
-    logger: ClassVar[structlog.stdlib.BoundLogger]
-
-    @classmethod
-    def sidebar(cls) -> Nav:
-        return Nav([scls.nav for scls in iter_subclasses(cls) if scls.nav is not None])
+    @property
+    def logger(self) -> structlog.stdlib.BoundLogger:
+        return structlog.get_logger(model=self.name)
 
     def __init_subclass__(cls, /, blueprint: Blueprint | None = None, namespace: str | None = None) -> None:
         super().__init_subclass__()
 
-        cls.logger = log.bind(model=cls.name)
-
-        if not hasattr(cls, "permission"):
-            cls.permission = cls.name
-
         if blueprint is not None:
+            # indicates that we are in a concrete subclass.
+            # otherwise we assume we are in an abstract subclass
+
+            if not hasattr(cls, "permission"):
+                cls.permission = cls.name
             cls.register_blueprint(blueprint, namespace, cls.url, cls.key)
+        elif any(hasattr(cls, attr) for attr in {"url", "key", "form", "model", "name"}):
+            raise NotImplementedError("Concrete subclasses must pass the blueprint to the class definition")
 
     def dispatch_action(self, action: str, **kwargs: Any) -> IntoResponse:
         method = getattr(self, action, None)
         if method is None or not hasattr(method, "action"):
-            self.logger.error(f"Unimplemented method {action!r}", path=request.path)
+            self.logger.error(f"Unimplemented method {action!r}", path=request.path, debug=True)
             abort(400)
+
+        if request.method not in method.action.methods:
+            self.logger.error(f"Method not allowed {action!r}", path=request.path, method=request.method, debug=True)
+            abort(405)
 
         return method(**kwargs)
 
     @classmethod
     def importer(cls, data: dict[str, Any]) -> list[M]:
-        if cls.schema is None:
+        if cls.schema is None:  # pragma: nocover
             raise NotImplementedError("No schema defined")
-        items = data[cls.name]
+
+        try:
+            items = data[cls.name]
+        except (KeyError, TypeError, IndexError):
+            items = data
+
         if isinstance(items, list):
             schema = cls.schema(many=True)
             return schema.load(items)
@@ -268,7 +289,7 @@ class AdminView(View, Generic[M, F]):
     @classmethod
     def importer_command(cls) -> click.Command:
 
-        logger = cls.logger.bind(command="import")
+        logger = structlog.get_logger(model=cls.name, command="import")
 
         @click.command(name=cls.name)
         @click.option("--clear/--no-clear")
@@ -296,16 +317,19 @@ class AdminView(View, Generic[M, F]):
 
     @classmethod
     def exporter_command(cls) -> click.Command:
+
+        logger = structlog.get_logger(model=cls.name, command="import")
+
         @click.command(name=cls.name)
         @click.argument("filename", type=click.File("w"))
         @with_appcontext
         def export_command(filename: IO[str]) -> None:
             import yaml
 
-            if not cls.schema:
+            if not cls.schema:  # pragma: nocover
                 click.echo(f"No schema defined for {cls.name}", err=True)
                 raise click.Abort()
-
+            logger.info(f"Exporting {cls.name}")
             session = get(Session)
 
             items = session.scalars(select(cls.model)).all()
@@ -322,7 +346,8 @@ class AdminView(View, Generic[M, F]):
         for arg in args:
             kwargs.setdefault(arg, args[arg])
 
-        kwargs["action"] = kwargs.pop("action")
+        kwargs["action"] = action = kwargs.pop("action")
+        self.logger.debug("Dispatching", action=action)
         response = self.dispatch_action(**kwargs)
         if request.headers.get("HX-Request"):
             partial = kwargs.get("partial")
@@ -339,6 +364,7 @@ class AdminView(View, Generic[M, F]):
     def single(self, **kwargs: Any) -> M:
         session = get(Session)
         if (single := session.scalars(select(self.model).filter_by(**kwargs)).first()) is None:
+            self.logger.error("Not found", **kwargs, debug=True)
             abort(404)
         return single
 
@@ -356,11 +382,10 @@ class AdminView(View, Generic[M, F]):
         )
 
     def _log_form_errors(self, form: F) -> None:
-        if has_app_context():
-            if current_app.config["ENV"] not in ("production", "prd"):
-                self.logger.error("Errors", errors=form.errors, data=form.data)
+        if has_app_context() and form.errors:
+            self.logger.error("Form contains", errors=form.errors, data=form.data, debug=True)
 
-    @action()
+    @action(permission="edit", url="/<key>/edit/", methods=["GET", "POST", "PATCH", "PUT"])
     def edit(self, **kwargs: Any) -> IntoResponse:
         obj = self.single(**kwargs)
         form = self.form(obj=obj)
@@ -372,15 +397,15 @@ class AdminView(View, Generic[M, F]):
                 return redirect_next(url_for(".list"))
         return self.render_form(form, obj)
 
-    @action(url="/<key>/preview/")
+    @action(permission="view", url="/<key>/preview/", methods=["GET"])
     def preview(self, **kwargs: Any) -> IntoResponse:
         obj = self.single(**kwargs)
-        return render_template(f"admin/{self.name}/preview.html", **{self.name: obj})
+        return render_template([f"admin/{self.name}/preview.html", "admin/portal/preview.html"], **{self.name: obj})
 
     def blank(self, **kwargs: Any) -> M:
         return self.model(**kwargs)
 
-    @action(methods=["GET", "POST", "PUT"])
+    @action(permission="edit", url="/new/", methods=["GET", "POST", "PUT"])
     def new(self, **kwargs: Any) -> IntoResponse:
         obj = self.blank(**kwargs)
         form = self.form(obj=obj)
@@ -395,7 +420,7 @@ class AdminView(View, Generic[M, F]):
 
         return self.render_form(form, obj)
 
-    @action
+    @action(permission="view", url="/list/", methods=["GET"])
     def list(self, **kwargs: Any) -> IntoResponse:
         items = self.query()
         context: dict[str, Any] = {f"{self.name}s": items, "rows": items}
@@ -406,21 +431,7 @@ class AdminView(View, Generic[M, F]):
             **context,
         )
 
-    @action(permission="edit", methods=["GET", "DELETE"], attachments=True)
-    def delete_attachment(self, *, attachment: str, partial: str, **kwargs: Any) -> IntoResponse:
-        session = get(Session)
-        obj = self.single(**kwargs)
-        attachment = session.scalar(select(Attachment).where(Attachment.id == attachment))
-        if attachment is not None:
-            session.delete(attachment)
-            session.commit()
-            session.refresh(obj)
-        if request.method == "DELETE":
-            return "", 204
-        form = self.form(obj=obj)
-        return render_template(f"{self.attachments}", form=form, **{self.name: obj})
-
-    @action
+    @action(permission="delete", methods=["GET", "DELETE"], url="/<key>/delete/")
     def delete(self, **kwargs: Any) -> IntoResponse:
         session = get(Session)
         obj = self.single(**kwargs)
@@ -437,44 +448,42 @@ class AdminView(View, Generic[M, F]):
         return redirect_next(url_for(f".{cls.bp.name}.{action}", **kwargs))
 
     @classmethod
+    def _register_action(cls, name: str, attr: Any, key: str) -> Any:
+        if name.startswith("_"):
+            return None
+        try:
+            action = getattr(attr, "action", None)
+        except Exception:  # pragma: nocover
+            log.exception("Error registering action", name=name, debug=True)
+        else:
+            if action is not None:
+
+                view = require_permission(f"{cls.permission}.{action.permission}")(cls.as_view(action.name))
+                cls.bp.add_url_rule(
+                    action.url.replace("<key>", key),
+                    endpoint=action.name,
+                    view_func=view,
+                    methods=action.methods,
+                    defaults={"action": name, **action.defaults},
+                )
+                return view
+        return None
+
+    @classmethod
     def register_blueprint(cls, scaffold: Flask | Blueprint, namespace: str | None, url: str, key: str) -> None:
         cls.bp = AdminBlueprint(
             namespace or cls.name, cls.__module__, url_prefix=f"/{url}/", template_folder="templates/"
         )
 
-        if getattr(cls, "schema", None) is not None:
-            cls.importer_group.add_command(cls.importer_command())
-            cls.exporter_group.add_command(cls.exporter_command())
-
-        if isinstance(scaffold, Portal) and cls.nav is not None:
-            scaffold.add_menu_item(cls.nav)
+        if isinstance(scaffold, Portal) and getattr(cls, "schema", None) is not None:
+            scaffold.register_admin(cls)
 
         views = {}
-        for name in dir(cls):
-            if name.startswith("_"):
-                continue
-            try:
-                attr = getattr(cls, name)
-                if not callable(attr):
-                    continue
-                action = getattr(attr, "action", None)
-            except Exception:
-                cls.logger.exception("Error registering action", name=name)
-            else:
-                if action is not None:
-                    if action.attachments and not cls.attachments:
-                        continue
 
-                    views[action.name] = view = require_permission(f"{cls.permission}.{action.permission}")(
-                        cls.as_view(action.name)
-                    )
-                    cls.bp.add_url_rule(
-                        action.url.replace("<key>", key),
-                        endpoint=action.name,
-                        view_func=view,
-                        methods=action.methods,
-                        defaults={"action": name, **action.defaults},
-                    )
+        for bcls in cls.__mro__:
+            for name, attr in bcls.__dict__.items():
+                if view := cls._register_action(name, attr, key):
+                    views[attr.action.name] = view
 
         scaffold.register_blueprint(cls.bp)
 
@@ -495,6 +504,12 @@ class AdminView(View, Generic[M, F]):
             methods=["GET"],
         )
 
+        cls.bp.add_url_rule(
+            "/do/<action>/",
+            view_func=cls.as_view(f"{cls.name}_do"),
+            methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+        )
+
 
 C = TypeVar("C")
 
@@ -507,25 +522,29 @@ def iter_subclasses(cls: type[C]) -> Iterator[type[C]]:
         yield subcls
 
 
-@AdminView.importer_group.command(name="all")
+@click.command(name="all")
 @click.option("--clear/--no-clear")
 @click.argument("filename", type=click.File("r"))
 @with_appcontext
-def import_all(filename: IO[str], clear: bool) -> None:
+@click.pass_context
+def import_all(ctx: click.Context, filename: IO[str], clear: bool) -> None:
     """Import all items known from a YAML file"""
     import yaml
 
     data = yaml.safe_load(filename)
     session = get(Session)
+    portal = get(Portal)
 
-    for cls in iter_subclasses(AdminView):
+    log.info("Importing all", clear=clear, data=data.keys(), models=[cls.name for cls in portal.admins])
+
+    for cls in portal.admins:
         schema = getattr(cls, "schema", None)
         if schema is None:
             continue
         items = data.get(cls.name, None)
         if items is None:
             continue
-        cls.logger.info(f"Importing {cls.name}", count=len(items))
+        log.info(f"Importing {cls.name}", model=cls.name, count=len(items))
         if isinstance(items, list):
             schema = schema(many=True)
             for item in schema.load(items):
@@ -534,22 +553,26 @@ def import_all(filename: IO[str], clear: bool) -> None:
             schema = schema()
             session.add(schema.load(items))
 
+    session.commit()
 
-@AdminView.exporter_group.command(name="all")
+
+@click.command(name="all")
 @click.argument("filename", type=click.File("w"))
 @with_appcontext
-def export_all(filename: IO[str]) -> None:
+@click.pass_context
+def export_all(ctx: click.Context, filename: IO[str]) -> None:
     """Export all items known to a YAML file"""
     import yaml
 
     session = get(Session)
+    portal = get(Portal)
     data = {}
 
-    for cls in iter_subclasses(AdminView):
-        if cls.schema is None:
+    for cls in portal.admins:
+        if cls.schema is None:  # pragma: nocover
             continue
 
-        cls.logger.info(f"Exporting {cls.name}")
+        log.info(f"Exporting {cls.name}", model=cls.name)
         items = session.scalars(select(cls.model)).all()
         schema = cls.schema(many=True)
         data[cls.name] = schema.dump(items)

@@ -254,7 +254,7 @@ def require_permission(
             if current_user.can(permission):
                 return current_app.ensure_sync(func)(*args, **kwargs)
 
-            log.warning("Permission denied", user=current_user, permission=permission)
+            log.warning("Permission denied", user=current_user, permission=permission, debug=True)
             return current_app.login_manager.unauthorized()  # type: ignore[attr-defined]
 
         return decorated_view

@@ -1,40 +1,7 @@
 import dataclasses as dc
-from typing import Any
 from urllib.parse import urlsplit as url_parse
 
-import structlog
-from flask import url_for
-from flask.testing import FlaskClient
 from werkzeug import Response as TestResponse
-
-logger = structlog.get_logger()
-
-
-class LoginClient(FlaskClient):
-    blueprint: str = "auth"
-
-    def login(self, email: str | None, password: str | None, **parameters: Any) -> TestResponse:
-        with self.application.app_context():
-            url = url_for(f"{self.blueprint}.login")
-        response = self.post(url, data={"email": email, "password": password}, **parameters)
-        assert response.status_code == 302
-        return response
-
-    def login_session(self, email: str, **parameters: Any) -> TestResponse:
-        with self.application.app_context():
-            url = url_for(f"{self.blueprint}.dev_login")
-
-        response = self.post(url, json={"email": email}, **parameters)
-        assert response.status_code == 204
-        return response
-
-    def logout(self) -> TestResponse:
-        with self.application.app_context():
-            url = url_for(f"{self.blueprint}.logout")
-
-        response = self.get(url)
-        assert response.status_code == 302
-        return response
 
 
 class Response:

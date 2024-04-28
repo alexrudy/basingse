@@ -1,5 +1,4 @@
 import dataclasses as dc
-import logging
 from typing import Any
 
 import humanize
@@ -9,7 +8,6 @@ from bootlace import Bootlace
 from bootlace import render
 from flask import Flask
 from flask_attachments import Attachments
-from rich.traceback import install
 
 from . import attachments as attmod  # noqa: F401
 from . import svcs
@@ -17,6 +15,7 @@ from .admin.settings import AdminSettings
 from .assets import Assets
 from .auth.extension import Authentication
 from .customize.settings import CustomizeSettings
+from .logging import Logging
 from .markdown import MarkdownOptions
 from .models import Model
 from .models import SQLAlchemy
@@ -29,36 +28,6 @@ from .views import CoreSettings
 
 
 logger = structlog.get_logger()
-
-
-def configure_structlog() -> None:
-    structlog.configure(
-        processors=[
-            structlog.contextvars.merge_contextvars,
-            structlog.processors.add_log_level,
-            structlog.processors.StackInfoRenderer(),
-            structlog.dev.set_exc_info,
-            structlog.processors.TimeStamper(),
-            structlog.dev.ConsoleRenderer(),
-        ],
-        wrapper_class=structlog.make_filtering_bound_logger(logging.NOTSET),
-        context_class=dict,
-        logger_factory=structlog.PrintLoggerFactory(),
-        cache_logger_on_first_use=False,
-    )
-
-    # formatter = structlog.stdlib.ProcessorFormatter(
-    #     processors=[structlog.dev.ConsoleRenderer()],
-    # )
-
-    install(show_locals=True)
-
-
-@dc.dataclass(frozen=True)
-class Logging:
-
-    def init_app(self, app: Flask) -> None:
-        configure_structlog()
 
 
 @dc.dataclass(frozen=True)

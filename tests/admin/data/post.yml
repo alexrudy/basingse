@@ -1,0 +1,11 @@
+post:
+  - title: The second post
+    content: |
+      Some content which goes in the second post
+  - title: Balls and Strikes
+    content: |
+      This post is not about the supreme court.
+alternate:
+  - title: Five is way too many
+    content: |
+      This post is out of line.

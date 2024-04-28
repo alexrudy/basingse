@@ -49,7 +49,7 @@ def get_site_settings() -> SiteSettings:
 
     if settings is None:
         settings = default_settings(session)
-        logger.warning("No site settings found, created default settings")
+        logger.warning("No site settings found, created default settings", debug=True)
         make_transient(settings)
     return settings
 

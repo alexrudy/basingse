@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import dataclasses as dc
 import datetime as dt
+import functools
 import sqlite3
 import uuid
+from collections.abc import Iterator
 from typing import ClassVar
 
 import structlog
@@ -112,26 +114,26 @@ class SQLAlchemy:
 
         engine = create_engine(app.config["SQLALCHEMY_DATABASE_URI"])
 
+        def engine_health_check(engine: Engine) -> None:
+            with engine.connect() as conn:
+                conn.scalar(text("SELECT 1"))
+
+        def session_factory(cls: type[Session]) -> Iterator[Session]:
+            with cls(bind=svcs.get(Engine)) as session:
+                yield session
+
         svcs.register_factory(
             app,
             Engine,
             lambda: engine,
             enter=False,
-            ping=lambda engine: engine.execute(text("SELECT 1")).scalar_one(),
+            ping=engine_health_check,
             on_registry_close=engine.dispose,
         )
 
-        svcs.register_factory(
-            app,
-            Session,
-            lambda: Session(bind=svcs.get(Engine)),
-        )
+        svcs.register_factory(app, Session, functools.partial(session_factory, Session))
 
-        svcs.register_factory(
-            app,
-            BaseSession,
-            lambda: Session(bind=svcs.get(Engine)),
-        )
+        svcs.register_factory(app, BaseSession, functools.partial(session_factory, Session))
 
         app.cli.add_command(group)
         alembic.init_app(app)

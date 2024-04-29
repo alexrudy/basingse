@@ -11,13 +11,8 @@ def rewrite_url(request: Request, **kwargs: str) -> str:
 
 
 def rewrite_endpoint(request: Request, **kwargs: str) -> str:
-    if request.view_args:
-        args = dict(**request.view_args)
-    else:
-        args = dict()
-    args.update(kwargs)
-    assert request.endpoint, "Expected an endpoint to rewrite."
-    return url_for(request.endpoint, **args)
+    assert request.endpoint is not None, "Request has no endpoint."
+    return rewrite_update(request, request.endpoint, **kwargs)
 
 
 def rewrite_update(request: Request, endpoint: str, **kwargs: str) -> str:

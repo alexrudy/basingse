@@ -45,7 +45,7 @@ class Ok(Response):
     status: int = 200
 
 
-def assertrepr_compare(config: Any, op: str, left: Any, right: Any) -> list[str] | None:
+def assertrepr_compare(config: Any, op: str, left: Any, right: Any) -> list[str] | None:  # pragma: nocover
     expected = None
     assertee = None
     if isinstance(left, Response) and isinstance(right, TestResponse):

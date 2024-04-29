@@ -41,7 +41,25 @@ def home() -> ResponseReturnValue:
     return render_template("page.html", page=homepage)
 
 
+def health() -> ResponseReturnValue:
+    ok: list[str] = []
+    failing: list[dict[str, str]] = []
+    code = 200
+
+    for svc in svcs.get_pings():
+        try:
+            svc.ping()
+            ok.append(svc.name)
+        except Exception as e:
+            logger.debug("Healthcheck failed", service=svc.name, error=e)
+            failing.append({svc.name: repr(e)})
+            code = 500
+
+    return {"ok": ok, "failing": failing}, code
+
+
 @dc.dataclass(frozen=True)
 class CoreSettings:
     def init_app(self, app: Flask) -> None:
         app.add_url_rule("/", "home", home)
+        app.add_url_rule("/healthcheck", "health", health)

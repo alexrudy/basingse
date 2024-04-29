@@ -24,6 +24,7 @@ from basingse.assets import AssetCollection
 from basingse.auth.testing import LoginClient
 from basingse.models import Model
 from basingse.settings import BaSingSe
+from basingse.testing.responses import assertrepr_compare as responses_assertrepr_compare
 
 
 logger = structlog.get_logger()
@@ -31,6 +32,10 @@ logger = structlog.get_logger()
 
 def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "flask: mark test as flask utility")
+
+
+def pytest_assertrepr_compare(config: Any, op: str, left: Any, right: Any) -> list[str] | None:
+    return responses_assertrepr_compare(config, op, left, right)
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -64,12 +69,16 @@ def setup_app_logging(app: Flask) -> None:
 
 
 @pytest.fixture(scope="function")
-def app() -> Iterator[Flask]:
+def app(tmp_path: Path) -> Iterator[Flask]:
     import glob
     from werkzeug.utils import cached_property
     from jinja2.loaders import BaseLoader
 
     class TestingFlask(Flask):
+
+        def __repr__(self) -> str:
+            return f"<TestingFlask {self.import_name} {id(self)}>"
+
         @cached_property
         def jinja_loader(self) -> BaseLoader | None:
             """Override the jinja loader to look through all test folders"""
@@ -84,7 +93,7 @@ def app() -> Iterator[Flask]:
 
     app = TestingFlask(__name__)
     app.test_client_class = LoginClient
-    configure_app(app, config={"ENV": "test", "ASSETS_FOLDER": None})
+    configure_app(app, config={"ENV": "test", "ASSETS_FOLDER": None, "ATTACHMENTS_CACHE_DIRECTORY": str(tmp_path)})
     bss = BaSingSe(logging=None)
     bss.init_app(app)
     assert bss.assets, "Assets should be initialized"
@@ -113,12 +122,13 @@ def client(app: Flask) -> Iterator[LoginClient]:
 
 
 _LOG_RECORD_KEYS = set(logging.LogRecord("name", 0, "pathname", 0, "msg", (), None).__dict__.keys()) - {"name"}
+_LOG_METHOD_ARGS = {"args", "exc_info", "extra", "stack_info"}
 
 
 def render_to_log_kwargs(logger: logging.Logger, name: str, event_dict: EventDict) -> EventDict:
     msg = event_dict.pop("event")
     msg = f"{msg!s} " + " ".join(
-        f"{k}={event_dict.pop(k)!r}" for k in list(event_dict.keys()) if k not in _LOG_RECORD_KEYS
+        f"{k}={event_dict.pop(k)!r}" for k in list(event_dict.keys()) if k not in _LOG_METHOD_ARGS
     )
 
     return {"msg": msg, **event_dict}

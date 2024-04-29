@@ -14,8 +14,13 @@ from flask import send_file
 from flask import send_from_directory
 from flask.typing import ResponseReturnValue
 
+from . import svcs
+
 
 logger = structlog.get_logger()
+
+_ASSETS_EXTENSION_KEY = "basingse.assets"
+_ASSETS_BUST_CACHE_KEY = "ASSETS_BUST_CACHE"
 
 
 @dc.dataclass
@@ -24,9 +29,11 @@ class AssetCollection:
     manifest: Path
     directory: Path
     assets: dict[str, str] = dc.field(init=False)
+    targets: set[str] = dc.field(init=False)
 
     def __post_init__(self) -> None:
         self.assets = self._get_assets()
+        self.targets = {v for v in self.assets.values()}
 
     def _get_assets(self) -> dict[str, str]:
         return json.loads(self.read_text(str(self.manifest)))
@@ -40,12 +47,19 @@ class AssetCollection:
 
     def reload(self) -> None:
         self.assets = self._get_assets()
+        self.targets = {v for v in self.assets.values()}
 
     def __contains__(self, filename: str) -> bool:
-        return filename in self.assets
+        return filename in self.assets or filename in self.targets
+
+    def __len__(self) -> int:
+        return len(self.assets)
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.assets)
 
     def url(self, filename: str) -> str:
-        if current_app.config["DEBUG"]:
+        if not current_app.config[_ASSETS_BUST_CACHE_KEY]:
             return filename
         return self.assets[filename]
 
@@ -55,16 +69,16 @@ class AssetCollection:
                 yield filename
 
     def serve_asset(self, filename: str) -> ResponseReturnValue:
-        if not current_app.config["DEBUG"]:
+        if current_app.config[_ASSETS_BUST_CACHE_KEY]:
             max_age = current_app.get_send_file_max_age(filename)
         else:
             max_age = None
 
-        if current_app.config["DEBUG"] and filename in self.assets:
+        if not current_app.config[_ASSETS_BUST_CACHE_KEY] and filename in self.assets:
             filename = self.assets[filename]
 
-        conditional = not current_app.config["DEBUG"]
-        etag = not current_app.config["DEBUG"]
+        conditional = current_app.config[_ASSETS_BUST_CACHE_KEY]
+        etag = current_app.config[_ASSETS_BUST_CACHE_KEY]
         if isinstance(self.location, Path):
             return send_from_directory(
                 self.location / self.directory, filename, max_age=max_age, conditional=conditional, etag=etag
@@ -77,7 +91,6 @@ class AssetCollection:
 @dc.dataclass()
 class Assets:
 
-    folder: str | None = None
     module: str | None = None
     collection: list[AssetCollection] = dc.field(default_factory=list)
     blueprint: Blueprint | None = dc.field(
@@ -88,31 +101,35 @@ class Assets:
         init=True,
     )
 
+    _blueprint_has_endpoint: bool = dc.field(default=False, init=False, repr=False)
+
     def __post_init__(self, app: Flask | None = None) -> None:
+        if self.blueprint is not None and not self._blueprint_has_endpoint:
+            self.blueprint.add_url_rule("/assets/<path:filename>", "assets", self.serve_asset)
+            self._blueprint_has_endpoint = True
         if app is not None:
             self.init_app(app)
 
     def init_app(self, app: Flask) -> None:
-        folder = self.folder or app.config.get("ASSETS_FOLDER", None)
         module = self.module or app.config.get("ASSETS_MODULE", "basingse")
+        app.config.setdefault("ASSETS_BUST_CACHE", not app.config["DEBUG"])
+        app.config.setdefault("ASSETS_AUTORELOAD", app.config["DEBUG"])
 
         # Always include local assets
         self.collection.append(AssetCollection(module, Path("manifest.json"), Path("assets")))
 
-        if folder:
-            self.collection.append(AssetCollection(Path(app.root_path), Path("manifest.json"), Path(folder)))
-
         if self.blueprint is not None:
-            if not self.blueprint._got_registered_once:
-                self.blueprint.add_url_rule("/assets/<path:filename>", "assets", self.serve_asset)
             app.register_blueprint(self.blueprint)
-            assert any(app.url_map.iter_rules(endpoint=f"{self.blueprint.name}.assets"))
+            assert any(app.url_map.iter_rules(endpoint=f"{self.blueprint.name}.assets")), "No assets endpoint found"
         else:
             app.add_url_rule("/assets/<path:filename>", "assets", self.serve_asset)
+            assert any(app.url_map.iter_rules(endpoint="assets")), "No assets endpoint found"
 
-        if app.config.get("DEBUG"):
-            for collection in self.collection:
-                app.before_request(collection.reload)
+        if app.config.get("ASSETS_AUTORELOAD", False):
+            app.before_request(self.reload)
+
+        app.extensions[_ASSETS_EXTENSION_KEY] = self
+        svcs.register_factory(app, Assets, lambda: self)
 
         app.context_processor(self.context_processor)
 
@@ -130,7 +147,7 @@ class Assets:
             yield from collection.iter_assets(extension)
 
     def url(self, filename: str) -> str:
-        if current_app.config["DEBUG"]:
+        if not current_app.config[_ASSETS_BUST_CACHE_KEY]:
             return filename
         for collection in self.collection:
             if filename in collection:
@@ -140,8 +157,15 @@ class Assets:
     def serve_asset(self, filename: str) -> ResponseReturnValue:
         for collection in self.collection:
             if filename in collection:
+                logger.info("Serving asset", filename=filename, debug=True)
                 return collection.serve_asset(filename)
+
+        logger.warning("Asset not found", filename=filename, debug=True)
         return "Not Found", 404
+
+    def reload(self) -> None:
+        for collection in self.collection:
+            collection.reload()
 
 
 def check_dist() -> None:

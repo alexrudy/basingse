@@ -1,3 +1,4 @@
+import copy
 import dataclasses as dc
 from typing import Any
 
@@ -51,7 +52,7 @@ def context() -> dict[str, Any]:
 @dc.dataclass
 class BaSingSe:
 
-    assets: Assets | None = dc.field(default_factory=lambda: Assets(blueprint=core))
+    assets: Assets | None = dc.field(default_factory=lambda: Assets(blueprint=copy.deepcopy(core)))
     auth: Authentication | None = Authentication()
     attachments: Attachments | None = Attachments(registry=Model.registry)
     customize: CustomizeSettings | None = CustomizeSettings()
@@ -78,7 +79,8 @@ class BaSingSe:
 
             if dc.is_dataclass(attr):
                 cfg = config.get(field.name, {})
-                attr = dc.replace(attr, **cfg)
+                if any(cfg):
+                    attr = dc.replace(attr, **cfg)
 
             if hasattr(attr, "init_app"):
                 if self.initailized.get(field.name, False):

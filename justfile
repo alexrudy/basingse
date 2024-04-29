@@ -28,7 +28,6 @@ test-all:
 
 # run lints
 lint:
-    flake8
     pre-commit run --all-files
 
 # run mypy

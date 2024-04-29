@@ -3,6 +3,7 @@ from typing import Generic
 from typing import overload
 from typing import TypeVar
 
+
 T = TypeVar("T")
 F = Callable[[], T]
 

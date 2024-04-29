@@ -33,7 +33,7 @@ distlib==0.3.8
     # via virtualenv
 docutils==0.21.2
     # via readme-renderer
-filelock==3.13.4
+filelock==3.14.0
     # via
     #   tox
     #   virtualenv
@@ -88,7 +88,7 @@ pyflakes==3.2.0
     # via flake8
 pyproject-api==1.6.1
     # via tox
-pyproject-hooks==1.0.0
+pyproject-hooks==1.1.0
     # via
     #   build
     #   pip-tools
@@ -114,7 +114,7 @@ urllib3==2.2.1
     # via
     #   requests
     #   twine
-virtualenv==20.26.0
+virtualenv==20.26.1
     # via
     #   pre-commit
     #   tox

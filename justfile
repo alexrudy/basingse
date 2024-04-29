@@ -20,11 +20,11 @@ sync: prepare
 
 # run tests
 test:
-    pytest
+    pytest -q -n 2 --cov-report=html
 
 # run all tests
 test-all:
-    tox
+    tox -p auto
 
 # run lints
 lint:

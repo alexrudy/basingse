@@ -36,22 +36,30 @@ class LogoSize(enum.Enum):
 class Logo(Model):
     """Represents the options for a site's logo"""
 
-    small_id: Mapped[UUID] = mapped_column(Uuid(), nullable=True)
+    small_id: Mapped[UUID] = mapped_column(
+        Uuid(), ForeignKey("attachments.attachment.id", ondelete="SET NULL"), nullable=True
+    )
     small = relationship(
         "Attachment", uselist=False, foreign_keys=[small_id], primaryjoin=Attachment.id == small_id, lazy="joined"
     )
 
-    large_id: Mapped[UUID] = mapped_column(Uuid(), nullable=True)
+    large_id: Mapped[UUID] = mapped_column(
+        Uuid(), ForeignKey("attachments.attachment.id", ondelete="SET NULL"), nullable=True
+    )
     large = relationship(
         "Attachment", uselist=False, foreign_keys=[large_id], primaryjoin=Attachment.id == large_id, lazy="joined"
     )
 
-    text_id: Mapped[UUID] = mapped_column(Uuid(), nullable=True)
+    text_id: Mapped[UUID] = mapped_column(
+        Uuid(), ForeignKey("attachments.attachment.id", ondelete="SET NULL"), nullable=True
+    )
     text = relationship(
         "Attachment", uselist=False, foreign_keys=[text_id], primaryjoin=Attachment.id == text_id, lazy="joined"
     )
 
-    favicon_id: Mapped[UUID] = mapped_column(Uuid(), nullable=True)
+    favicon_id: Mapped[UUID] = mapped_column(
+        Uuid(), ForeignKey("attachments.attachment.id", ondelete="SET NULL"), nullable=True
+    )
     favicon = relationship(
         "Attachment", uselist=False, foreign_keys=[favicon_id], primaryjoin=Attachment.id == favicon_id, lazy="joined"
     )

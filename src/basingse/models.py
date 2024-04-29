@@ -6,6 +6,7 @@ import functools
 import sqlite3
 import uuid
 from collections.abc import Iterator
+from typing import Any
 from typing import ClassVar
 
 import structlog
@@ -106,8 +107,36 @@ def init() -> None:
     Model.metadata.create_all(engine)
 
 
+@dc.dataclass
+class Database:
+    @property
+    def engine(self) -> Engine:
+        return svcs.get(Engine)
+
+    @property
+    def session(self) -> Session:
+        return svcs.get(Session)
+
+    def apply_driver_hacks(self, app: Flask, uri: Any, options: dict[str, str]) -> tuple[Any, dict[str, str]]:
+        return uri, options
+
+
 @dc.dataclass(frozen=True)
 class SQLAlchemy:
+
+    db: Database = dc.field(default_factory=Database)
+
+    @property
+    def engine(self) -> Engine:
+        return svcs.get(Engine)
+
+    @property
+    def session(self) -> Session:
+        return svcs.get(Session)
+
+    @property
+    def metadata(self) -> MetaData:
+        return Base.metadata
 
     def init_app(self, app: Flask) -> None:
         """Initialize just the services component"""
@@ -136,4 +165,7 @@ class SQLAlchemy:
         svcs.register_factory(app, BaseSession, functools.partial(session_factory, Session))
 
         app.cli.add_command(group)
+
+        # We fake our way through as if we were the default SQLAlchemy extension
+        app.extensions["sqlalchemy"] = self
         alembic.init_app(app)

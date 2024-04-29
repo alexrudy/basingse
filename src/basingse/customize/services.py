@@ -14,6 +14,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import make_transient
 from sqlalchemy.orm import Session
 
+from .models import Logo
 from .models import SiteSettings
 from .models import SocialLink
 from basingse import svcs
@@ -47,9 +48,12 @@ def get_site_settings() -> SiteSettings:
             select(SiteSettings).where(SiteSettings.active).limit(1)
         ).scalar_one_or_none()
 
-    if settings is None:
-        settings = default_settings(session)
-        logger.warning("No site settings found, created default settings", debug=True)
+        if settings is None:
+            settings = default_settings(session)
+            logger.warning("No site settings found, created default settings", debug=True)
+            session.commit()
+        else:
+            settings.refresh_links()
         make_transient(settings)
     return settings
 
@@ -68,7 +72,11 @@ def get_social_links() -> Iterable[SocialLink]:
 
 
 @event.listens_for(SiteSettings, "after_update")
+@event.listens_for(SiteSettings, "after_insert")
+@event.listens_for(Logo, "after_update")
+@event.listens_for(Logo, "after_insert")
 def _clear_site_settings(*args: object) -> None:
+    logger.info("Clearing site settings cache")
     get_site_settings.clear()
 
 
@@ -82,23 +90,21 @@ def _clear_social_links(*args: object) -> None:
 def default_settings(session: Session) -> SiteSettings:
     """Create a default settings object"""
 
-    with session.begin():
+    homepage = session.scalar(select(Page).where(Page.slug == "home"))
+    if homepage is None:
+        contents = json.dumps(default_homepage())
+        homepage = Page(slug="home", title="Home", contents=contents)
+        session.add(homepage)
 
-        homepage = session.scalar(select(Page).where(Page.slug == "home"))
-        if homepage is None:
-            contents = json.dumps(default_homepage())
-            homepage = Page(slug="home", title="Home", contents=contents)
-            session.add(homepage)
+    default_settings = SiteSettings(active=True, title="Website", homepage=homepage)
 
-        default_settings = SiteSettings(active=True, title="Website", homepage=homepage)
-
-        resource = importlib.resources.files("basingse") / "static/img/logo/default-logo.png"
-        with importlib.resources.as_file(resource) as path:
-            if os.path.isfile(path):
-                logo = Attachment.from_file(path)
-                session.add(logo)
-                default_settings.logo.large = logo
-        session.add(default_settings)
+    resource = importlib.resources.files("basingse") / "static/img/logo/default-logo.png"
+    with importlib.resources.as_file(resource) as path:
+        if os.path.isfile(path):
+            logo = Attachment.from_file(path)
+            session.add(logo)
+            default_settings.logo.large = logo
+    session.add(default_settings)
 
     return default_settings
 

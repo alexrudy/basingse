@@ -1,8 +1,11 @@
 [coverage:run]
 branch = True
+parallel = True
 source =
     src/basingse
     tests/
+disable_warnings =
+    module-not-measured
 
 [coverage:paths]
 source =

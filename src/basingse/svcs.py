@@ -49,6 +49,20 @@ def register_factory(
     )
 
 
+def register_value(
+    app: Flask,
+    svc_type: type,
+    value: object,
+    *,
+    enter: bool = False,
+    ping: Callable | None = None,
+    on_registry_close: Callable | Awaitable | None = None,
+) -> None:
+    app.extensions[_REGISTRY_KEY].register_value(
+        svc_type, value, enter=enter, ping=ping, on_registry_close=on_registry_close
+    )
+
+
 def teardown(exc: BaseException | None) -> None:
     """
     To be used with :meth:`flask.Flask.teardown_appcontext` that requires to

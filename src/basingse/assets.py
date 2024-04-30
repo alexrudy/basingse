@@ -129,7 +129,7 @@ class Assets:
             app.before_request(self.reload)
 
         app.extensions[_ASSETS_EXTENSION_KEY] = self
-        svcs.register_factory(app, Assets, lambda: self)
+        svcs.register_value(app, Assets, self)
 
         app.context_processor(self.context_processor)
 

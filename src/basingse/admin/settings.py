@@ -13,6 +13,6 @@ class AdminSettings:
     blueprint: BlueprintOptions = BlueprintOptions()
 
     def init_app(self, app: Flask) -> None:
-        svcs.register_factory(app, Portal, lambda: portal)
+        svcs.register_value(app, Portal, portal)
 
         app.register_blueprint(portal, **dc.asdict(self.blueprint))

@@ -151,10 +151,10 @@ class SQLAlchemy:
             with cls(bind=svcs.get(Engine)) as session:
                 yield session
 
-        svcs.register_factory(
+        svcs.register_value(
             app,
             Engine,
-            lambda: engine,
+            engine,
             enter=False,
             ping=engine_health_check,
             on_registry_close=engine.dispose,

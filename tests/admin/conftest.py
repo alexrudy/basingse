@@ -61,7 +61,7 @@ class FakePostTable(Table):
 def portal(app: Flask) -> Portal:
     portal = Portal("test_admin", __name__, url_prefix="/tests/admin/", template_folder="templates")
 
-    svcs.register_factory(app, Portal, lambda: portal)
+    svcs.register_value(app, Portal, portal)
     return portal
 
 

@@ -37,6 +37,17 @@ def favicon(app: Flask) -> None:
         logo_fixture(LogoSize.FAVICON)
 
 
+@pytest.fixture
+def no_logo(app: Flask) -> None:
+    with app.app_context():
+        settings = get_site_settings()
+        session = svcs.get(Session)
+        settings = session.get(SiteSettings, settings.id)
+        assert settings is not None, "No site settings found"
+        settings.logo.set_size(LogoSize.LARGE, None)
+        session.commit()
+
+
 def test_logo_invalid_size(client: FlaskClient) -> None:
     response = client.get("/brand/logo/invalid")
     assert response.status_code == 400
@@ -50,16 +61,8 @@ def test_logo_large(client: FlaskClient) -> None:
         assert response.content_type == "image/png"
 
 
-def test_logo_notfound(app: Flask, client: FlaskClient) -> None:
-
-    with app.app_context():
-        settings = get_site_settings()
-        session = svcs.get(Session)
-        settings = session.get(SiteSettings, settings.id)
-        assert settings is not None, "No site settings found"
-        settings.logo.set_size(LogoSize.LARGE, None)
-        session.commit()
-
+@pytest.mark.usefixtures("no_logo")
+def test_logo_notfound(client: FlaskClient) -> None:
     response = client.get("/brand/logo/large")
     assert response.status_code == 404
 

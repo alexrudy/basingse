@@ -35,7 +35,9 @@ def home() -> ResponseReturnValue:
     if settings.homepage_id is None:
         no_homepage(settings)
 
-    if (homepage := session.get(Page, settings.homepage_id)) is None:
+    # coverage is not needed here because the homepage_id is a foreign key, so this should
+    # never happen
+    if (homepage := session.get(Page, settings.homepage_id)) is None:  # pragma: nocover
         no_homepage(settings)
 
     return render_template("page.html", page=homepage)

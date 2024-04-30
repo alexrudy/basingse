@@ -1,4 +1,5 @@
 import datetime as dt
+import io
 from pathlib import Path
 from uuid import UUID
 
@@ -8,6 +9,7 @@ from bootlace.table import Column
 from bootlace.table import Table
 from flask import Flask
 from flask_attachments import Attachment
+from flask_attachments import CompressionAlgorithm
 from flask_wtf.form import FlaskForm as Form
 from marshmallow import fields
 from marshmallow import Schema as BaseSchema
@@ -25,6 +27,8 @@ from basingse.admin.extension import Portal
 from basingse.attachments.admin import AttachmentAdmin
 from basingse.attachments.forms import AttachmentField
 from basingse.models import Model
+from basingse.testing.responses import Ok
+from basingse.testing.responses import Redirect
 
 logger = structlog.get_logger()
 
@@ -98,4 +102,91 @@ def test_delete_attachment(app: Flask, profile: FakeProfile) -> None:
 
     with app.test_client() as client:
         response = client.get(f"/tests/admin/profiles/{profile.id}/delete-attachment/{profile.attachment_id}/")
-        assert response.status_code == 200
+        assert response == Ok()
+
+
+class TestAttachmentAdmin:
+
+    @pytest.fixture
+    def attachment(self, app: Flask) -> Attachment:
+        with app.app_context():
+            session = svcs.get(Session)
+            attachment = Attachment.from_file(Path("tests/data/attachment.txt"))
+            session.add(attachment)
+            session.commit()
+            session.refresh(attachment)
+            make_transient(attachment)
+        return attachment
+
+    def test_new_attachment(self, app: Flask) -> None:
+        with app.test_client() as client:
+            response = client.get("/admin/attachment/new/")
+            assert response == Ok()
+
+    def test_list_redirect(self, app: Flask) -> None:
+        with app.test_client() as client:
+            response = client.get("/admin/attachment/")
+            assert response == Redirect("/admin/attachment/list/")
+
+    def test_list_attachments(self, app: Flask) -> None:
+        with app.test_client() as client:
+            response = client.get("/admin/attachment/list/")
+            assert response == Ok()
+
+    def test_create_attachment(self, app: Flask) -> None:
+        with app.test_client() as client:
+            response = client.post(
+                "/admin/attachment/new/",
+                data={
+                    "filename": "example.txt",
+                    "content_type": "text/plain",
+                    "compression": "NONE",
+                    "digest_algorithm": "sha256",
+                    "attachment": (io.BytesIO(b"Hello, World!"), "example.txt"),
+                },
+            )
+            assert response == Redirect("/admin/attachment/list/")
+
+    def test_create_no_file(self, app: Flask) -> None:
+        with app.test_client() as client:
+            response = client.post("/admin/attachment/new/", data={"filename": "example.txt"})
+            assert response == Ok()
+
+    def test_edit_attachment_invalid(self, app: Flask, attachment: Attachment) -> None:
+        with app.test_client() as client:
+            response = client.post(
+                f"/admin/attachment/{attachment.id}/edit/", data={"content_type": "some/invalid/mime"}
+            )
+            assert response == Ok()
+
+    def test_edit_attachment(self, app: Flask, attachment: Attachment) -> None:
+        with app.test_client() as client:
+            response = client.post(f"/admin/attachment/{attachment.id}/edit/", data={"filename": "example.txt"})
+            assert response == Redirect("/admin/attachment/list/")
+
+        with app.app_context():
+            session = svcs.get(Session)
+            altered = session.get(Attachment, attachment.id)
+            assert altered is not None
+            assert altered.filename == "example.txt"
+
+    def test_edit_attachment_get(self, app: Flask, attachment: Attachment) -> None:
+        with app.test_client() as client:
+            response = client.get(f"/admin/attachment/{attachment.id}/edit/")
+            assert response == Ok()
+
+    def test_edit_attachment_immutable_fields(self, app: Flask, attachment: Attachment) -> None:
+        with app.test_client() as client:
+            response = client.post(
+                f"/admin/attachment/{attachment.id}/edit/",
+                data={"filename": "example.txt", "compression": "GZIP", "digest_algorithm": "sha1", "digest": "1234"},
+            )
+            assert response == Ok()
+
+        with app.app_context():
+            session = svcs.get(Session)
+            altered = session.get(Attachment, attachment.id)
+            assert altered is not None
+            assert altered.filename != "example.txt"
+            assert altered.compression != CompressionAlgorithm.GZIP
+            assert altered.digest_algorithm != "sha1"

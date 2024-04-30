@@ -20,7 +20,7 @@ sync: prepare
 
 # run tests
 test:
-    pytest -q -n 2 --cov-report=html
+    pytest -q -n 4 --cov-report=html
 
 # run all tests
 test-all:

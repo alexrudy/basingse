@@ -91,6 +91,17 @@ class Logo(Model):
 
         return None
 
+    def set_size(self, size: LogoSize, attachment: Attachment) -> None:
+        """Set the attachment for a given size"""
+        if size == LogoSize.SMALL:
+            self.small = attachment
+        elif size == LogoSize.LARGE:
+            self.large = attachment
+        elif size == LogoSize.TEXT:
+            self.text = attachment
+        elif size == LogoSize.FAVICON:
+            self.favicon = attachment
+
     def link(self, size: LogoSize) -> str | None:
         """Get the best-fit logo link for a given size"""
 

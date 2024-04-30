@@ -30,7 +30,7 @@ def logo_endpoint(size: LogoSize) -> IntoResponse:
 def logo(size: str) -> IntoResponse:
     try:
         sz = LogoSize[size.upper()]
-    except ValueError:
+    except KeyError:
         abort(400, f"Invalid logo size: {size}")
     else:
         return logo_endpoint(sz)

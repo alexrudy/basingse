@@ -40,9 +40,10 @@ def get_session() -> Session:
 
 
 @cached
-def get_site_settings() -> SiteSettings:
+def get_site_settings(session: Session | None = None) -> SiteSettings:
     """Get the site settings"""
-    session = get_session()
+    if session is None:
+        session = get_session()
     with session.begin():
         settings: SiteSettings | None = session.execute(
             select(SiteSettings).where(SiteSettings.active).limit(1)

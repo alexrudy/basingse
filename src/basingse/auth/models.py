@@ -4,7 +4,7 @@ from typing import Any
 
 import pytz
 import structlog
-import wtforms
+import wtforms.fields
 from bootlace.table import Heading
 from bootlace.table.columns import CheckColumn
 from bootlace.table.columns import Column
@@ -55,8 +55,8 @@ class User(Model):
             nullable=False,
             unique=True,
             doc="User's email address",
-            schema=SchemaInfo(),
-            form=fields.Email(validate=[EmailValidator(granular_message=True)]),
+            schema=fields.Email(),
+            form=wtforms.fields.EmailField(validate=[EmailValidator(granular_message=True)]),
             listview=EditColumn("Email", attribute="email"),
         )
     )

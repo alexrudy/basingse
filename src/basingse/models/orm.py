@@ -25,6 +25,8 @@ def column(
     index: bool | None = None,
     unique: bool | None = None,
     primary_key: bool = False,
+    server_default: Any = None,
+    onupdate: Any | Callable[[], Any] | None = None,
     schema: SchemaInfo | fields.Field | None = None,
     form: FormInfo | wtforms.Field | None = None,
     listview: Column | None = None,
@@ -46,6 +48,8 @@ def column(
         index=index,
         unique=unique,
         primary_key=primary_key,
+        server_default=server_default,
+        onupdate=onupdate,
         doc=doc,
         info=info,
     )
@@ -92,7 +96,7 @@ def relationship(
         backref=backref,
         cascade=cascade,
         viewonly=viewonly,
-        lazy=lazy,  # type: ignore[arg-type]
+        lazy=lazy,
         doc=doc,
         foreign_keys=foreign_keys,
         remote_side=remote_side,

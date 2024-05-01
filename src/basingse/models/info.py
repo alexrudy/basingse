@@ -61,6 +61,8 @@ class SchemaInfo(Generic[T]):
 
         fcls = self._get_field_for_type(column.type)
 
+        assert issubclass(fcls, fields.Field), f"{fcls} is not a subclass of {fields.Field}"
+
         field = fcls(
             load_default=self.load_default,
             dump_default=self.dump_default,
@@ -109,6 +111,14 @@ class FormInfo(Generic[T]):
         for key in list(key for key in kwargs.keys() if kwargs[key] is None):
             del kwargs[key]
 
+        if not column.nullable:
+            if not any(
+                isinstance(validator, wtforms.validators.DataRequired) for validator in kwargs.get("validators", [])
+            ):
+                kwargs.setdefault("validators", []).append(wtforms.validators.DataRequired())
+
+        assert issubclass(fcls, wtforms.Field), f"{fcls} is not a subclass of {wtforms.Field}"
+
         field = fcls(
             **kwargs,
         )
@@ -126,9 +136,9 @@ class FormInfo(Generic[T]):
         sa.Integer: wtforms.IntegerField,
         sa.Date: wtforms.DateField,
         sa.DateTime: wtforms.DateTimeField,
-        sa.Text: fields.String,
-        sa.String: fields.String,
-        sa.Boolean: fields.Boolean,
+        sa.Text: wtforms.TextAreaField,
+        sa.String: wtforms.StringField,
+        sa.Boolean: wtforms.BooleanField,
     }
 
 

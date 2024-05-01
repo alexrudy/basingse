@@ -29,7 +29,6 @@ from sqlalchemy.engine.interfaces import DBAPIConnection
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import declared_attr
 from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import Session as BaseSession
 from sqlalchemy.pool import ConnectionPoolEntry
 from wtforms import Form
@@ -78,8 +77,12 @@ class Model(Base):
     id: Mapped[uuid.UUID] = orm.column(
         Uuid(), primary_key=True, default=uuid.uuid4, schema=info.SchemaInfo(dump_only=True)
     )
-    created: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), onupdate=func.now(), default=func.now())
+    created: Mapped[dt.datetime] = orm.column(
+        DateTime(timezone=True), server_default=func.now(), schema=info.SchemaInfo(dump_only=True)
+    )
+    updated: Mapped[dt.datetime] = orm.column(
+        DateTime(timezone=True), onupdate=func.now(), default=func.now(), schema=info.SchemaInfo(dump_only=True)
+    )
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} id={self.id}>"

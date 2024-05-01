@@ -1,12 +1,8 @@
 from typing import Any
 
-from bootlace.forms.fields import SLUG_VALIDATOR
-from flask_wtf import FlaskForm as Form
 from markupsafe import Markup
 from wtforms import StringField
-from wtforms import SubmitField
 from wtforms.fields import Field
-from wtforms.validators import DataRequired
 from wtforms.widgets import html_params
 
 
@@ -23,12 +19,3 @@ class EditorField(StringField):
         self.render_kw = {"class": "editor-js"}
 
     widget = EditorWidget()
-
-
-class PageEditForm(Form):
-    title = StringField("Title", validators=[DataRequired()])
-    slug = StringField("Slug", validators=[DataRequired(), SLUG_VALIDATOR])
-
-    contents = EditorField("Content", validators=[DataRequired()])
-
-    submit = SubmitField("Save")

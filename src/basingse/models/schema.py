@@ -8,6 +8,7 @@ from typing import TypeVar
 import wtforms
 from bootlace.table import ColumnBase as Column
 from bootlace.table import Table
+from flask_wtf import FlaskForm
 from marshmallow import post_load
 from marshmallow import Schema as BaseSchema
 
@@ -90,4 +91,8 @@ def build_model_listview(model: "type[Model]") -> type[Table]:
 @functools.cache
 def build_model_form(model: "type[Model]") -> type[wtforms.Form]:
     fields: dict[str, wtforms.Field] = collect_attributes(model, "form", FormInfo, FormInfo.field)
-    return type(model.__name__ + "Form", (wtforms.Form,), fields)
+
+    if "submit" not in fields:
+        fields["submit"] = wtforms.SubmitField("Submit")
+
+    return type(model.__name__ + "Form", (FlaskForm,), fields)

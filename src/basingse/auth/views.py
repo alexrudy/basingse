@@ -159,7 +159,7 @@ def session_reset_token(id: uuid.UUID) -> Any:
 def me() -> Any:
     if request.accept_mimetypes.accept_html:
         return redirect(get_extension().profile, id=current_user.id)
-    schema = current_user.__schema__()
+    schema = current_user.__schema__()()
     return jsonify(schema.dump(current_user))
 
 

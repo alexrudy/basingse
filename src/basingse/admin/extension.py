@@ -248,6 +248,14 @@ class AdminView(View, Generic[M, F]):
     def __init_subclass__(cls, /, blueprint: Blueprint | None = None, namespace: str | None = None) -> None:
         super().__init_subclass__()
 
+        if (model := getattr(cls, "model", None)) is not None:
+            if getattr(cls, "schema", None) is None and hasattr(model, "__schema__"):
+                cls.schema = model.__schema__()
+            if getattr(cls, "table", None) is None and hasattr(model, "__listview__"):
+                cls.table = model.__listview__()
+            if getattr(cls, "form", None) is None and hasattr(model, "__form__"):
+                cls.form = model.__form__()
+
         if blueprint is not None:
             # indicates that we are in a concrete subclass.
             # otherwise we assume we are in an abstract subclass

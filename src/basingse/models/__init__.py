@@ -10,11 +10,13 @@ from typing import Any
 from typing import ClassVar
 
 import structlog
+from bootlace.table import Table as ListView
 from flask import abort
 from flask import flash
 from flask import Flask
 from flask.cli import AppGroup
 from flask_alembic import Alembic
+from marshmallow import Schema
 from sqlalchemy import create_engine
 from sqlalchemy import DateTime
 from sqlalchemy import event
@@ -30,7 +32,11 @@ from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import Session as BaseSession
 from sqlalchemy.pool import ConnectionPoolEntry
+from wtforms import Form
 
+from . import info
+from . import orm
+from . import schema
 from basingse import svcs
 
 alembic = Alembic()
@@ -69,12 +75,26 @@ class Base(DeclarativeBase):
 class Model(Base):
     __abstract__ = True
 
-    id: Mapped[uuid.UUID] = mapped_column(Uuid(), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = orm.column(
+        Uuid(), primary_key=True, default=uuid.uuid4, schema=info.SchemaInfo(dump_only=True)
+    )
     created: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), onupdate=func.now(), default=func.now())
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} id={self.id}>"
+
+    @classmethod
+    def __schema__(cls) -> type[Schema]:
+        return schema.build_model_schema(cls)
+
+    @classmethod
+    def __listview__(cls) -> type[ListView]:
+        return schema.build_model_listview(cls)
+
+    @classmethod
+    def __form__(cls) -> type[Form]:
+        return schema.build_model_form(cls)
 
 
 class Session(BaseSession):

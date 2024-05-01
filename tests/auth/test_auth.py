@@ -19,7 +19,6 @@ from sqlalchemy.orm import Session
 
 from basingse import svcs
 from basingse.auth.models import User
-from basingse.auth.models import UserSchema
 from basingse.auth.testing import LoginClient
 from basingse.auth.testing import Ok
 from basingse.auth.testing import Redirect
@@ -395,8 +394,6 @@ def test_user_schema() -> None:
         "email": "author@basingse.test",
     }
 
-    schema = UserSchema()
-
-    user = schema.load(data)
+    user = User.__schema__()().load(data)
     assert user.email == "author@basingse.test"
     assert not user.active

@@ -7,8 +7,6 @@ from typing import Generic
 from typing import TypeVar
 
 from marshmallow import fields
-from marshmallow import post_load
-from marshmallow import Schema as BaseSchema
 from marshmallow.exceptions import ValidationError
 
 E = TypeVar("E", bound=enum.Enum)
@@ -66,10 +64,3 @@ class EnumField(fields.Field, Generic[E]):
             return self.enum[value.upper()]
         except KeyError as error:
             raise ValidationError(f"Unknown {self.enum.__name__}: {value}") from error
-
-
-class Schema(BaseSchema):
-
-    @post_load
-    def make_instance(self, data: dict[str, Any], **kwargs: Any) -> Any:
-        return self.Meta.model(**data)  # type: ignore

@@ -4,59 +4,101 @@ from typing import Any
 
 import pytz
 import structlog
+import wtforms
+from bootlace.table import Heading
+from bootlace.table.columns import CheckColumn
+from bootlace.table.columns import Column
+from bootlace.table.columns import EditColumn
 from flask import current_app
 from flask import url_for
 from flask_login import AnonymousUserMixin
 from flask_login import login_user
 from flask_login import logout_user
 from marshmallow import fields
-from marshmallow import post_load
-from marshmallow import Schema
 from sqlalchemy import Boolean
 from sqlalchemy import DateTime
 from sqlalchemy import select
 from sqlalchemy import String
 from sqlalchemy.orm import deferred
 from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
-from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import validates
+from wtforms.validators import Email as EmailValidator
+from wtforms_sqlalchemy.fields import QueryCheckboxField
 
+from .forms import BSListWidget
+from .forms import get_query_roles
 from .permissions import Permission
 from .permissions import permissionable
 from .permissions import Role
 from basingse.models import Model
+from basingse.models.info import FormInfo
+from basingse.models.info import SchemaInfo
+from basingse.models.orm import column
+from basingse.models.orm import relationship
 
 __all__ = ["User"]
 
 logger = structlog.get_logger(__name__)
 
 
-class UserSchema(Schema):
-    id = fields.Str(dump_only=True)
-    email = fields.Str()
-    password = fields.Str(load_only=True)
-    active = fields.Bool(load_default=False)
-    roles = fields.Function(lambda obj: [role.name for role in obj.roles], dump_only=True)
-
-    @post_load
-    def make_user(self, data: dict[str, Any], **kwargs: Any) -> "User":
-        return User(**data)
+class RoleColumn(Column):
+    def cell(self, item: Any) -> Any:
+        return ", ".join(role.name for role in getattr(item, self.attribute))
 
 
 class User(Model):
 
-    __schema__ = UserSchema
-
-    email: Mapped[str] = deferred(mapped_column(String(), nullable=False, unique=True, doc="Email"))
-    password: Mapped[str | None] = mapped_column(String(), nullable=True, doc="Password")
-    active: Mapped[bool] = mapped_column(Boolean, default=False, doc="Is this user active?")
-    token: Mapped[str] = mapped_column(
-        String(), default=lambda: secrets.token_hex(32), nullable=False, index=True, unique=True
+    email: Mapped[str] = deferred(
+        column(
+            String(),
+            nullable=False,
+            unique=True,
+            doc="User's email address",
+            schema=SchemaInfo(),
+            form=fields.Email(validate=[EmailValidator(granular_message=True)]),
+            listview=EditColumn("Email", attribute="email"),
+        )
     )
-    last_login: Mapped[dt.datetime | None] = mapped_column(DateTime, default=None, nullable=True)
-    roles: Mapped[list[Role]] = relationship("Role", secondary="role_grants", back_populates="users", lazy="selectin")
+    password: Mapped[str | None] = column(
+        String(),
+        nullable=True,
+        doc="Password",
+        schema=SchemaInfo(load_only=True),
+        form=wtforms.PasswordField("Password", validators=[wtforms.validators.DataRequired()]),
+    )
+
+    active: Mapped[bool] = column(
+        Boolean(),
+        default=False,
+        doc="Is this user active?",
+        schema=SchemaInfo(load_default=False),
+        form=FormInfo(),
+        listview=CheckColumn(Heading("Active", icon="check"), "is_active"),
+    )
+    token: Mapped[str] = column(
+        String(),
+        default=lambda: secrets.token_hex(32),
+        nullable=False,
+        index=True,
+        unique=True,
+        schema=SchemaInfo(load_only=True),
+        form=None,
+    )
+    last_login: Mapped[dt.datetime | None] = column(
+        DateTime(), default=None, nullable=True, schema=SchemaInfo(dump_only=True), form=None
+    )
+    roles: Mapped[list[Role]] = relationship(
+        "Role",
+        secondary="role_grants",
+        back_populates="users",
+        lazy="selectin",
+        schema=fields.Function(lambda obj: [role.name for role in obj.roles], dump_only=True),
+        form=QueryCheckboxField(
+            "Roles", get_label="name", query_factory=get_query_roles, widget=BSListWidget(prefix_label=False)
+        ),
+        listview=RoleColumn("Roles"),
+    )
 
     def get_id(self) -> str:
         return self.token

@@ -26,12 +26,14 @@ from sqlalchemy import Uuid
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.associationproxy import AssociationProxy
 from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
-from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session
 
 from basingse import svcs
 from basingse.models import Model
+from basingse.models.info import FormInfo
+from basingse.models.info import SchemaInfo
+from basingse.models.orm import column
+from basingse.models.orm import relationship
 
 if TYPE_CHECKING:
     from .models import User
@@ -133,10 +135,12 @@ class PermissionGrant(Model):
         def __init__(self, **kwargs):  # type: ignore
             ...
 
-    role_id: Mapped[uuid.UUID] = mapped_column(Uuid(), ForeignKey("roles.id"), nullable=False, doc="Role ID")
+    role_id: Mapped[uuid.UUID] = column(Uuid(), ForeignKey("roles.id"), nullable=False, doc="Role ID")
     role: Mapped["Role"] = relationship("Role", back_populates="grants")
-    model: Mapped[str] = mapped_column(String(), nullable=False, doc="Model")
-    action: Mapped[Action] = mapped_column(Enum(Action), nullable=False, doc="Permission")
+    model: Mapped[str] = column(String(), nullable=False, doc="Model", schema=SchemaInfo(), form=FormInfo())
+    action: Mapped[Action] = column(
+        Enum(Action), nullable=False, doc="Permission", schema=SchemaInfo(), form=FormInfo()
+    )
 
     def __repr__(self) -> str:
         return f"<PermissionGrant {self.model}.{self.action.name.lower()}>"
@@ -157,8 +161,12 @@ class Role(Model):
 
         def __init__(self, *, name: str | None = None, administrator: bool | None = None) -> None: ...
 
-    name: Mapped[str] = mapped_column(String(), nullable=False, unique=True, doc="Role name")
-    administrator: Mapped[bool] = mapped_column(Boolean, default=False, doc="Is this an administrator grant?")
+    name: Mapped[str] = column(
+        String(), nullable=False, unique=True, doc="Role name", schema=SchemaInfo(), form=FormInfo()
+    )
+    administrator: Mapped[bool] = column(
+        Boolean(), default=False, doc="Is this an administrator grant?", schema=SchemaInfo(), form=FormInfo()
+    )
 
     grants: Mapped[set["PermissionGrant"]] = relationship(
         "PermissionGrant", back_populates="role", cascade="all, delete-orphan", lazy="selectin", collection_class=set
@@ -207,8 +215,8 @@ class RoleGrant(Model):
 
         def __init__(self, *, user_id: uuid.UUID, role_id: uuid.UUID) -> None: ...
 
-    user_id: Mapped[uuid.UUID] = mapped_column(Uuid(), ForeignKey("users.id"), nullable=False, doc="User ID")
-    role_id: Mapped[uuid.UUID] = mapped_column(Uuid(), ForeignKey("roles.id"), nullable=False, doc="Role ID")
+    user_id: Mapped[uuid.UUID] = column(Uuid(), ForeignKey("users.id"), nullable=False, doc="User ID")
+    role_id: Mapped[uuid.UUID] = column(Uuid(), ForeignKey("roles.id"), nullable=False, doc="Role ID")
 
     def __repr__(self) -> str:
         return f"<RoleGrant user={self.user_id} role={self.role_id}>"

@@ -97,7 +97,7 @@ class SchemaInfo(Generic[T]):
 
 
 @dc.dataclass
-class FormInfo(Generic[T]):
+class FormInfo:
 
     validators: list[Any] | None = None
     label: str | None = None

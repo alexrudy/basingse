@@ -21,6 +21,8 @@ from sqlalchemy import select
 from sqlalchemy import String
 from sqlalchemy.orm import deferred
 from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import mapped_column
+from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import validates
 from wtforms.validators import Email as EmailValidator
@@ -32,10 +34,7 @@ from .permissions import Permission
 from .permissions import permissionable
 from .permissions import Role
 from basingse.models import Model
-from basingse.models.info import FormInfo
-from basingse.models.info import SchemaInfo
-from basingse.models.orm import column
-from basingse.models.orm import relationship
+from basingse.models import orm
 
 __all__ = ["User"]
 
@@ -50,54 +49,61 @@ class RoleColumn(Column):
 class User(Model):
 
     email: Mapped[str] = deferred(
-        column(
+        mapped_column(
             String(),
             nullable=False,
             unique=True,
             doc="User's email address",
-            schema=fields.Email(),
-            form=wtforms.fields.EmailField(validate=[EmailValidator(granular_message=True)]),
-            listview=EditColumn("Email", attribute="email"),
+            info=orm.info(
+                schema=fields.Email(),
+                form=wtforms.fields.EmailField(validate=[EmailValidator(granular_message=True)]),
+                listview=EditColumn("Email", attribute="email"),
+            ),
         )
     )
-    password: Mapped[str | None] = column(
+    password: Mapped[str | None] = mapped_column(
         String(),
         nullable=True,
         doc="Password",
-        schema=SchemaInfo(load_only=True),
-        form=wtforms.PasswordField("Password", validators=[wtforms.validators.DataRequired()]),
+        info=orm.info(
+            schema=orm.SchemaInfo(load_only=True),
+            form=wtforms.PasswordField("Password", validators=[wtforms.validators.DataRequired()]),
+        ),
     )
 
-    active: Mapped[bool] = column(
+    active: Mapped[bool] = mapped_column(
         Boolean(),
         default=False,
         doc="Is this user active?",
-        schema=SchemaInfo(load_default=False),
-        form=FormInfo(),
-        listview=CheckColumn(Heading("Active", icon="check"), "is_active"),
+        info=orm.info(
+            schema=orm.SchemaInfo(load_default=False),
+            form=orm.auto(),
+            listview=CheckColumn(Heading("Active", icon="check"), "is_active"),
+        ),
     )
-    token: Mapped[str] = column(
+    token: Mapped[str] = mapped_column(
         String(),
         default=lambda: secrets.token_hex(32),
         nullable=False,
         index=True,
         unique=True,
-        schema=SchemaInfo(load_only=True),
-        form=None,
+        info=orm.info(schema=orm.SchemaInfo(load_only=True)),
     )
-    last_login: Mapped[dt.datetime | None] = column(
-        DateTime(), default=None, nullable=True, schema=SchemaInfo(dump_only=True), form=None
+    last_login: Mapped[dt.datetime | None] = mapped_column(
+        DateTime(), default=None, nullable=True, info=orm.info(schema=orm.SchemaInfo(dump_only=True))
     )
     roles: Mapped[list[Role]] = relationship(
         "Role",
         secondary="role_grants",
         back_populates="users",
         lazy="selectin",
-        schema=fields.Function(lambda obj: [role.name for role in obj.roles], dump_only=True),
-        form=QueryCheckboxField(
-            "Roles", get_label="name", query_factory=get_query_roles, widget=BSListWidget(prefix_label=False)
+        info=orm.info(
+            schema=fields.Function(lambda obj: [role.name for role in obj.roles], dump_only=True),
+            form=QueryCheckboxField(
+                "Roles", get_label="name", query_factory=get_query_roles, widget=BSListWidget(prefix_label=False)
+            ),
+            listview=RoleColumn("Roles"),
         ),
-        listview=RoleColumn("Roles"),
     )
 
     def get_id(self) -> str:

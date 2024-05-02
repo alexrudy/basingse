@@ -8,8 +8,8 @@ from sqlalchemy.orm import Session
 
 from .conftest import FakePost
 from basingse import svcs
-from basingse.admin.extension import import_all
-from basingse.admin.extension import Portal
+from basingse.admin.portal import import_all
+from basingse.admin.portal import Portal
 from basingse.testing.cli import Success
 
 

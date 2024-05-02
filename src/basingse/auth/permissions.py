@@ -261,20 +261,31 @@ def require_permission(
     def wrapper(func: RouteCallable) -> RouteCallable:
         @wraps(func)
         def decorated_view(*args: Any, **kwargs: Any) -> ResponseReturnValue:
-            if request.method in flask_login.config.EXEMPT_METHODS or current_app.config.get("LOGIN_DISABLED", False):
+            if check_permissions(permission):
                 return current_app.ensure_sync(func)(*args, **kwargs)
-            elif not current_user.is_authenticated:
-                return current_app.login_manager.unauthorized()  # type: ignore[attr-defined]
-
-            if current_user.can(permission):
-                return current_app.ensure_sync(func)(*args, **kwargs)
-
-            log.warning("Permission denied", user=current_user, permission=permission, debug=True)
             return current_app.login_manager.unauthorized()  # type: ignore[attr-defined]
 
         return decorated_view
 
     return wrapper
+
+
+def check_permissions(permission: Any, action: Any = None) -> bool:
+    """Check if the current user has a permission"""
+    if action is not None:
+        permission = Permission(permission, action)
+    elif not isinstance(permission, Permission):
+        permission = Permission(permission)
+
+    if request.method in flask_login.config.EXEMPT_METHODS or current_app.config.get("LOGIN_DISABLED", False):
+        return True
+    elif not current_user.is_authenticated:
+        return False
+    if current_user.can(permission):
+        return True
+
+    log.warning("Permission denied", user=current_user, permission=permission, debug=True)
+    return False
 
 
 def create_administrator(email: str, password: str) -> "User":

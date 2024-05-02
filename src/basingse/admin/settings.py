@@ -2,7 +2,7 @@ import dataclasses as dc
 
 from flask import Flask
 
-from .extension import Portal
+from .portal import Portal
 from .views import portal
 from basingse import svcs
 from basingse.utils.settings import BlueprintOptions

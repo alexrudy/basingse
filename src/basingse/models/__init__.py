@@ -16,7 +16,6 @@ from flask import flash
 from flask import Flask
 from flask.cli import AppGroup
 from flask_alembic import Alembic
-from marshmallow import Schema
 from sqlalchemy import create_engine
 from sqlalchemy import DateTime
 from sqlalchemy import event
@@ -103,7 +102,7 @@ class Model(Base):
         return f"<{self.__class__.__name__} id={self.id}>"
 
     @classmethod
-    def __schema__(cls) -> type[Schema]:
+    def __schema__(cls) -> type[schema.Schema]:
         return schema.build_model_schema(cls)
 
     @classmethod

@@ -25,7 +25,7 @@ from ..services import get_social_links
 from .forms import SettingsForm
 from basingse import svcs
 from basingse.admin.extension import AdminBlueprint
-from basingse.admin.extension import PortalMenuItem
+from basingse.admin.portal import PortalMenuItem
 from basingse.models import Session
 from basingse.utils.settings import BlueprintOptions
 

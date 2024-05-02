@@ -24,7 +24,7 @@ from wtforms import validators
 
 from basingse import svcs
 from basingse.admin.extension import AdminView
-from basingse.admin.extension import Portal
+from basingse.admin.portal import Portal
 from basingse.attachments.admin import AttachmentAdmin
 from basingse.attachments.forms import AttachmentField
 from basingse.models import Model

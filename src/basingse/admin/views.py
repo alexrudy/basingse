@@ -6,7 +6,7 @@ from flask_login import login_required
 from werkzeug.exceptions import HTTPException
 
 import basingse.markdown
-from .extension import Portal
+from .portal import Portal
 
 __all__ = ["portal", "portal"]
 

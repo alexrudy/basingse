@@ -4,7 +4,7 @@ from wtforms.fields import Field
 from wtforms.fields import StringField
 from wtforms.widgets import FileInput
 
-from basingse.admin.extension import get_form_encoding
+from basingse.admin.portal import get_form_encoding
 
 
 class PlainForm(Form):

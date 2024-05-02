@@ -17,7 +17,7 @@ from wtforms.validators import Length
 from basingse import svcs
 from basingse.admin.extension import action
 from basingse.admin.extension import AdminView
-from basingse.admin.extension import Portal
+from basingse.admin.portal import Portal
 from basingse.models import Model
 from basingse.models import orm
 

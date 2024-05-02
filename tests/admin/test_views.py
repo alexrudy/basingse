@@ -49,7 +49,7 @@ def client(app: Flask) -> Iterator[FlaskClient]:
         ("edit", Action("edit", "edit", "/<key>/edit/", methods=["GET", "POST", "PATCH", "PUT"])),
         ("preview", Action("preview", "view", "/<key>/preview/", methods=["GET"])),
         ("delete", Action("delete", "delete", "/<key>/delete/", methods=["GET", "DELETE"])),
-        ("list", Action("list", "view", "/list/", methods=["GET"])),
+        ("listview", Action("list", "view", "/list/", methods=["GET"])),
         ("new", Action("new", "edit", "/new/", methods=["GET", "POST", "PUT"])),
     ],
     ids=["edit", "preview", "delete", "list", "new"],

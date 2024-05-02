@@ -15,7 +15,7 @@ from wtforms import Form
 
 from .forms import AttachmentForm
 from basingse.admin.extension import AdminView
-from basingse.admin.extension import PortalMenuItem
+from basingse.admin.portal import PortalMenuItem
 from basingse.admin.views import portal
 from basingse.models.schema import Schema
 

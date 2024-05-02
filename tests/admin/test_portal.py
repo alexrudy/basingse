@@ -2,7 +2,7 @@ from bootlace.icon import Icon
 from bootlace.links import View
 from flask import Flask
 
-from basingse.admin.extension import PortalMenuItem
+from basingse.admin.portal import PortalMenuItem
 
 
 def test_portal_menu() -> None:

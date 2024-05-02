@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from .models import Page
 from basingse import svcs
 from basingse.admin.extension import AdminView
-from basingse.admin.extension import PortalMenuItem
+from basingse.admin.portal import PortalMenuItem
 from basingse.admin.views import portal
 
 

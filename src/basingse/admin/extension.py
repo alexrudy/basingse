@@ -3,6 +3,7 @@ import os.path
 from collections.abc import Callable
 from collections.abc import Iterable
 from typing import Any
+from typing import cast
 from typing import ClassVar
 from typing import Generic
 from typing import IO
@@ -13,14 +14,7 @@ import click
 import structlog
 from blinker import Signal
 from blinker import signal
-from bootlace.icon import Icon
-from bootlace.links import View as ViewLink
-from bootlace.nav import NavStyle
-from bootlace.nav.elements import Link
-from bootlace.nav.elements import Nav
 from bootlace.table import Table
-from bootlace.util import as_tag
-from bootlace.util import render
 from flask import abort
 from flask import Blueprint
 from flask import current_app
@@ -32,23 +26,23 @@ from flask import url_for
 from flask.cli import with_appcontext
 from flask.typing import ResponseReturnValue as IntoResponse
 from flask.views import View
-from flask_login import current_user
 from flask_wtf import FlaskForm as FormBase
 from jinja2 import FileSystemLoader
 from jinja2 import Template
-from markupsafe import Markup
 from marshmallow import ValidationError
 from sqlalchemy import delete
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from werkzeug.exceptions import BadRequest
-from wtforms import FileField
+from werkzeug.exceptions import HTTPException
 from wtforms import Form
 
+from basingse.admin.portal import Portal
+from basingse.admin.portal import PortalMenuItem
+from basingse.auth.permissions import check_permissions
 from basingse.auth.permissions import require_permission
 from basingse.auth.utils import redirect_next
-from basingse.htmx import HtmxProperties
 from basingse.models import Model as ModelBase
 from basingse.models.schema import Schema
 from basingse.svcs import get
@@ -76,6 +70,16 @@ class NoItemFound(Exception):
         return f"No {self.model.__name__} found: {filters}"
 
 
+@attrs.define
+class FormValidationError(Exception):
+    """Indicates that a form was invalid"""
+
+    response: IntoResponse
+
+    def __str__(self) -> str:
+        return "Form validation failed"
+
+
 def handle_notfound(exc: NoItemFound) -> IntoResponse:
     if request.accept_mimetypes.best_match(["text/html", "application/json"]) == "application/json":
         return jsonify(error=str(exc)), 404
@@ -96,105 +100,27 @@ def handle_integrity(exc: IntegrityError) -> IntoResponse:
     return render_template(["admin/400.html", "admin/bad_request.html"], error=exc), 400
 
 
-def handle_bad_request(exc: Exception) -> IntoResponse:
+def handle_form_validation(exc: FormValidationError) -> IntoResponse:
+    return exc.response
+
+
+def handle_http_exception(exc: HTTPException) -> IntoResponse:
+    if exc.code and exc.code >= 500:
+        log.exception("HTTP Exception", exc_info=exc, code=exc.code, description=exc.description)
+        raise exc
+
     if request.accept_mimetypes.best_match(["text/html", "application/json"]) == "application/json":
         return jsonify(error=str(exc)), getattr(exc, "code", 400)
-    return render_template(["admin/400.html", "admin/bad_request.html"], error=exc), getattr(exc, "code", 400)
+    return render_template(["admin/400.html", "admin/bad_request.html"], error=exc), exc.code or 400
 
 
-@attrs.define(init=False)
-class PortalMenuItem(Link):
-    """
-    A menu item for the admin portal
-    """
+def register_error_handlers(scaffold: Flask | Blueprint) -> None:
 
-    permissions: str | None = None
-
-    # This ordering is frozen for backwards compatibility
-    def __init__(self, label: str, view: str, icon: str | Icon, permissions: str) -> None:
-        if isinstance(icon, str):
-            icon = Icon(icon)
-
-        link = ViewLink(endpoint=view, text=[icon, " ", label])
-
-        super().__init__(link=link)
-        self.permissions = permissions
-
-    @property
-    def enabled(self) -> bool:
-        if self.permissions is None:
-            return True
-        return current_user.can(self.permissions)
-
-
-class Portal(Blueprint):
-    """Blueprint customized for making admin portals with navigation menus"""
-
-    #: The CLI group to use for importers
-    importer_group: click.Group
-
-    #: The CLI group to use for exporters
-    exporter_group: click.Group
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.sidebar: list[PortalMenuItem] = []
-        self.admins: list[type[AdminView]] = []
-        self.context_processor(self.context)
-        self.importer_group = click.Group(
-            "import",
-            help="Import data from YAML files",
-        )
-        self.importer_group.add_command(import_all)
-
-        self.exporter_group = click.Group(
-            "export",
-            help="Export data to YAML files",
-        )
-        self.exporter_group.add_command(export_all)
-
-        self.register_error_handler(NoItemFound, handle_notfound)
-        self.register_error_handler(ValidationError, handle_validation)
-        self.register_error_handler(IntegrityError, handle_integrity)
-        self.register_error_handler(400, handle_bad_request)
-        self.register_error_handler(405, handle_bad_request)
-
-    def register_admin(self, view: "type[AdminView]") -> None:
-        self.admins.append(view)
-        if hasattr(view.model, "__schema__"):
-            self.importer_group.add_command(view.importer_command())
-            self.exporter_group.add_command(view.exporter_command())
-        if view.nav is not None:
-            self.sidebar.append(view.nav)
-
-    def _render_nav(self) -> Markup:
-        ul = as_tag(Nav([item for item in self.sidebar if item.enabled], style=NavStyle.PILLS))
-        ul.classes.add("flex-column", "mb-auto")
-        return render(ul)
-
-    def context(self) -> dict[str, Any]:
-        return {
-            "nav": self._render_nav(),
-            "hx": HtmxProperties,
-            "base_template": base_template(),
-            "form_encoding": get_form_encoding,
-        }
-
-
-def get_form_encoding(form: Form) -> str:
-    """Get the form encoding type"""
-    for field in form:
-        if isinstance(field, FileField):
-            return "multipart/form-data"
-        if (widget := getattr(field, "widget", None)) is not None:
-            if getattr(widget, "input_type", None) == "file":
-                return "multipart/form-data"
-    return "application/x-www-form-urlencoded"
-
-
-def base_template() -> Template:
-    name = current_app.config.get("BASINGSE_ADMIN_BASE_TEMPLATE", ["admin/customize.html", "admin/base.html"])
-    return current_app.jinja_env.get_or_select_template(name)
+    scaffold.register_error_handler(NoItemFound, handle_notfound)
+    scaffold.register_error_handler(ValidationError, handle_validation)
+    scaffold.register_error_handler(IntegrityError, handle_integrity)
+    scaffold.register_error_handler(FormValidationError, handle_form_validation)
+    scaffold.register_error_handler(HTTPException, handle_http_exception)
 
 
 @dc.dataclass
@@ -223,18 +149,37 @@ def action(**options: Any) -> Callable[[Fn], Fn]:
     return decorate
 
 
-class AdminView(View, Generic[M]):
-    #: base url for this view
-    url: ClassVar[str]
+@attrs.define
+class AdminManager(Generic[M]):
+    """Manager for admin components"""
 
-    #: Url template for identifying an individual instance
-    key: ClassVar[str]
+    #: The name of the model to manage
+    name: str
 
-    #: The model to use for this view
+    #: The model to manage
     model: type[M]
 
-    #: The name of this view
+
+def request_accepts_json() -> bool:
+    return request.accept_mimetypes.best_match(["text/html", "application/json"]) == "application/json"
+
+
+class AdminView(View, Generic[M]):
+
+    #: Whether to initialize the view on every request
+    init_every_request: ClassVar[bool] = False
+
+    #: base url for this view
+    url: str
+
+    #: Url template for identifying an individual instance
+    key: str
+
+    #: The name of this admin view
     name: ClassVar[str]
+
+    #: The model for this view
+    model: type[M]
 
     #: The permission namespace to use for this view
     permission: ClassVar[str]
@@ -244,6 +189,9 @@ class AdminView(View, Generic[M]):
 
     # The navigation item for this view
     nav: ClassVar[PortalMenuItem | None] = None
+
+    #: The registered actions for this view
+    actions: dict[str, Callable[..., IntoResponse]]
 
     @property
     def logger(self) -> structlog.stdlib.BoundLogger:
@@ -262,18 +210,6 @@ class AdminView(View, Generic[M]):
         elif any(hasattr(cls, attr) for attr in {"url", "key", "model", "name"}):
             raise NotImplementedError("Concrete subclasses must pass the blueprint to the class definition")
 
-    def dispatch_action(self, action: str, **kwargs: Any) -> IntoResponse:
-        method = getattr(self, action, None)
-        if method is None or not hasattr(method, "action"):
-            self.logger.error(f"Unimplemented method {action!r}", path=request.path, debug=True)
-            abort(400)
-
-        if request.method not in method.action.methods:
-            self.logger.error(f"Method not allowed {action!r}", path=request.path, method=request.method, debug=True)
-            abort(405)
-
-        return method(**kwargs)
-
     @classmethod
     def schema(cls, **options: Any) -> Schema:
         return cls.model.__schema__()(**options)
@@ -285,72 +221,6 @@ class AdminView(View, Generic[M]):
     @classmethod
     def form(cls, obj: M | None = None, **options: Any) -> Form:
         return cls.model.__form__()(obj=obj, **options)
-
-    @classmethod
-    def importer(cls, data: dict[str, Any]) -> list[M]:
-
-        try:
-            items = data[cls.name]
-        except (KeyError, TypeError, IndexError):
-            items = data
-
-        if isinstance(items, list):
-            schema = cls.schema(many=True)
-            return schema.load(items)
-        schema = cls.schema()
-        return [schema.load(items)]
-
-    @classmethod
-    def importer_command(cls) -> click.Command:
-
-        logger = structlog.get_logger(model=cls.name, command="import")
-
-        @click.command(name=cls.name)
-        @click.option("--clear/--no-clear")
-        @click.option("--data-key", type=str, help="Key for data in the YAML file")
-        @click.argument("filename", type=click.File("r"))
-        @with_appcontext
-        def import_command(filename: IO[str], clear: bool, data_key: str | None) -> None:
-            import yaml
-
-            data = yaml.safe_load(filename)
-            if data_key is not None:
-                data = data[data_key]
-
-            session = get(Session)
-
-            if clear:
-                logger.info(f"Clearing {cls.name}")
-                session.execute(delete(cls.model))
-
-            session.add_all(cls.importer(data))
-            session.commit()
-
-        import_command.help = f"Import {cls.name} data from a YAML file"
-        return import_command
-
-    @classmethod
-    def exporter_command(cls) -> click.Command:
-
-        logger = structlog.get_logger(model=cls.name, command="import")
-
-        @click.command(name=cls.name)
-        @click.argument("filename", type=click.File("w"))
-        @with_appcontext
-        def export_command(filename: IO[str]) -> None:
-            import yaml
-
-            logger.info(f"Exporting {cls.name}")
-            session = get(Session)
-
-            items = session.scalars(select(cls.model)).all()
-            schema = cls.schema(many=True)
-            data = schema.dump(items)
-
-            yaml.safe_dump({cls.name: data}, filename)
-
-        export_command.help = f"Export {cls.name} data to a YAML file"
-        return export_command
 
     def dispatch_request(self, **kwargs: Any) -> IntoResponse:
         args = request.args.to_dict()
@@ -368,33 +238,66 @@ class AdminView(View, Generic[M]):
                 return self.dispatch_action(**kwargs)
         return response
 
-    def render_json(self, obj: M | Iterable[M]) -> IntoResponse:
-        """Render the object as JSON"""
-        if not isinstance(obj, self.model):
+    def dispatch_action(self, action: str, **kwargs: Any) -> IntoResponse:
+        method = self.actions.get(action)
+        if method is None or not hasattr(method, "action"):
+            self.logger.error(f"Unimplemented method {action!r}", path=request.path, debug=True)
+            abort(400, description=f"Unimplemented method {action!r}")
+
+        if request.method not in method.action.methods:
+            self.logger.error(f"Method not allowed {action!r}", path=request.path, method=request.method, debug=True)
+            abort(405, description=f"Method not allowed {request.method}")
+
+        if not check_permissions(self.permission, method.action.permission):
+            self.logger.error(f"Permission denied {action!r}", path=request.path, permission=method.action.permission)
+            abort(401, description=f"Permission denied {method.action.permission}")
+
+        return method(self, **kwargs)
+
+    def render_single(self, obj: M, template: str | list[str | Template], **context: Any) -> IntoResponse:
+        if request_accepts_json():
+            schema = self.schema()
+            return jsonify(schema.dump(obj))
+
+        context[self.name] = obj
+        return render_template(template, **context)
+
+    def render_save(self, obj: M, next: str = ".list") -> IntoResponse:
+        if request_accepts_json():
+            schema = self.schema()
+            return jsonify(schema.dump(obj))
+        return redirect_next(next)
+
+    def render_list(self, items: Iterable[M], template: str | list[str | Template], **context: Any) -> IntoResponse:
+        if request_accepts_json():
             schema = self.schema(many=True)
-            return jsonify(data=schema.dump(obj))
+            return jsonify(data=schema.dump(items))
 
-        schema = self.schema()
-        return jsonify(schema.dump(obj))
+        context["items"] = items
+        return render_template(template, **context)
 
-    def render_or_serialize(
-        self, obj: M | Iterable[M], template: str | list[str | Template], **context: Any
-    ) -> IntoResponse:
-        """Render or serialize the object based on the request accept header"""
-        if not isinstance(obj, self.model):
-            context.setdefault("items", obj)
-        else:
-            context[self.name] = obj
+    def render_delete(self, next: str = ".list") -> IntoResponse:
+        if request_accepts_json():
+            return jsonify({}), 200
 
-        mime = request.accept_mimetypes.best_match(["text/html", "application/json"])
-        if mime == "application/json":
-            return self.render_json(obj)
+        if request.method == "DELETE":
+            return "", 204
+        return redirect_next(next)
 
+    def render_form(self, obj: M, form: F, template: str | list[str | Template], **context: Any) -> IntoResponse:
+        if request_accepts_json():
+            if form.errors:
+                return jsonify(errors=form.errors, error="Submission contains invalid data"), 400
+            return self.render_single(obj, form)
+
+        context[self.name] = obj
+        context["form"] = form
         return render_template(template, **context)
 
     def query(self) -> Iterable[M]:
         session = get(Session)
-        return session.execute(select(self.model).order_by(self.model.created)).scalars()
+        results = session.execute(select(self.model).order_by(self.model.created)).scalars()
+        return cast(Iterable[M], results)
 
     def single(self, **kwargs: Any) -> M:
         session = get(Session)
@@ -402,56 +305,43 @@ class AdminView(View, Generic[M]):
             raise NoItemFound(self.model, kwargs)
         return single
 
-    @action(permission="view", url="/<key>/", methods=["GET"])
-    def view(self, **kwargs: Any) -> IntoResponse:
-        obj = self.single(**kwargs)
-        return self.render_or_serialize(
-            obj,
-            [f"admin/{self.name}/view.html", "admin/portal/view.html"],
-        )
+    def blank(self, **kwargs: Any) -> M:
+        return self.model(**kwargs)
 
-    def save(self, obj: M, signal: Signal) -> M:
+    def save(self, obj: M, signal: Signal) -> None:
         session = get(Session)
         session.add(obj)
         session.commit()
         signal.send(self.__class__)
-        return obj
 
-    def process_json(self, *, obj: M, data: dict[str, Any], signal: Signal) -> IntoResponse:
+    def process_json(self, *, obj: M, data: dict[str, Any], signal: Signal) -> M:
         obj = self.schema(instance=obj).load(data)
         self.save(obj, signal)
-        if request.accept_mimetypes.best_match(["text/html", "application/json"]) == "application/json":
-            return self.render_json(obj)
-        return redirect_next(".list")
+        return obj
 
-    def process_form(self, *, obj: M, form: FormBase, signal: Signal) -> IntoResponse:
+    def process_form(self, *, obj: M, form: FormBase, signal: Signal) -> M:
         if form.validate_on_submit():
             form.populate_obj(obj=obj)
             self.save(obj, signal)
-            if request.accept_mimetypes.best_match(["text/html", "application/json"]) == "application/json":
-                return self.render_json(obj)
-            return redirect_next(".list")
-        if form.errors:
-            self.logger.error("Form validation failed", obj=obj, errors=form.errors, debug=True)
-        return self.render_form(obj, form)
-
-    def render_form(self, obj: M, form: F) -> IntoResponse:
-        if request.accept_mimetypes.best_match(["text/html", "application/json"]) == "application/json":
-            if form.errors:
-                return jsonify(errors=form.errors, error="Submission contains invalid data"), 400
-            return self.render_json(obj)
-
-        return render_template(
-            [f"admin/{self.name}/edit.html", "admin/portal/edit.html"], **{self.name: obj, "form": form}
+            return obj
+        raise FormValidationError(
+            response=self.render_form(obj, form, [f"admin/{self.name}/edit.html", "admin/portal/edit.html"])
         )
 
     def process_submit(self, *, obj: M, form: F, signal: Signal) -> IntoResponse:
         if request.method in ["POST", "PATCH", "PUT"] and request.is_json:
             if not isinstance(request.json, dict):
                 raise BadRequest("JSON data must be an object")
-            return self.process_json(obj=obj, data=request.json, signal=signal)
+            obj = self.process_json(obj=obj, data=request.json, signal=signal)
+            return self.render_save(obj)
         else:
-            return self.process_form(obj=obj, form=form, signal=signal)
+            obj = self.process_form(obj=obj, form=form, signal=signal)
+            return self.render_save(obj)
+
+    @action(permission="view", url="/<key>/", methods=["GET"])
+    def view(self, **kwargs: Any) -> IntoResponse:
+        obj = self.single(**kwargs)
+        return self.render_single(obj, [f"admin/{self.name}/view.html", "admin/portal/view.html"])
 
     @action(permission="edit", url="/<key>/edit/", methods=["GET", "POST", "PATCH", "PUT"])
     def edit(self, **kwargs: Any) -> IntoResponse:
@@ -461,23 +351,20 @@ class AdminView(View, Generic[M]):
     @action(permission="view", url="/<key>/preview/", methods=["GET"])
     def preview(self, **kwargs: Any) -> IntoResponse:
         obj = self.single(**kwargs)
-        return self.render_or_serialize(
+        return self.render_single(
             obj,
             [f"admin/{self.name}/preview.html", "admin/portal/preview.html"],
         )
-
-    def blank(self, **kwargs: Any) -> M:
-        return self.model(**kwargs)
 
     @action(permission="edit", url="/new/", methods=["GET", "POST", "PUT"])
     def new(self, **kwargs: Any) -> IntoResponse:
         obj = self.blank(**kwargs)
         return self.process_submit(obj=obj, form=self.form(obj=obj), signal=on_new, **kwargs)
 
-    @action(permission="view", url="/list/", methods=["GET"])
-    def list(self, **kwargs: Any) -> IntoResponse:
+    @action(name="list", permission="view", url="/list/", methods=["GET"])
+    def listview(self, **kwargs: Any) -> IntoResponse:
         items = self.query()
-        return self.render_or_serialize(
+        return self.render_list(
             items,
             [f"admin/{self.name}/list.html", "admin/portal/list.html"],
             table=self.table(),
@@ -491,13 +378,11 @@ class AdminView(View, Generic[M]):
         session.delete(obj)
         session.commit()
         on_delete.send(self.__class__, **kwargs)
-        if request.method == "DELETE":
-            return "", 204
-        return redirect_next(url_for(".list"))
+        return self.render_delete()
 
     @classmethod
     def _parent_redirect_to(cls, action: str, **kwargs: Any) -> IntoResponse:
-        if request.accept_mimetypes.best_match(["text/html", "application/json"]) == "application/json":
+        if request_accepts_json():
             log.debug("Redirecting to action", action=action, kwargs=kwargs)
             return cls().dispatch_action(action, **kwargs)
 
@@ -520,7 +405,7 @@ class AdminView(View, Generic[M]):
                     endpoint=action.name,
                     view_func=view,
                     methods=action.methods,
-                    defaults={"action": name, **action.defaults},
+                    defaults={"action": action.name, **action.defaults},
                 )
                 return view
         return None
@@ -534,13 +419,16 @@ class AdminView(View, Generic[M]):
         if isinstance(scaffold, Portal):
             scaffold.register_admin(cls)
 
-        views = {}
+        register_error_handlers(scaffold)
+
+        actions = {}
 
         for bcls in cls.__mro__:
             for name, attr in bcls.__dict__.items():
-                if view := cls._register_action(name, attr, key):
-                    views[attr.action.name] = view
+                if cls._register_action(name, attr, key):
+                    actions[attr.action.name] = attr
 
+        cls.actions = actions
         scaffold.register_blueprint(cls.bp)
 
         # Register two views on the parent scaffold, to provide fallbacks with sensible names.
@@ -566,59 +454,80 @@ class AdminView(View, Generic[M]):
             methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
         )
 
+    # Import/Export CLI commands
 
-@click.command(name="all")
-@click.option("--clear/--no-clear")
-@click.argument("filename", type=click.File("r"))
-@with_appcontext
-@click.pass_context
-def import_all(ctx: click.Context, filename: IO[str], clear: bool) -> None:
-    """Import all items known from a YAML file"""
-    import yaml
+    @classmethod
+    def importer(cls, data: dict[str, Any]) -> list[M]:
 
-    data = yaml.safe_load(filename)
-    session = get(Session)
-    portal = get(Portal)
+        try:
+            items = data[cls.name]
+        except (KeyError, TypeError, IndexError):
+            items = data
 
-    log.info("Importing all", clear=clear, data=data.keys(), models=[cls.name for cls in portal.admins])
-
-    for cls in portal.admins:
-
-        if (items := data.get(cls.name, None)) is None:
-            continue
-
-        log.info(f"Importing {cls.name}", model=cls.name, count=len(items))
         if isinstance(items, list):
             schema = cls.schema(many=True)
-            for item in schema.load(items):
-                session.add(item)
-        else:
-            schema = cls.schema()
-            session.add(schema.load(items))
+            return schema.load(items)
+        schema = cls.schema()
+        return [schema.load(items)]
 
-    session.commit()
+    @classmethod
+    def import_subcommand(cls) -> click.Command:
 
+        logger = structlog.get_logger(model=cls.name, command="import")
 
-@click.command(name="all")
-@click.argument("filename", type=click.File("w"))
-@with_appcontext
-@click.pass_context
-def export_all(ctx: click.Context, filename: IO[str]) -> None:
-    """Export all items known to a YAML file"""
-    import yaml
+        @click.command(name=cls.name)
+        @click.option("--clear/--no-clear")
+        @click.option("--data-key", type=str, help="Key for data in the YAML file")
+        @click.argument("filename", type=click.File("r"))
+        @with_appcontext
+        def importer(filename: IO[str], clear: bool, data_key: str | None) -> None:
+            import yaml
 
-    session = get(Session)
-    portal = get(Portal)
-    data = {}
+            data = yaml.safe_load(filename)
+            if data_key is not None:
+                data = data[data_key]
 
-    for cls in portal.admins:
+            session = get(Session)
 
-        log.info(f"Exporting {cls.name}", model=cls.name)
+            if clear:
+                logger.info(f"Clearing {cls.name}")
+                session.execute(delete(cls.model))
+
+            session.add_all(cls.importer(data))
+            session.commit()
+
+        importer.help = f"Import {cls.name} data from a YAML file"
+        return importer
+
+    @classmethod
+    def exporter(cls) -> list[M]:
+        session = get(Session)
+
         items = session.scalars(select(cls.model)).all()
         schema = cls.schema(many=True)
-        data[cls.name] = schema.dump(items)
+        return schema.dump(items)
 
-    yaml.safe_dump(data, filename)
+    @classmethod
+    def export_subcommand(cls) -> click.Command:
+
+        logger = structlog.get_logger(model=cls.name, command="import")
+
+        @click.command(name=cls.name)
+        @click.argument("filename", type=click.File("w"))
+        @with_appcontext
+        def export_command(filename: IO[str]) -> None:
+            import yaml
+
+            logger.info(f"Exporting {cls.name}")
+            data = cls.exporter()
+            yaml.safe_dump({cls.name: data}, filename)
+
+        export_command.help = f"Export {cls.name} data to a YAML file"
+        return export_command
+
+    def register_commands(self, group: click.Group) -> None:
+        group.add_command(self.import_subcommand())
+        group.add_command(self.export_subcommand())
 
 
 class AdminBlueprint(Blueprint):

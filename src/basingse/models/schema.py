@@ -12,7 +12,9 @@ from flask_wtf import FlaskForm
 from marshmallow import fields
 from marshmallow import post_load
 from marshmallow import Schema as BaseSchema
+from sqlalchemy.orm import Session
 
+from basingse import svcs
 from basingse.models.info import _Attribute
 from basingse.models.info import FormInfo
 from basingse.models.info import SchemaInfo
@@ -25,8 +27,23 @@ E = TypeVar("E", bound=enum.Enum)
 
 class Schema(BaseSchema):
 
+    def __init__(self, *, many: bool = False, instance: Any = None, **kwargs: Any) -> None:
+        self._orm_instance = instance
+        super().__init__(many=many, **kwargs)
+
     @post_load
     def make_instance(self, data: dict[str, Any], **kwargs: Any) -> Any:
+        instance = self._orm_instance
+
+        if "id" in data and not instance:
+            session = svcs.get(Session)
+            instance = session.get(self.Meta.model, data["id"])  # type: ignore
+
+        if instance:
+            for key, value in data.items():
+                setattr(instance, key, value)
+            return instance
+
         return self.Meta.model(**data)  # type: ignore
 
 

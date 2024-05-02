@@ -2,17 +2,16 @@ import dataclasses as dc
 import os.path
 from collections.abc import Callable
 from collections.abc import Iterable
-from collections.abc import Iterator
 from typing import Any
 from typing import ClassVar
 from typing import Generic
 from typing import IO
-from typing import overload
 from typing import TypeVar
 
 import attrs
 import click
 import structlog
+from blinker import Signal
 from blinker import signal
 from bootlace.icon import Icon
 from bootlace.links import View as ViewLink
@@ -26,7 +25,7 @@ from flask import abort
 from flask import Blueprint
 from flask import current_app
 from flask import Flask
-from flask import has_app_context
+from flask import jsonify
 from flask import render_template
 from flask import request
 from flask import url_for
@@ -38,10 +37,12 @@ from flask_wtf import FlaskForm as FormBase
 from jinja2 import FileSystemLoader
 from jinja2 import Template
 from markupsafe import Markup
-from marshmallow import Schema
+from marshmallow import ValidationError
 from sqlalchemy import delete
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from werkzeug.exceptions import BadRequest
 from wtforms import FileField
 from wtforms import Form
 
@@ -49,6 +50,7 @@ from basingse.auth.permissions import require_permission
 from basingse.auth.utils import redirect_next
 from basingse.htmx import HtmxProperties
 from basingse.models import Model as ModelBase
+from basingse.models.schema import Schema
 from basingse.svcs import get
 
 log: structlog.BoundLogger = structlog.get_logger(__name__)
@@ -60,7 +62,44 @@ Fn = TypeVar("Fn", bound=Callable)
 on_new = signal("new")
 on_update = signal("update")
 on_delete = signal("delete")
-on_submit = signal("submit")
+
+
+@attrs.define
+class NoItemFound(Exception):
+    """Indicates that an item was not found"""
+
+    model: type[ModelBase]
+    filters: dict[str, Any]
+
+    def __str__(self) -> str:
+        filters = ", ".join(f"{k}={v}" for k, v in self.filters.items())
+        return f"No {self.model.__name__} found: {filters}"
+
+
+def handle_notfound(exc: NoItemFound) -> IntoResponse:
+    if request.accept_mimetypes.best_match(["text/html", "application/json"]) == "application/json":
+        return jsonify(error=str(exc)), 404
+    return render_template(["admin/404.html", "admin/not_found.html"], error=exc), 404
+
+
+def handle_validation(exc: ValidationError) -> IntoResponse:
+    if request.accept_mimetypes.best_match(["text/html", "application/json"]) == "application/json":
+        if isinstance(exc.messages, dict):
+            return jsonify(error=exc.messages), 400
+        return jsonify(error=str(exc)), 400
+    return render_template(["admin/400.html", "admin/bad_request.html"], error=exc), 400
+
+
+def handle_integrity(exc: IntegrityError) -> IntoResponse:
+    if request.accept_mimetypes.best_match(["text/html", "application/json"]) == "application/json":
+        return jsonify(error=str(exc)), 400
+    return render_template(["admin/400.html", "admin/bad_request.html"], error=exc), 400
+
+
+def handle_bad_request(exc: Exception) -> IntoResponse:
+    if request.accept_mimetypes.best_match(["text/html", "application/json"]) == "application/json":
+        return jsonify(error=str(exc)), getattr(exc, "code", 400)
+    return render_template(["admin/400.html", "admin/bad_request.html"], error=exc), getattr(exc, "code", 400)
 
 
 @attrs.define(init=False)
@@ -114,9 +153,15 @@ class Portal(Blueprint):
         )
         self.exporter_group.add_command(export_all)
 
+        self.register_error_handler(NoItemFound, handle_notfound)
+        self.register_error_handler(ValidationError, handle_validation)
+        self.register_error_handler(IntegrityError, handle_integrity)
+        self.register_error_handler(400, handle_bad_request)
+        self.register_error_handler(405, handle_bad_request)
+
     def register_admin(self, view: "type[AdminView]") -> None:
         self.admins.append(view)
-        if view.schema is not None:
+        if hasattr(view.model, "__schema__"):
             self.importer_group.add_command(view.importer_command())
             self.exporter_group.add_command(view.exporter_command())
         if view.nav is not None:
@@ -166,68 +211,27 @@ class Action:
     attachments: bool = False
 
 
-@overload
-def action(fn: Fn) -> Fn: ...
-
-
-@overload
-def action(**options: Any) -> Callable[[Any], Callable[[Fn], Fn]]: ...
-
-
-def action(*args: Any, **options: Any) -> Callable[[Any], Callable[[Fn], Fn]]:
+def action(**options: Any) -> Callable[[Fn], Fn]:
     """Mark a function as an action"""
 
     def decorate(func: Fn) -> Fn:
-        name = options.setdefault("name", func.__name__)
-
-        if name in {"list", "preview"}:
-            options.setdefault("permission", "view")
-        elif name == "new":
-            options.setdefault("permission", "edit")
-        else:
-            options.setdefault("permission", name)
-
-        if name in {"preview", "edit"}:
-            options.setdefault("url", f"/<key>/{name}/")
-        else:
-            options.setdefault("url", f"/{name}/")
-
-        if options.get("permission") == "view":
-            options.setdefault("methods", ["GET"])
-        elif options.get("permission") == "edit":
-            options.setdefault("methods", ["GET", "POST", "PATCH", "PUT"])
-        elif options.get("permission") == "delete":
-            options.setdefault("methods", ["GET", "DELETE"])
+        options.setdefault("name", func.__name__)
 
         func.action = Action(**options)  # type: ignore
         return func
 
-    if args:
-        if len(args) > 1:  # pragma: nocover
-            raise TypeError(f"action() takes at most 1 positional argument ({len(args)} given)")
-        return decorate(args[0])
-
     return decorate
 
 
-class AdminView(View, Generic[M, F]):
+class AdminView(View, Generic[M]):
     #: base url for this view
     url: ClassVar[str]
 
     #: Url template for identifying an individual instance
     key: ClassVar[str]
 
-    #: The form to use for this view
-    form: type[F]
-
     #: The model to use for this view
     model: type[M]
-
-    #: The table to use for rendering list views
-    table: type[Table]
-
-    #: The schema to use for API responses
-    schema: type[Schema] | None = None
 
     #: The name of this view
     name: ClassVar[str]
@@ -254,20 +258,9 @@ class AdminView(View, Generic[M, F]):
 
             if not hasattr(cls, "permission"):
                 cls.permission = cls.name
-            cls.setup()
             cls.register_blueprint(blueprint, namespace, cls.url, cls.key)
-        elif any(hasattr(cls, attr) for attr in {"url", "key", "form", "model", "name"}):
+        elif any(hasattr(cls, attr) for attr in {"url", "key", "model", "name"}):
             raise NotImplementedError("Concrete subclasses must pass the blueprint to the class definition")
-
-    @classmethod
-    def setup(cls) -> None:
-        if (model := getattr(cls, "model", None)) is not None:
-            if getattr(cls, "schema", None) is None and hasattr(model, "__schema__"):
-                cls.schema = property(lambda _: model.__schema__())  # type: ignore
-            if getattr(cls, "table", None) is None and hasattr(model, "__listview__"):
-                cls.table = property(lambda _: model.__listview__())  # type: ignore
-            if getattr(cls, "form", None) is None and hasattr(model, "__form__"):
-                cls.form = property(lambda _: model.__form__())  # type: ignore
 
     def dispatch_action(self, action: str, **kwargs: Any) -> IntoResponse:
         method = getattr(self, action, None)
@@ -282,9 +275,19 @@ class AdminView(View, Generic[M, F]):
         return method(**kwargs)
 
     @classmethod
+    def schema(cls, **options: Any) -> Schema:
+        return cls.model.__schema__()(**options)
+
+    @classmethod
+    def table(cls) -> Table:
+        return cls.model.__listview__()()
+
+    @classmethod
+    def form(cls, obj: M | None = None, **options: Any) -> Form:
+        return cls.model.__form__()(obj=obj, **options)
+
+    @classmethod
     def importer(cls, data: dict[str, Any]) -> list[M]:
-        if cls.schema is None:  # pragma: nocover
-            raise NotImplementedError("No schema defined")
 
         try:
             items = data[cls.name]
@@ -337,9 +340,6 @@ class AdminView(View, Generic[M, F]):
         def export_command(filename: IO[str]) -> None:
             import yaml
 
-            if not cls.schema:  # pragma: nocover
-                click.echo(f"No schema defined for {cls.name}", err=True)
-                raise click.Abort()
             logger.info(f"Exporting {cls.name}")
             session = get(Session)
 
@@ -368,6 +368,30 @@ class AdminView(View, Generic[M, F]):
                 return self.dispatch_action(**kwargs)
         return response
 
+    def render_json(self, obj: M | Iterable[M]) -> IntoResponse:
+        """Render the object as JSON"""
+        if not isinstance(obj, self.model):
+            schema = self.schema(many=True)
+            return jsonify(data=schema.dump(obj))
+
+        schema = self.schema()
+        return jsonify(schema.dump(obj))
+
+    def render_or_serialize(
+        self, obj: M | Iterable[M], template: str | list[str | Template], **context: Any
+    ) -> IntoResponse:
+        """Render or serialize the object based on the request accept header"""
+        if not isinstance(obj, self.model):
+            context.setdefault("items", obj)
+        else:
+            context[self.name] = obj
+
+        mime = request.accept_mimetypes.best_match(["text/html", "application/json"])
+        if mime == "application/json":
+            return self.render_json(obj)
+
+        return render_template(template, **context)
+
     def query(self) -> Iterable[M]:
         session = get(Session)
         return session.execute(select(self.model).order_by(self.model.created)).scalars()
@@ -375,43 +399,72 @@ class AdminView(View, Generic[M, F]):
     def single(self, **kwargs: Any) -> M:
         session = get(Session)
         if (single := session.scalars(select(self.model).filter_by(**kwargs)).first()) is None:
-            self.logger.error("Not found", **kwargs, debug=True)
-            abort(404)
+            raise NoItemFound(self.model, kwargs)
         return single
 
-    def process(self, form: F, obj: M) -> bool:
+    @action(permission="view", url="/<key>/", methods=["GET"])
+    def view(self, **kwargs: Any) -> IntoResponse:
+        obj = self.single(**kwargs)
+        return self.render_or_serialize(
+            obj,
+            [f"admin/{self.name}/view.html", "admin/portal/view.html"],
+        )
+
+    def save(self, obj: M, signal: Signal) -> M:
         session = get(Session)
-        form.populate_obj(obj=obj)
         session.add(obj)
         session.commit()
-        return True
+        signal.send(self.__class__)
+        return obj
 
-    def render_form(self, form: F, obj: M) -> IntoResponse:
-        self._log_form_errors(form)
+    def process_json(self, *, obj: M, data: dict[str, Any], signal: Signal) -> IntoResponse:
+        obj = self.schema(instance=obj).load(data)
+        self.save(obj, signal)
+        if request.accept_mimetypes.best_match(["text/html", "application/json"]) == "application/json":
+            return self.render_json(obj)
+        return redirect_next(".list")
+
+    def process_form(self, *, obj: M, form: FormBase, signal: Signal) -> IntoResponse:
+        if form.validate_on_submit():
+            form.populate_obj(obj=obj)
+            self.save(obj, signal)
+            if request.accept_mimetypes.best_match(["text/html", "application/json"]) == "application/json":
+                return self.render_json(obj)
+            return redirect_next(".list")
+        if form.errors:
+            self.logger.error("Form validation failed", obj=obj, errors=form.errors, debug=True)
+        return self.render_form(obj, form)
+
+    def render_form(self, obj: M, form: F) -> IntoResponse:
+        if request.accept_mimetypes.best_match(["text/html", "application/json"]) == "application/json":
+            if form.errors:
+                return jsonify(errors=form.errors, error="Submission contains invalid data"), 400
+            return self.render_json(obj)
+
         return render_template(
             [f"admin/{self.name}/edit.html", "admin/portal/edit.html"], **{self.name: obj, "form": form}
         )
 
-    def _log_form_errors(self, form: F) -> None:
-        if has_app_context() and form.errors:
-            self.logger.error("Form contains", errors=form.errors, data=form.data, debug=True)
+    def process_submit(self, *, obj: M, form: F, signal: Signal) -> IntoResponse:
+        if request.method in ["POST", "PATCH", "PUT"] and request.is_json:
+            if not isinstance(request.json, dict):
+                raise BadRequest("JSON data must be an object")
+            return self.process_json(obj=obj, data=request.json, signal=signal)
+        else:
+            return self.process_form(obj=obj, form=form, signal=signal)
 
     @action(permission="edit", url="/<key>/edit/", methods=["GET", "POST", "PATCH", "PUT"])
     def edit(self, **kwargs: Any) -> IntoResponse:
         obj = self.single(**kwargs)
-        form = self.form(obj=obj)
-
-        if form.validate_on_submit():
-            on_submit.send(self.__class__, **kwargs)
-            if self.process(form, obj):
-                on_update.send(self.__class__, **kwargs)
-                return redirect_next(url_for(".list"))
-        return self.render_form(form, obj)
+        return self.process_submit(obj=obj, form=self.form(obj=obj), signal=on_update)
 
     @action(permission="view", url="/<key>/preview/", methods=["GET"])
     def preview(self, **kwargs: Any) -> IntoResponse:
         obj = self.single(**kwargs)
-        return render_template([f"admin/{self.name}/preview.html", "admin/portal/preview.html"], **{self.name: obj})
+        return self.render_or_serialize(
+            obj,
+            [f"admin/{self.name}/preview.html", "admin/portal/preview.html"],
+        )
 
     def blank(self, **kwargs: Any) -> M:
         return self.model(**kwargs)
@@ -419,27 +472,15 @@ class AdminView(View, Generic[M, F]):
     @action(permission="edit", url="/new/", methods=["GET", "POST", "PUT"])
     def new(self, **kwargs: Any) -> IntoResponse:
         obj = self.blank(**kwargs)
-        form = self.form(obj=obj)
-
-        if form.validate_on_submit():
-            on_submit.send(self.__class__, **kwargs)
-            if self.process(form, obj):
-                self.logger.debug("Saved", name=self.name, obj=obj)
-                kwargs["name"] = self.name
-                on_new.send(self.__class__, **kwargs)
-                return redirect_next(url_for(".list"))
-
-        return self.render_form(form, obj)
+        return self.process_submit(obj=obj, form=self.form(obj=obj), signal=on_new, **kwargs)
 
     @action(permission="view", url="/list/", methods=["GET"])
     def list(self, **kwargs: Any) -> IntoResponse:
         items = self.query()
-        context: dict[str, Any] = {f"{self.name}s": items, "rows": items}
-        if self.table is not None:
-            context["table"] = self.table()
-        return render_template(
+        return self.render_or_serialize(
+            items,
             [f"admin/{self.name}/list.html", "admin/portal/list.html"],
-            **context,
+            table=self.table(),
         )
 
     @action(permission="delete", methods=["GET", "DELETE"], url="/<key>/delete/")
@@ -456,6 +497,10 @@ class AdminView(View, Generic[M, F]):
 
     @classmethod
     def _parent_redirect_to(cls, action: str, **kwargs: Any) -> IntoResponse:
+        if request.accept_mimetypes.best_match(["text/html", "application/json"]) == "application/json":
+            log.debug("Redirecting to action", action=action, kwargs=kwargs)
+            return cls().dispatch_action(action, **kwargs)
+
         return redirect_next(url_for(f".{cls.bp.name}.{action}", **kwargs))
 
     @classmethod
@@ -486,7 +531,7 @@ class AdminView(View, Generic[M, F]):
             namespace or cls.name, cls.__module__, url_prefix=f"/{url}/", template_folder="templates/"
         )
 
-        if isinstance(scaffold, Portal) and getattr(cls, "schema", None) is not None:
+        if isinstance(scaffold, Portal):
             scaffold.register_admin(cls)
 
         views = {}
@@ -517,20 +562,9 @@ class AdminView(View, Generic[M, F]):
 
         cls.bp.add_url_rule(
             "/do/<action>/",
-            view_func=cls.as_view(f"{cls.name}_do"),
+            view_func=cls.as_view("do"),
             methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
         )
-
-
-C = TypeVar("C")
-
-
-def iter_subclasses(cls: type[C]) -> Iterator[type[C]]:
-    subcls: type[C]
-
-    for subcls in cls.__subclasses__():
-        yield from iter_subclasses(subcls)
-        yield subcls
 
 
 @click.command(name="all")
@@ -549,19 +583,17 @@ def import_all(ctx: click.Context, filename: IO[str], clear: bool) -> None:
     log.info("Importing all", clear=clear, data=data.keys(), models=[cls.name for cls in portal.admins])
 
     for cls in portal.admins:
-        schema = getattr(cls, "schema", None)
-        if schema is None:
+
+        if (items := data.get(cls.name, None)) is None:
             continue
-        items = data.get(cls.name, None)
-        if items is None:
-            continue
+
         log.info(f"Importing {cls.name}", model=cls.name, count=len(items))
         if isinstance(items, list):
-            schema = schema(many=True)
+            schema = cls.schema(many=True)
             for item in schema.load(items):
                 session.add(item)
         else:
-            schema = schema()
+            schema = cls.schema()
             session.add(schema.load(items))
 
     session.commit()
@@ -580,8 +612,6 @@ def export_all(ctx: click.Context, filename: IO[str]) -> None:
     data = {}
 
     for cls in portal.admins:
-        if cls.schema is None:  # pragma: nocover
-            continue
 
         log.info(f"Exporting {cls.name}", model=cls.name)
         items = session.scalars(select(cls.model)).all()

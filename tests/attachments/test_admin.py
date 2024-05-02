@@ -1,6 +1,7 @@
 import datetime as dt
 import io
 from pathlib import Path
+from typing import Any
 from uuid import UUID
 
 import pytest
@@ -12,12 +13,12 @@ from flask_attachments import Attachment
 from flask_attachments import CompressionAlgorithm
 from flask_wtf.form import FlaskForm as Form
 from marshmallow import fields
-from marshmallow import Schema as BaseSchema
 from sqlalchemy.orm import make_transient
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session
+from werkzeug.datastructures import FileStorage
 from wtforms import fields as form_fields
 from wtforms import validators
 
@@ -27,6 +28,7 @@ from basingse.admin.extension import Portal
 from basingse.attachments.admin import AttachmentAdmin
 from basingse.attachments.forms import AttachmentField
 from basingse.models import Model
+from basingse.models.schema import Schema as BaseSchema
 from basingse.testing.responses import Ok
 from basingse.testing.responses import Redirect
 
@@ -45,6 +47,9 @@ class FakeProfileSchema(BaseSchema):
 
     id = fields.Integer(dump_only=True)
     title = fields.String(required=True)
+
+    class Meta:
+        model = FakeProfile
 
 
 class FakeProfileForm(Form):
@@ -77,9 +82,18 @@ def adminview(portal: Portal, app: Flask) -> type[AdminView]:
         permission = "profile"
 
         model = FakeProfile
-        form = FakeProfileForm
-        schema = FakeProfileSchema
-        table = FakeProfileTable
+
+        @classmethod
+        def form(cls, obj: FakeProfile | None = None, **options: Any) -> Form:
+            return FakeProfileForm(obj=obj, **options)
+
+        @classmethod
+        def schema(cls, **options: Any) -> FakeProfileSchema:
+            return FakeProfileSchema(**options)
+
+        @classmethod
+        def table(cls, **options: Any) -> Table:
+            return FakeProfileTable(**options)
 
     app.register_blueprint(portal)
     return FakeProfileAdmin
@@ -142,7 +156,7 @@ class TestAttachmentAdmin:
                     "content_type": "text/plain",
                     "compression": "NONE",
                     "digest_algorithm": "sha256",
-                    "attachment": (io.BytesIO(b"Hello, World!"), "example.txt"),
+                    "attachment": FileStorage(io.BytesIO(b"Hello, World!"), "example.txt"),
                 },
             )
             assert response == Redirect("/admin/attachment/list/")

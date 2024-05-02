@@ -18,6 +18,9 @@ sync: prepare
     pip install -e .
     tox --notest
 
+isort:
+    -pre-commit run reorder-python-imports --all-files
+
 # run tests
 test:
     pytest -q -n 4 --cov-report=html

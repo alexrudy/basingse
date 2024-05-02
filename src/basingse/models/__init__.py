@@ -87,7 +87,7 @@ class Model(Base):
     __abstract__ = True
 
     id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(), primary_key=True, default=uuid.uuid4, info=orm.info(schema=info.SchemaInfo(dump_only=True))
+        Uuid(), primary_key=True, default=uuid.uuid4, info=orm.info(schema=info.SchemaInfo(required=False))
     )
     created: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), info=orm.info(schema=info.SchemaInfo(dump_only=True))

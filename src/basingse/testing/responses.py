@@ -36,6 +36,11 @@ class Unauthorized(Response):
 
 
 @dc.dataclass(eq=False)
+class BadRequest(Response):
+    status: int = 400
+
+
+@dc.dataclass(eq=False)
 class NotFound(Response):
     status: int = 404
 

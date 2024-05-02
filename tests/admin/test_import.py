@@ -43,6 +43,20 @@ class TestImports:
             assert post is not None
             assert post.content.strip() == "Some content which goes in the second post"
 
+    def test_model_clear(self, app: Flask, portal: Portal, yml: Path, post: FakePost) -> None:
+        runner = app.test_cli_runner()
+        result = runner.invoke(portal.importer_group, ["post", "--clear", str(yml / "post.yml")])
+        assert result == Success()
+
+        with app.app_context():
+            session = svcs.get(Session)
+            new_post = session.scalar(select(FakePost).where(FakePost.title == "The second post"))
+            assert new_post is not None
+            assert new_post.content.strip() == "Some content which goes in the second post"
+
+            other = session.scalar(select(FakePost).where(FakePost.id == post.id))
+            assert other is None, "Post was not cleared"
+
     def test_model_alternate_key(self, app: Flask, portal: Portal, yml: Path) -> None:
         runner = app.test_cli_runner()
         result = runner.invoke(portal.importer_group, ["post", str(yml / "post.yml"), "--data-key", "alternate"])

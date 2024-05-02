@@ -2,7 +2,6 @@ import dataclasses as dc
 import inspect
 from collections.abc import Callable
 from collections.abc import Iterable
-from collections.abc import Iterator
 from typing import Any
 from typing import ClassVar
 from typing import Generic
@@ -12,17 +11,34 @@ from typing import TypeVar
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
 import wtforms
+from bootlace.table.base import ColumnBase as Column
 from marshmallow import fields
 from marshmallow.utils import _Missing as Missing
 from marshmallow.utils import missing
 from sqlalchemy.types import TypeEngine
 
-
 #: Type alias for the python type of a SQLAlchemy attribute.
 T = TypeVar("T")
+F = TypeVar("F", covariant=True)
+
+
+@dc.dataclass
+class Detached:
+    __info__: "OrmInfo"
+    __attr_name__: str | None = None
+
+    def __set_name__(self, owner: type, name: str) -> None:
+        self.__attr_name__ = name
+
+    def __get__(self, instance: Any, owner: type) -> "OrmInfo":
+        raise AttributeError("Detached attribute is only for carrying __info__")
+
+    def __repr__(self) -> str:
+        return "detached()"
+
 
 #: Type alias for an SQLAlchemy attribute defining a column or relationship.
-_SqlAlchemyAttribute = sa.Column | orm.relationships.RelationshipProperty | sa.sql.elements.KeyedColumnElement
+_Attribute = sa.Column | orm.relationships.RelationshipProperty | sa.sql.elements.KeyedColumnElement | Detached
 
 
 @dc.dataclass
@@ -36,7 +52,7 @@ class SchemaInfo(Generic[T]):
     dump_only: bool = False
     load_only: bool = False
 
-    def field(self, name: str, attribute: _SqlAlchemyAttribute) -> fields.Field:
+    def field(self, name: str, attribute: _Attribute) -> fields.Field:
         if isinstance(attribute, (sa.Column, sa.sql.elements.KeyedColumnElement)):
             return self._column_field(attribute)
         elif isinstance(attribute, orm.relationships.RelationshipProperty):
@@ -102,9 +118,34 @@ class FormInfo:
     validators: list[Any] | None = None
     label: str | None = None
     description: str | None = None
-    choices: Iterator[str] | None = None
 
-    def field(self, name: str, column: _SqlAlchemyAttribute) -> wtforms.Field:
+    def field(self, name: str, column: _Attribute) -> wtforms.Field:
+        if isinstance(column, (sa.Column, sa.sql.elements.KeyedColumnElement)):
+            return self._field_for_column(column)
+        elif isinstance(column, orm.relationships.RelationshipProperty):
+            return self._field_for_relationship(column)
+        elif isinstance(column, Detached):
+            return self._field_for_detached(column)
+        raise ValueError(f"Unable to determine the type of {column!r}")
+
+    def _field_for_relationship(self, relationship: orm.relationships.RelationshipProperty) -> wtforms.Field:
+        if relationship.uselist:
+            return wtforms.SelectMultipleField(
+                label=self.label,
+                description=self.description,
+                validators=self.validators,
+            )
+        else:
+            return wtforms.SelectField(
+                label=self.label,
+                description=self.description,
+                validators=self.validators,
+            )
+
+    def _field_for_detached(self, detached: Detached) -> wtforms.Field:
+        raise ValueError("Detached fields must be concrete, not abstract")
+
+    def _field_for_column(self, column: sa.Column | sa.sql.elements.KeyedColumnElement) -> wtforms.Field:
         fcls = self._get_field_for_type(column.type)
 
         kwargs = dc.asdict(self)
@@ -145,3 +186,21 @@ class FormInfo:
 class Info(TypedDict):
     form: FormInfo | wtforms.Field
     schema: SchemaInfo | fields.Field
+    listview: Column | None
+
+
+class Auto:
+    __slots__ = ()
+
+    def __repr__(self) -> str:
+        return "auto()"
+
+
+@dc.dataclass
+class OrmInfo:
+    schema: SchemaInfo | fields.Field | Auto | None
+    form: FormInfo | wtforms.Field | Auto | None
+    listview: Column | None
+
+    def get(self, key: str) -> FormInfo | SchemaInfo | Column | None:
+        return getattr(self, key, None)

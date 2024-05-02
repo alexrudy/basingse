@@ -71,6 +71,17 @@ class Base(DeclarativeBase):
     def __tablename__(cls) -> str:  # noqa: B902
         return tablename(cls.__name__)
 
+    @classmethod
+    def __info__(cls) -> dict[str, info.OrmInfo]:
+        detected = {}
+        for bcls in cls.__mro__:
+            if not hasattr(bcls, "__dict__"):
+                continue
+            for key in bcls.__dict__:
+                if (info := getattr(bcls.__dict__[key], "__info__", None)) is not None:
+                    detected[key] = info
+        return detected
+
 
 class Model(Base):
     __abstract__ = True

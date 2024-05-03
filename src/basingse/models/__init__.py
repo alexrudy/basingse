@@ -146,6 +146,8 @@ def init() -> None:
 
 @dc.dataclass
 class Database:
+    """Fake to emulate the behavior of the default SQLAlchemy extension"""
+
     @property
     def engine(self) -> Engine:
         return svcs.get(Engine)
@@ -160,7 +162,13 @@ class Database:
 
 @dc.dataclass(frozen=True)
 class SQLAlchemy:
+    """SQLAlchemy extension for Flask applications
 
+    Uses svcs to manage the SQLAlchemy engine and session, and provides a simpler implementation
+    than the default SQLAlchemy extension.
+    """
+
+    #: Fake to emulate the behavior of the default SQLAlchemy extension
     db: Database = dc.field(default_factory=Database)
 
     @property

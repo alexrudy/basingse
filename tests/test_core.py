@@ -5,6 +5,7 @@ from flask import Flask
 from sqlalchemy.orm import Session
 
 from .auth.conftest import user  # noqa: F401
+from .conftest import TemplatesFixture
 from basingse import svcs
 from basingse.app import configure_app
 from basingse.auth.models import User
@@ -39,6 +40,20 @@ def test_home(client: LoginClient) -> None:
     response = client.get("/")
     assert response.status_code == 200
     assert b"Welcome Home!" in response.data
+
+
+def test_core_assets(client: LoginClient, templates: TemplatesFixture) -> None:
+    response = client.get("/")
+    assert response.status_code == 200
+    assert b"Welcome Home!" in response.data
+    assert b'<link href="/bss/assets/css/basingse.main.css" rel="stylesheet">' in response.data
+
+    record = templates[-1]
+    assert record.template.name == "page.html"
+    assert record.context["page"].title == "Home"
+    assert "asset" in record.context
+
+    assert len(list(record.context["asset"].iter_assets("css"))) == 1
 
 
 @pytest.mark.usefixtures("no_homepage")

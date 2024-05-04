@@ -10,7 +10,8 @@ from flask import Flask
 from flask import has_app_context
 from flask import request
 from flask import request_started
-from flask_login import current_user
+from flask_login import user_loaded_from_cookie
+from flask_login import user_loaded_from_request
 from rich.traceback import install
 
 D = TypeVar("D", bound=MutableMapping[str, Any])
@@ -42,10 +43,14 @@ class RequestInfo:
     host: str | None
     method: str
 
+    def __repr__(self) -> str:
+
+        return f"<{self.method} {self.path} from {self.peer} ({self.host}) [id={self.id}]>"
+
     @classmethod
     def build(cls) -> "RequestInfo":
         return cls(
-            id=request.headers.get("X-Unique-ID", "NONE"),
+            id=request.headers.get("X-Unique-ID", None),
             peer=request.headers.get("X-Forwarded-For", request.remote_addr),
             path=request.path,
             host=request.host,
@@ -59,10 +64,9 @@ def bind_request_details(sender: Flask, **extras: dict[str, Any]) -> None:
         request=RequestInfo.build(),
     )
 
-    if current_user.is_authenticated:
-        structlog.contextvars.bind_contextvars(
-            user=current_user.get_id(),
-        )
+
+def bind_user_details(sender: Flask, user: Any, **extras: dict[str, Any]) -> None:
+    structlog.contextvars.bind_contextvars(user=user.id)
 
 
 logger = structlog.get_logger()
@@ -94,3 +98,5 @@ class Logging:
     def init_app(self, app: Flask) -> None:
         configure_structlog()
         request_started.connect(bind_request_details, app)
+        user_loaded_from_request.connect(bind_user_details, app)
+        user_loaded_from_cookie.connect(bind_user_details, app)

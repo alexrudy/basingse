@@ -106,6 +106,6 @@ def build_model_form(model: "type[Model]") -> type[wtforms.Form]:
     fields: dict[str, wtforms.Field] = collect_attributes(model, "form", FormInfo)
 
     if "submit" not in fields:
-        fields["submit"] = wtforms.SubmitField("Submit")
+        fields["submit"] = wtforms.SubmitField("Save")
 
     return type(model.__name__ + "Form", (FlaskForm,), fields)

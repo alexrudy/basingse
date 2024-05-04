@@ -79,6 +79,14 @@ class Base(DeclarativeBase):
             for key in bcls.__dict__:
                 if (info := getattr(bcls.__dict__[key], "__info__", None)) is not None:
                     detected[key] = info
+                elif isinstance(bcls.__dict__[key], property) and (
+                    info := getattr(bcls.__dict__[key].fget, "__info__", None)
+                ):
+                    detected[key] = info
+                elif hasattr(bcls.__dict__[key], "__wrapped__") and (
+                    info := getattr(bcls.__dict__[key].__wrapped__, "__info__", None)
+                ):
+                    detected[key] = info
         return detected
 
 

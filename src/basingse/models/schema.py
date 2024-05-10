@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from basingse import svcs
 from basingse.models.info import _Attribute
+from basingse.models.info import ColumnInfo
 from basingse.models.info import FormInfo
 from basingse.models.info import SchemaInfo
 
@@ -97,7 +98,7 @@ def build_model_schema(model: "type[Model]") -> type[Schema]:
 
 @functools.cache
 def build_model_listview(model: "type[Model]") -> type[Table]:
-    columns: dict[str, Column] = collect_attributes(model, "listview", None)
+    columns: dict[str, Column] = collect_attributes(model, "listview", ColumnInfo)
     return type(model.__name__ + "Table", (Table,), columns)
 
 

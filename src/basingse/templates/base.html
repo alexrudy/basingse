@@ -5,7 +5,7 @@
 <header>
     {% block navbar %}
     {% include "_topbar.html" %}
-    {{ navbar }}
+    {% if navbar %}{{ render(navbar) }}{% endif %}
     {% endblock %}
 </header>
 <main class="container-lg flex-grow-1 mb-5">

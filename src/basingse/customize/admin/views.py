@@ -110,7 +110,6 @@ def render_social_partial() -> IntoResponse:
     if settings is None:
         settings = default_settings(session)
         session.flush()
-    settings.refresh_links()
     form = SettingsForm(obj=settings)
     links = form.links
 

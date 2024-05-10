@@ -11,7 +11,9 @@ from typing import TypeVar
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
 import wtforms
+from bootlace.table import columns
 from bootlace.table.base import ColumnBase as Column
+from bootlace.table.base import Table
 from marshmallow import fields
 from marshmallow.utils import _Missing as Missing
 from marshmallow.utils import missing
@@ -183,10 +185,63 @@ class FormInfo:
     }
 
 
+@dc.dataclass
+class ColumnInfo:
+    heading: str | None = None
+    attribute: str | None = None
+
+    def field(self, name: str, column: _Attribute) -> Column:
+        if isinstance(column, (sa.Column, sa.sql.elements.KeyedColumnElement)):
+            return self._field_for_column(column)
+        elif isinstance(column, orm.relationships.RelationshipProperty):
+            return self._field_for_relationship(column)
+        elif isinstance(column, Detached):
+            return self._field_for_detached(column)
+        raise ValueError(f"Unable to determine the type of {column!r}")
+
+    def _field_for_relationship(self, relationship: orm.relationships.RelationshipProperty) -> Column:
+        raise NotImplementedError("Relationships are not supported in list views")
+
+    def _field_for_detached(self, detached: Detached) -> Column:
+        raise ValueError("Detached fields must be concrete, not abstract")
+
+    def _field_for_column(self, column: sa.Column | sa.sql.elements.KeyedColumnElement) -> Column:
+        fcls = self._get_field_for_type(column.type)
+
+        kwargs = dc.asdict(self)
+        for key in list(key for key in kwargs.keys() if kwargs[key] is None):
+            del kwargs[key]
+
+        field = fcls(
+            **kwargs,
+        )
+
+        if self.attribute is None:
+            field.__set_name__(Table, column.name)
+
+        return field
+
+    def _get_field_for_type(self, datatype: TypeEngine) -> type[Column]:
+        for bcls in inspect.getmro(type(datatype)):
+            if (fcls := self.COLUMN_MAPPING.get(bcls)) is not None:
+                return fcls
+
+        raise ValueError(f"Unable to find an appropriate column type for {datatype!r}")
+
+    COLUMN_MAPPING: ClassVar[dict[type[TypeEngine], type[Column]]] = {
+        sa.Integer: columns.Column,
+        sa.Date: columns.Column,
+        sa.DateTime: columns.Datetime,
+        sa.Text: columns.Column,
+        sa.String: columns.Column,
+        sa.Boolean: columns.CheckColumn,
+    }
+
+
 class Info(TypedDict):
     form: FormInfo | wtforms.Field
     schema: SchemaInfo | fields.Field
-    listview: Column | None
+    listview: Column | ColumnInfo | None
 
 
 class Auto:
@@ -200,7 +255,7 @@ class Auto:
 class OrmInfo:
     schema: SchemaInfo | fields.Field | Auto | None
     form: FormInfo | wtforms.Field | Auto | None
-    listview: Column | None
+    listview: Column | ColumnInfo | Auto | None
 
     def get(self, key: str) -> FormInfo | SchemaInfo | Column | None:
         return getattr(self, key, None)

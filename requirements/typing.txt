@@ -10,7 +10,7 @@ mypy==1.10.0
     # via
     #   -r requirements/typing.in
     #   sqlalchemy
-sqlalchemy[mypy]==2.0.29
+sqlalchemy[mypy]==2.0.30
     # via
     #   -r requirements/base.in
     #   -r requirements/typing.in

@@ -53,8 +53,6 @@ def get_site_settings(session: Session | None = None) -> SiteSettings:
             settings = default_settings(session)
             logger.warning("No site settings found, created default settings", debug=True)
             session.commit()
-        else:
-            settings.refresh_links()
         make_transient(settings)
     return settings
 

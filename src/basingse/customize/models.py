@@ -3,22 +3,21 @@ from typing import Any
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from bootlace.table.columns import CheckColumn
+from bootlace.table.columns import Column
 from flask import url_for
 from flask_attachments import Attachment
-from marshmallow import fields
-from marshmallow import Schema
 from sqlalchemy import Boolean
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
-from sqlalchemy import select
 from sqlalchemy import String
 from sqlalchemy import Uuid
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
-from sqlalchemy.orm import object_session
 from sqlalchemy.orm import relationship
 
 from basingse.models import Model
+from basingse.models import orm
 
 if TYPE_CHECKING:
     from basingse.page.models import Page  # noqa: F401
@@ -123,12 +122,28 @@ class SiteSettings(Model):
         self._links: list[SocialLink] = []
 
     # TODO: Constrian global settings to be a single row
-    active: Mapped[bool] = mapped_column(Boolean, default=False, doc="Is this site active?")
+    active: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        doc="Is this site active?",
+        info=orm.info(schema=orm.auto(), form=orm.auto(), listview=CheckColumn("Active")),
+    )
 
     logo_id: Mapped[UUID] = mapped_column(Uuid(), ForeignKey("logos.id", ondelete="SET NULL"), nullable=True)
-    logo = relationship("Logo", uselist=False, foreign_keys=[logo_id], lazy="joined")
+    logo = relationship(
+        "Logo",
+        uselist=False,
+        foreign_keys=[logo_id],
+        lazy="joined",
+        info=orm.info(schema=orm.auto(), listview=CheckColumn("Logo")),
+    )
 
-    title: Mapped[str] = mapped_column(String(), nullable=True, doc="Site title")
+    title: Mapped[str] = mapped_column(
+        String(),
+        nullable=True,
+        doc="Site title",
+        info=orm.info(schema=orm.auto(), form=orm.auto(), listview=Column("Title")),
+    )
     subtitle: Mapped[str] = mapped_column(String(), nullable=True, doc="Site subtitle")
 
     homepage_id: Mapped[UUID] = mapped_column(Uuid(), ForeignKey("pages.id"), nullable=True)
@@ -142,32 +157,7 @@ class SiteSettings(Model):
 
     footer_message: Mapped[str] = mapped_column(String(), nullable=True, doc="Footer message")
 
-    # links = relationship("SocialLink", primaryjoin=lambda: select(SocialLink))
-
-    def fetch_links(self) -> None:
-        links = getattr(self, "_links", None)
-        if links is not None:
-            return
-        self.refresh_links()
-
-    def refresh_links(self) -> None:
-        session = object_session(self)
-        if session is None:
-            return
-
-        self._links = list(session.scalars(select(SocialLink).order_by(SocialLink.order)))
-
-    @property
-    def links(self) -> list["SocialLink"]:
-        self.fetch_links()
-        return getattr(self, "_links", [])
-
-    @links.setter
-    def links(self, value: list["SocialLink"]) -> None:
-        session = object_session(self)
-        if session is not None:
-            session.add_all(value)
-        self._links = value
+    links = relationship("SocialLink", lazy="selectin", back_populates="site")
 
 
 class SocialLink(Model):
@@ -175,10 +165,31 @@ class SocialLink(Model):
     Social links
     """
 
-    order: Mapped[int] = mapped_column(Integer, nullable=True, doc="Social link order on homepage")
-    name: Mapped[str] = mapped_column(String(), nullable=True, doc="Social link name")
-    _url = mapped_column("url", String(), nullable=True, doc="Social link url")
-    icon: Mapped[str] = mapped_column(String(), nullable=True, doc="Social link icon name from bootstrap icons")
+    site_id = mapped_column(Uuid(), ForeignKey("site_settingss.id", ondelete="CASCADE"), nullable=False)
+    site = relationship("SiteSettings", uselist=False, foreign_keys=[site_id], lazy="joined", back_populates="links")
+
+    order: Mapped[int] = mapped_column(
+        Integer, nullable=True, doc="Social link order on homepage", info=orm.info(schema=orm.auto())
+    )
+    name: Mapped[str] = mapped_column(
+        String(),
+        nullable=True,
+        doc="Social link name",
+        info=orm.info(schema=orm.auto(), form=orm.auto(), listview=orm.auto()),
+    )
+    _url = mapped_column(
+        "url",
+        String(),
+        nullable=True,
+        doc="Social link url",
+        info=orm.info(schema=orm.auto(), form=orm.auto(), listview=orm.auto()),
+    )
+    icon: Mapped[str] = mapped_column(
+        String(),
+        nullable=True,
+        doc="Social link icon name from bootstrap icons",
+        info=orm.info(schema=orm.auto(), form=orm.auto(), listview=orm.auto()),
+    )
     image_id: Mapped[UUID] = mapped_column(Uuid(), nullable=True)
     image = relationship(
         "Attachment", uselist=False, foreign_keys=[image_id], primaryjoin=Attachment.id == image_id, lazy="joined"
@@ -198,17 +209,3 @@ class SocialLink(Model):
     @url.setter
     def url(self, value: str) -> None:
         self._url = value
-
-
-class SocialLinkSchema(Schema):
-    """
-    Schema for social links
-    """
-
-    class Meta:
-        model = SocialLink
-
-    order = fields.Integer()
-    name = fields.String()
-    url = fields.String()
-    icon = fields.String()

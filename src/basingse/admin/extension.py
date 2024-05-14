@@ -137,13 +137,30 @@ class Action:
     attachments: bool = False
 
 
-def action(**options: Any) -> Callable[[Fn], Fn]:
+def action(
+    *,
+    name: str | None = None,
+    permission: str,
+    url: str,
+    methods: list[str] | None = None,
+    defaults: dict[str, Any] | None = None,
+    attachments: bool = False,
+) -> Callable[[Fn], Fn]:
     """Mark a function as an action"""
 
     def decorate(func: Fn) -> Fn:
-        options.setdefault("name", func.__name__)
+        nonlocal name
+        if name is None:
+            name = func.__name__
 
-        func.action = Action(**options)  # type: ignore
+        func.action = Action(  # type: ignore[attr-defined]
+            name,
+            permission=permission,
+            url=url,
+            methods=methods or [],
+            defaults=defaults or {},
+            attachments=attachments,
+        )
         return func
 
     return decorate

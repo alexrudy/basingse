@@ -120,6 +120,7 @@ class FormInfo:
     validators: list[Any] | None = None
     label: str | None = None
     description: str | None = None
+    default: Any | None = None
 
     def field(self, name: str, column: _Attribute) -> wtforms.Field:
         if isinstance(column, (sa.Column, sa.sql.elements.KeyedColumnElement)):

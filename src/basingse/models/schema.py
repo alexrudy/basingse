@@ -84,7 +84,15 @@ def collect_attributes(
     for name, relationship in model.__mapper__.relationships.items():
         if value := relationship.info.get(key):
             attrs[name] = process_info(name, relationship, value, info_type)
-    return attrs
+
+    reordered = {}
+    for cls in reversed(model.__mro__):
+        for name in cls.__dict__.keys():
+            if name in attrs:
+                reordered[name] = attrs.pop(name)
+
+    reordered.update(attrs)
+    return reordered
 
 
 @functools.cache
@@ -109,4 +117,8 @@ def build_model_form(model: "type[Model]") -> type[wtforms.Form]:
     if "submit" not in fields:
         fields["submit"] = wtforms.SubmitField("Save")
 
-    return type(model.__name__ + "Form", (FlaskForm,), fields)
+    for i, field in enumerate(fields.values()):
+        field.creation_counter = i
+
+    form = type(model.__name__ + "Form", (FlaskForm,), fields)
+    return form

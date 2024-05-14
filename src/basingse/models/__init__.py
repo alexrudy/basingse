@@ -9,12 +9,12 @@ from collections.abc import Iterator
 from typing import Any
 from typing import ClassVar
 
+import click
 import structlog
 from bootlace.table import Table as ListView
 from flask import abort
 from flask import flash
 from flask import Flask
-from flask.cli import AppGroup
 from flask_alembic import Alembic
 from sqlalchemy import create_engine
 from sqlalchemy import DateTime
@@ -73,20 +73,27 @@ class Base(DeclarativeBase):
     @classmethod
     def __info__(cls) -> dict[str, info.OrmInfo]:
         detected = {}
+        seen = set()
         for bcls in cls.__mro__:
             if not hasattr(bcls, "__dict__"):
                 continue
             for key in bcls.__dict__:
                 if (info := getattr(bcls.__dict__[key], "__info__", None)) is not None:
-                    detected[key] = info
+                    if id(info) not in seen:
+                        detected[key] = info
+                        seen.add(id(info))
                 elif isinstance(bcls.__dict__[key], property) and (
                     info := getattr(bcls.__dict__[key].fget, "__info__", None)
                 ):
-                    detected[key] = info
+                    if id(info) not in seen:
+                        detected[key] = info
+                        seen.add(id(info))
                 elif hasattr(bcls.__dict__[key], "__wrapped__") and (
                     info := getattr(bcls.__dict__[key].__wrapped__, "__info__", None)
                 ):
-                    detected[key] = info
+                    if id(info) not in seen:
+                        detected[key] = info
+                        seen.add(id(info))
         return detected
 
 
@@ -142,10 +149,7 @@ def set_sqlite_foreignkey_pragma(dbapi_connection: DBAPIConnection, connection_r
         cursor.close()
 
 
-group = AppGroup("db", help="Database commands")
-
-
-@group.command("init")
+@click.command("init")
 def init() -> None:
     """Initialize the database"""
     engine = svcs.get(Engine)
@@ -217,8 +221,8 @@ class SQLAlchemy:
 
         svcs.register_factory(app, BaseSession, functools.partial(session_factory, Session))
 
-        app.cli.add_command(group)
-
         # We fake our way through as if we were the default SQLAlchemy extension
         app.extensions["sqlalchemy"] = self
         alembic.init_app(app)
+        if dbgroup := app.cli.commands.get("db"):
+            dbgroup.add_command(init)  # type: ignore

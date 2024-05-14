@@ -93,12 +93,14 @@ class Portal(Blueprint):
             help="Import data from YAML files",
         )
         self.importer_group.add_command(import_all)
+        self.cli.add_command(self.importer_group)
 
         self.exporter_group = click.Group(
             "export",
             help="Export data to YAML files",
         )
         self.exporter_group.add_command(export_all)
+        self.cli.add_command(self.exporter_group)
 
     def register_admin(self, view: "type[AdminView]") -> None:
         self.admins.append(view)

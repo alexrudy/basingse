@@ -5,8 +5,15 @@
 {% endmacro %}
 
 {% macro field(entity, class='form-control') %}
+{% if entity.widget.input_type == "checkbox" %}
+<div class="form-check">
+    {{ entity(class="form-check-input", **kwargs) }}
+    {{ entity.label(class="form-check-label") }}
+</div>
+{% else %}
 {{ entity.label(class_="form-label")}}
 {{ entity(class_="form-control", **kwargs) }}
+{% endif %}
 {% if entity.description %}<div class="form-text">{{ entity.description }}</div>{% endif %}
 {{ errors(entity.errors) }}
 {% endmacro %}

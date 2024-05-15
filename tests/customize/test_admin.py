@@ -94,7 +94,8 @@ class TestSocialLinks:
     def social_link(self, app: Flask) -> SocialLink:
         with app.app_context():
             session = svcs.get(Session)
-            link = SocialLink(name="Test", url="https://test.com")
+            settings = get_site_settings(session)
+            link = SocialLink(name="Test", url="https://test.com", site=settings)
             link.image = Attachment.from_file("tests/data/logo.png")
             session.add(link)
             session.commit()
@@ -120,7 +121,7 @@ class TestSocialLinks:
 
         with app.app_context():
             session = svcs.get(Session)
-            link = SocialLink(name="Another Test", url="https://test.com")
+            link = SocialLink(name="Another Test", url="https://test.com", site_id=social_link.site_id)
             session.add(link)
             session.commit()
             session.refresh(link)

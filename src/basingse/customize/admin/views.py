@@ -103,13 +103,7 @@ def delete_social_image(id: UUID) -> IntoResponse:
 
 def render_social_partial() -> IntoResponse:
     session = svcs.get(Session)
-
-    query = select(SiteSettings).where(SiteSettings.active).limit(1)
-
-    settings = session.execute(query).scalar_one_or_none()
-    if settings is None:
-        settings = default_settings(session)
-        session.flush()
+    settings = get_site_settings(session)
     form = SettingsForm(obj=settings)
     links = form.links
 
@@ -146,7 +140,10 @@ def social_link_append() -> IntoResponse:
     query = select(func.count(SocialLink.id))
     n = session.scalar(query) or 0
 
-    new_link = SocialLink(order=n + 1)
+    settings = get_site_settings(session)
+    session.flush()
+
+    new_link = SocialLink(order=n + 1, site_id=settings.id)
     session.add(new_link)
     session.commit()
 

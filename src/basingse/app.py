@@ -14,8 +14,7 @@ def log_queries(
     conn: Any, cursor: Any, statement: str, parameters: dict[str, Any], context: Any, executemany: Any
 ) -> None:
     if statement.strip().startswith("PRAGMA ") or statement.strip().startswith("CREATE "):
-        pass
-        # logger.log(5, "%s parameters=%r", statement.strip(), parameters)
+        logger.debug("%s parameters=%r", statement.strip(), parameters)
     else:
         logger.debug("%s parameters=%r", statement, parameters)
 

@@ -1,5 +1,5 @@
 
-virtual_env :=  justfile_directory() / ".direnv/python-3.11/bin"
+virtual_env :=  justfile_directory() / ".direnv/python-3.12/bin"
 
 export PATH := virtual_env + ":" + env('PATH')
 

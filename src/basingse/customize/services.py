@@ -1,7 +1,9 @@
+import contextlib
 import importlib.resources
 import json
 import os.path
 from collections.abc import Iterable
+from collections.abc import Iterator
 from typing import Any
 
 import structlog
@@ -29,22 +31,25 @@ def default_homepage() -> dict[str, Any]:
     return json.loads(resource.read_text())
 
 
-def get_session() -> Session:
-    if (session := g.get("_customize_session")) is not None:
-        return session
+@contextlib.contextmanager
+def session_for_customize(session: Session | None = None) -> Iterator[Session]:
+    with contextlib.ExitStack() as stack:
 
-    engine = svcs.get(Engine)
-    session = Session(engine, expire_on_commit=False, autobegin=False)
-    g._customize_session = session
-    return session
+        if session is None:
+            if (session := g.get("_customize_session")) is None:
+                engine = svcs.get(Engine)
+                session = Session(engine, expire_on_commit=False, autobegin=False)
+                g._customize_session = session
+
+            stack.enter_context(session.begin())
+
+        yield session
 
 
 @cached
 def get_site_settings(session: Session | None = None) -> SiteSettings:
     """Get the site settings"""
-    if session is None:
-        session = get_session()
-    with session.begin():
+    with session_for_customize(session) as session:
         settings: SiteSettings | None = session.execute(
             select(SiteSettings).where(SiteSettings.active).limit(1)
         ).scalar_one_or_none()
@@ -60,8 +65,7 @@ def get_site_settings(session: Session | None = None) -> SiteSettings:
 @cached
 def get_social_links() -> Iterable[SocialLink]:
     """Get the social links"""
-    session = get_session()
-    with session.begin():
+    with session_for_customize() as session:
         query = select(SocialLink).order_by(SocialLink.order.asc())
         links = []
         for link in session.execute(query).scalars():

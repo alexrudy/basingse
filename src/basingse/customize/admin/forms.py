@@ -2,6 +2,7 @@ import uuid
 from collections.abc import Callable
 from typing import TypeVar
 
+import structlog
 from bootlace.forms.fields import MarkdownField
 from flask_wtf import FlaskForm
 from sqlalchemy import select
@@ -23,6 +24,9 @@ from basingse.models import Session
 from basingse.page.models import Page
 
 T = TypeVar("T")
+
+
+log = structlog.get_logger(__name__)
 
 
 def maybe(cls: type[T]) -> Callable[[str | T], T]:
@@ -48,16 +52,18 @@ class SocialForm(FlaskForm):
 
 class FormList(FieldList):
     def populate_obj(self, obj: object, name: str) -> None:
-        values = getattr(obj, name, [])
-        values = {value.id: value for value in values}
+        values = {value.id: value for value in getattr(obj, name, [])}
         output = []
         session = svcs.get(Session)
-
-        for entry in self.entries:
-            item = values.get(entry["id"].data, SocialLink())
-            entry.form.populate_obj(item)
-            output.append(session.merge(item))
-        setattr(obj, name, output)
+        with session.no_autoflush:
+            for entry in self.entries:
+                log.debug("Processing List Entry", entry=entry.data)
+                item = values.get(entry["id"].data, SocialLink())
+                entry.form.populate_obj(item)
+                item = session.merge(item)
+                output.append(item)
+                log.debug("Populated List Element", item=item)
+            getattr(obj, name)[:] = output
 
 
 class LogoForm(FlaskForm):

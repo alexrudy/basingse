@@ -209,3 +209,9 @@ class SocialLink(Model):
     @url.setter
     def url(self, value: str) -> None:
         self._url = value
+
+    def __repr__(self) -> str:
+        if self.name:
+            return f"<SocialLink name={self.name} id={self.id}>"
+        else:
+            return f"<SocialLink id={self.id}>"

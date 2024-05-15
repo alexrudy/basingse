@@ -32,6 +32,10 @@ from basingse.testing.responses import assertrepr_compare as responses_assertrep
 logger = structlog.get_logger()
 
 
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption("--log-queries", action="store_true", help="Log all queries")
+
+
 def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "flask: mark test as flask utility")
 
@@ -48,16 +52,17 @@ def setup_svcs_logging() -> None:
 
 
 @pytest.fixture(autouse=True, scope="session")
-def setup_query_logging() -> None:
-    event.listen(Engine, "before_cursor_execute", log_queries)
+def setup_query_logging(request: pytest.FixtureRequest) -> None:
+    if request.config.getoption("--log-queries"):
+        event.listen(Engine, "before_cursor_execute", log_queries)
 
-    @event.listens_for(Engine, "commit")
-    def receive_commit(conn: Any) -> None:
-        logger.debug("COMMIT", engine=conn.engine.url)
+        @event.listens_for(Engine, "commit")
+        def receive_commit(conn: Any) -> None:
+            logger.debug("COMMIT", engine=conn.engine.url)
 
-    @event.listens_for(Engine, "connect")
-    def connect(dbapi_connection: DBAPIConnection, connection_record: ConnectionPoolEntry) -> None:
-        logger.debug("connecting")
+        @event.listens_for(Engine, "connect")
+        def connect(dbapi_connection: DBAPIConnection, connection_record: ConnectionPoolEntry) -> None:
+            logger.debug("connecting")
 
 
 def setup_app_logging(app: Flask) -> None:

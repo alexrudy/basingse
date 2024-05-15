@@ -6,8 +6,8 @@ from jinja2 import Undefined
 from markdown_it import MarkdownIt
 from markdown_it.renderer import RendererHTML
 from markupsafe import Markup
-from mdit_py_plugins.footnote import footnote_plugin  # type: ignore[attr-defined]
-from mdit_py_plugins.front_matter import front_matter_plugin  # type: ignore[attr-defined]
+from mdit_py_plugins.footnote import footnote_plugin
+from mdit_py_plugins.front_matter import front_matter_plugin
 
 
 class BootstrapRender(RendererHTML):

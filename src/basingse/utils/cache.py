@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from typing import Any
 from typing import Generic
 from typing import overload
 from typing import TypeVar
@@ -13,7 +14,10 @@ class SingletonCache(Generic[T]):
         self._cached = None
         self._func = func
 
-    def __call__(self) -> T:
+    def __call__(self, *args: Any, **kwargs: Any) -> T:
+        if args or kwargs:
+            return self._func(*args, **kwargs)
+
         if self._cached is None:
             self._cached = value = self._func()
             return value

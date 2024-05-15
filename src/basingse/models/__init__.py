@@ -15,6 +15,7 @@ from bootlace.table import Table as ListView
 from flask import abort
 from flask import flash
 from flask import Flask
+from flask.cli import with_appcontext
 from flask_alembic import Alembic
 from sqlalchemy import create_engine
 from sqlalchemy import DateTime
@@ -150,6 +151,7 @@ def set_sqlite_foreignkey_pragma(dbapi_connection: DBAPIConnection, connection_r
 
 
 @click.command("init")
+@with_appcontext
 def init() -> None:
     """Initialize the database"""
     engine = svcs.get(Engine)

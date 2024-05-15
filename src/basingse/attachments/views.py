@@ -62,10 +62,10 @@ class AttachmentSchema(Schema):
 
 class AttachmentTable(Table):
 
-    filename = EditColumn("Filename", attribute="filename")
-    compression = Column("Compression", attribute="compression")
-    size = Column("Size", attribute="size")
-    mime = Column("MIME Type", attribute="mime")
+    filename = EditColumn("Filename")
+    compression = Column("Compression")
+    size = Column("Size")
+    mime = Column("MIME Type")
 
 
 class AttachmentsAdmin(AdminView, blueprint=portal):

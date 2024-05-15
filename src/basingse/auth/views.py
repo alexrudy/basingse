@@ -201,7 +201,7 @@ def dev_login() -> Any:
         abort(404)
 
     if login_user(user):
-        user.last_login = dt.datetime.utcnow()
+        user.last_login = dt.datetime.now(dt.UTC)
         session.commit()
         log.info("Authenticated from testing endpoint", user=current_user)
         return ("", 204)

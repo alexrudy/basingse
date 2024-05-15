@@ -57,7 +57,7 @@ class User(Model):
             info=orm.info(
                 schema=fields.Email(),
                 form=wtforms.fields.EmailField(validate=[EmailValidator(granular_message=True)]),
-                listview=EditColumn("Email", attribute="email"),
+                listview=EditColumn("Email", name="email"),
             ),
         )
     )
@@ -180,7 +180,7 @@ class User(Model):
         user = session.execute(select(cls).where(cls.email == email).limit(1)).scalar_one_or_none()
         if user and user.compare_password(password):
             if login_user(user):
-                user.last_login = dt.datetime.utcnow()
+                user.last_login = dt.datetime.now(dt.UTC)
                 return True
             else:
                 logout_user()

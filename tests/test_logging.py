@@ -9,6 +9,7 @@ from flask import Flask
 from flask import g
 
 from basingse.logging import bind_request_details
+from basingse.logging import bind_user_details
 from basingse.logging import DebugDemoter
 from basingse.logging import RequestInfo
 
@@ -76,7 +77,7 @@ def test_debug_demoter(app: Flask, event: dict[str, Any], debug: bool, expected_
 @pytest.mark.parametrize(
     "request_args, attributes",
     [
-        pytest.param({}, {"id": "NONE", "peer": None, "path": "/", "host": "localhost", "method": "GET"}, id="simple"),
+        pytest.param({}, {"id": None, "peer": None, "path": "/", "host": "localhost", "method": "GET"}, id="simple"),
         pytest.param(
             {"headers": {"X-Unique-ID": "123", "X-Forwarded-For": "10.0.0.1"}},
             {"peer": "10.0.0.1", "id": "123"},
@@ -104,7 +105,8 @@ def test_request_contextvars(app: Flask) -> None:
 @pytest.mark.usefixtures("auth")
 def test_request_contextvars_user(app: Flask) -> None:
     with app.test_request_context("/"):
-        g._login_user = User(is_authenticated=True)
         bind_request_details(app)
+        g._login_user = user = User(is_authenticated=True)
+        bind_user_details(app, user)
         vars = structlog.contextvars.get_contextvars()
         assert vars["user"] == 1

@@ -157,7 +157,6 @@ class Assets:
     def serve_asset(self, filename: str) -> ResponseReturnValue:
         for collection in self.collection:
             if filename in collection:
-                logger.info("Serving asset", filename=filename, debug=True)
                 return collection.serve_asset(filename)
 
         logger.warning("Asset not found", filename=filename, debug=True)

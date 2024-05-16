@@ -13,6 +13,13 @@ from flask import request_started
 from flask_login import user_loaded_from_cookie
 from flask_login import user_loaded_from_request
 from rich.traceback import install
+from sqlalchemy import Engine
+from sqlalchemy import event
+from sqlalchemy.engine.interfaces import DBAPIConnection
+from sqlalchemy.pool import ConnectionPoolEntry
+
+logger = structlog.get_logger()
+
 
 D = TypeVar("D", bound=MutableMapping[str, Any])
 
@@ -69,9 +76,6 @@ def bind_user_details(sender: Flask, user: Any, **extras: dict[str, Any]) -> Non
     structlog.contextvars.bind_contextvars(user=user.id)
 
 
-logger = structlog.get_logger()
-
-
 def configure_structlog() -> None:
     structlog.configure(
         processors=[
@@ -92,6 +96,18 @@ def configure_structlog() -> None:
     install(show_locals=True)
 
 
+def setup_query_logging() -> None:
+    event.listen(Engine, "before_cursor_execute", log_queries)
+
+    @event.listens_for(Engine, "commit")
+    def receive_commit(conn: Any) -> None:
+        logger.debug("COMMIT", engine=conn.engine.url)
+
+    @event.listens_for(Engine, "connect")
+    def connect(dbapi_connection: DBAPIConnection, connection_record: ConnectionPoolEntry) -> None:
+        logger.debug("connecting")
+
+
 @dc.dataclass(frozen=True)
 class Logging:
 
@@ -100,3 +116,14 @@ class Logging:
         request_started.connect(bind_request_details, app)
         user_loaded_from_request.connect(bind_user_details, app)
         user_loaded_from_cookie.connect(bind_user_details, app)
+        if app.config.get("LOG_QUERIES", False):
+            setup_query_logging()
+
+
+def log_queries(
+    conn: Any, cursor: Any, statement: str, parameters: dict[str, Any], context: Any, executemany: Any
+) -> None:
+    if statement.strip().startswith("PRAGMA ") or statement.strip().startswith("CREATE "):
+        logger.debug("%s parameters=%r", statement.strip(), parameters)
+    else:
+        logger.debug("%s parameters=%r", statement, parameters)

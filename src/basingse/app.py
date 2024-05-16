@@ -10,15 +10,6 @@ from basingse.settings import BaSingSe
 logger = structlog.get_logger()
 
 
-def log_queries(
-    conn: Any, cursor: Any, statement: str, parameters: dict[str, Any], context: Any, executemany: Any
-) -> None:
-    if statement.strip().startswith("PRAGMA ") or statement.strip().startswith("CREATE "):
-        logger.debug("%s parameters=%r", statement.strip(), parameters)
-    else:
-        logger.debug("%s parameters=%r", statement, parameters)
-
-
 def configure_app(app: Flask, config: dict[str, Any] | None = None, prefix: str | None = None) -> None:
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 

@@ -21,9 +21,9 @@ from structlog.types import EventDict
 
 from basingse import svcs
 from basingse.app import configure_app
-from basingse.app import log_queries
 from basingse.assets import AssetCollection
 from basingse.auth.testing import LoginClient
+from basingse.logging import log_queries
 from basingse.models import Model
 from basingse.settings import BaSingSe
 from basingse.testing.responses import assertrepr_compare as responses_assertrepr_compare

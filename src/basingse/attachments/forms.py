@@ -28,17 +28,25 @@ class AttachmentField(FileField):
         data = cast(FileStorage | Attachment | None, self.data)  # type: ignore[has-type]
         if data is None:
             self.data = None
-        if isinstance(data, Attachment):
+        if isinstance(data, (FileStorage, Attachment)):
             self.data = data
-        elif isinstance(data, FileStorage):
-            attachment = Attachment()
-            attachment.receive(data)
-            self.data = attachment
+        else:
+            log.error("Invalid data type", data=data)
+            self.data = None
 
     def populate_obj(self, obj: Any, name: str) -> None:
         """Make object population non-destructive"""
-        if self.data is not None:
+        if self.data is None:
+            return
+
+        if isinstance(self.data, Attachment):
             setattr(obj, name, self.data)
+        elif isinstance(self.data, FileStorage):
+            attachment = Attachment()
+            attachment.receive(self.data)
+            setattr(obj, name, attachment)
+        else:
+            log.error("Invalid data type", data=self.data)
 
 
 class Unchanged:

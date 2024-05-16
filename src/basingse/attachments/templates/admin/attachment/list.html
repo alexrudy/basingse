@@ -28,7 +28,7 @@ Attachments | {{ super() }}
 {% endblock %}
 
 {% block tbody %}
-{% for attachment in attachments %}
+{% for attachment in items %}
 <tr>
     <td>
         {{ attachment.id.hex | truncate(10, true, '') }}</a>

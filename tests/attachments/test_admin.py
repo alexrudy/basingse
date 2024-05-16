@@ -18,6 +18,7 @@ from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import select
 from werkzeug.datastructures import FileStorage
 from wtforms import fields as form_fields
 from wtforms import validators
@@ -117,6 +118,44 @@ def test_delete_attachment(app: Flask, profile: FakeProfile) -> None:
     with app.test_client() as client:
         response = client.get(f"/tests/admin/profiles/{profile.id}/delete-attachment/{profile.attachment_id}/")
         assert response == Ok()
+
+
+@pytest.mark.usefixtures("adminview")
+def test_save_attachment_field(app: Flask) -> None:
+
+    with app.test_client() as client:
+        response = client.post(
+            "/tests/admin/profiles/new/",
+            data={"title": "Hello", "attachment": FileStorage(io.BytesIO(b"Replaced!"), "example.txt")},
+        )
+        assert response == Redirect("/tests/admin/profiles/list/")
+
+    with app.app_context():
+        session = svcs.get(Session)
+        altered = session.scalar(select(FakeProfile).limit(1))
+        assert altered is not None
+        assert altered.title == "Hello"
+        assert altered.attachment is not None
+        assert altered.attachment.filename == "example.txt"
+
+
+@pytest.mark.usefixtures("adminview")
+def test_update_attachment_field(app: Flask, profile: FakeProfile) -> None:
+
+    with app.test_client() as client:
+        response = client.post(
+            f"/tests/admin/profiles/{profile.id}/edit/",
+            data={"title": "Hello", "attachment": FileStorage(io.BytesIO(b"Hello, World!"), "example.txt")},
+        )
+        assert response == Redirect("/tests/admin/profiles/list/")
+
+    with app.app_context():
+        session = svcs.get(Session)
+        altered = session.get(FakeProfile, profile.id)
+        assert altered is not None
+        assert altered.title == "Hello"
+        assert altered.attachment is not None
+        assert altered.attachment.filename == "example.txt"
 
 
 class TestAttachmentAdmin:

@@ -1,5 +1,6 @@
 import dataclasses as dc
 import os.path
+import re
 from collections.abc import Callable
 from collections.abc import Iterable
 from typing import Any
@@ -470,6 +471,33 @@ class AdminView(View, Generic[M]):
             view_func=cls.as_view("do"),
             methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
         )
+
+        cls.bp.url_defaults(cls.url_defaults_add_identity)
+
+    @classmethod
+    def url_defaults_add_identity(cls, endpoint: str, values: dict[str, Any]) -> None:
+        """Inject the object identity into the URL if it is part of the endpoint signature
+
+        This makes it so that URLs constructed on pages with a single object (e.g. view/edit)
+        do not need to be passed the object identity as a parameter.
+        """
+
+        if request.endpoint is None:
+            # No endpoint - can't inject identity
+            return
+
+        pattern = re.compile(r"<([^>]+)>")
+
+        if (m := pattern.search(cls.key)) is not None:
+            parts = m.group(1).split(":")
+            key = parts[-1]
+        else:
+            # Can't inject identity
+            return
+
+        if request.view_args and (id := request.view_args.get(key, None)) is not None:
+            if current_app.url_map.is_endpoint_expecting(endpoint, key):
+                values[key] = id
 
     # Import/Export CLI commands
 

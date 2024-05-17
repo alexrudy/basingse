@@ -1,4 +1,5 @@
 import hashlib
+import uuid
 from typing import Any
 from typing import cast
 
@@ -109,6 +110,10 @@ class AttachmentForm(FlaskForm):
         return data
 
     def populate_obj(self, obj: Attachment) -> None:
+        if self.id.data:
+            if isinstance(self.id.data, str):
+                self.id.data = uuid.UUID(self.id.data)
+
         super().populate_obj(obj)
         if self.attachment.data:
             obj.receive(self.attachment.data)

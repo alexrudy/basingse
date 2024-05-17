@@ -56,7 +56,7 @@ class User(Model):
             doc="User's email address",
             info=orm.info(
                 schema=fields.Email(),
-                form=wtforms.fields.EmailField(validate=[EmailValidator(granular_message=True)]),
+                form=wtforms.fields.EmailField(validators=[EmailValidator(granular_message=True)]),
                 listview=EditColumn("Email", name="email"),
             ),
         )

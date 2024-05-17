@@ -1,8 +1,39 @@
+{% from "_icon.html" import icon %}
+
 {% macro errors(items) %}
 {% for error in items %}
 <span class="text-danger">{{ error }}</span>
 {% endfor %}
 {% endmacro %}
+
+{% macro attachment_field(entity, class='form-control') %}
+{{ entity.label(class_="form-label")}}
+{% if entity.data.id %}
+<div class="input-group" id="{{ entity.id }}-group" hx-target="this">
+    <div class="input-group-text">File</div>
+    <input type="text" value="{{ entity.data.filename }}" name="{{ entity.name }}pseudofield" ,
+        id="{{ entity.id }}pseudofield" class="form-control" disabled>
+    <div class="input-group-text rounded-end d-inline-flex align-items-center">
+        <a {% if entity.data.id
+            %}hx-get="{{ url_for('.delete_attachment', attachment=entity.data.id, field=entity.id) }}" {% else
+            %}class="disabled" {% endif %} href="#">
+            {{ icon('trash') }}
+        </a>
+    </div>
+    <div class="visually-hidden">
+        {{ entity(class_="form-control", disabled=True, type="text") }}
+    </div>
+</div>
+<div class="form-text">Only one attachment is supported at a time.</div>
+{{ errors(entity.errors) }}
+{% else %}
+{{ entity.label(class_="form-label")}}
+{{ entity(class_="form-control", **kwargs) }}
+{% if entity.description %}<div class="form-text">{{ entity.description }}</div>{% endif %}
+{{ errors(entity.errors) }}
+{% endif %}
+{% endmacro %}
+
 
 {% macro field(entity, class='form-control') %}
 {% if entity.widget.input_type == "checkbox" %}
@@ -10,6 +41,8 @@
     {{ entity(class="form-check-input", **kwargs) }}
     {{ entity.label(class="form-check-label") }}
 </div>
+{% elif entity.widget.input_type == "file" %}
+{{ attachment_field(entity, class=class)}}
 {% else %}
 {{ entity.label(class_="form-label")}}
 {{ entity(class_="form-control", **kwargs) }}

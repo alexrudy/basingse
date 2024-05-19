@@ -7,9 +7,7 @@
 #
 -r base.txt
 coverage[toml]==7.5.1
-    # via
-    #   coverage
-    #   pytest-cov
+    # via pytest-cov
 execnet==2.1.1
     # via pytest-xdist
 freezegun==1.5.1
@@ -18,7 +16,7 @@ iniconfig==2.0.0
     # via pytest
 pluggy==1.5.0
     # via pytest
-pytest==8.2.0
+pytest==8.2.1
     # via
     #   -r requirements/tests.in
     #   pytest-cov

@@ -10,3 +10,4 @@ build
 twine
 watchdog
 hatchling
+-e .

@@ -1,46 +1,70 @@
+# Common Flask project tasks
 
-virtual_env :=  justfile_directory() / ".direnv/python-3.12/bin"
-
+# Set up the virtual environment based on the direnv convention
+# https://direnv.net/docs/legacy.html#virtualenv
+python_version := env('PYTHON_VERSION', "3.12")
+virtual_env :=  justfile_directory() / ".direnv/python-$python_version/bin"
 export PATH := virtual_env + ":" + env('PATH')
+export REQUIREMENTS_TXT := env('REQUIREMENTS', '')
 
 [private]
 prepare:
     pip install --quiet --upgrade pip
-    pip install --quiet pip-tools pip-compile-multi
+    pip install --quiet -r requirements/pip-tools.txt
 
 # lock the requirements files
 compile: prepare
-    pip-compile-multi --use-cache
+    pip-compile-multi --use-cache --backtracking
 
-# install dependencies into local virtual environment
+# Install dependencies
 sync: prepare
     pip-sync requirements/dev.txt
-    pip install -e .
-    tox --notest
+    [[ -f requirements/local.txt ]] && pip install -r requirements/local.txt
+    tox -p auto --notest
 
+# Sort imports
 isort:
     -pre-commit run reorder-python-imports --all-files
 
-# run tests
+# Run tests
 test:
     pytest -q -n 4 --cov-report=html
 
-# run all tests
+# Run all tests
 test-all:
     tox -p auto
 
-# run lints
+# Run lints
 lint:
     pre-commit run --all-files
 
-# run mypy
+# Run mypy
 mypy:
     mypy
 
-# run the application
+# run the flask application
 serve:
     flask run
 
-# watch for changes and run the application
-watch:
-    python -m watch
+# Build docs
+docs:
+    cd docs && make html
+
+# Clean up
+clean:
+    rm -rf dist/* *.egg-info
+    rm -rf docs/_build
+
+# Clean up docs
+clean-docs:
+    rm -rf docs/_build
+    rm -rf docs/api
+
+# Clean aggressively
+clean-all: clean
+    rm -rf .direnv
+    rm -rf .venv
+    rm -rf .tox
+    rm -rf .mypy_cache .pytest_cache
+    rm -rf docs/api
+    rm -rf .coverage htmlcov

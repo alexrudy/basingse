@@ -6,9 +6,9 @@ import pytz
 import structlog
 import wtforms.fields
 from bootlace.table import Heading
+from bootlace.table.columns import ActionColumn
 from bootlace.table.columns import CheckColumn
 from bootlace.table.columns import Column
-from bootlace.table.columns import EditColumn
 from flask import current_app
 from flask import url_for
 from flask_login import AnonymousUserMixin
@@ -57,7 +57,7 @@ class User(Model):
             info=orm.info(
                 schema=fields.Email(),
                 form=wtforms.fields.EmailField(validators=[EmailValidator(granular_message=True)]),
-                listview=EditColumn("Email", name="email"),
+                listview=ActionColumn("Email", name="email"),
             ),
         )
     )

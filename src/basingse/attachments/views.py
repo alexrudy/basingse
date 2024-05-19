@@ -4,7 +4,7 @@ from typing import Any
 import structlog
 from bootlace.table import Column
 from bootlace.table import Table
-from bootlace.table.columns import EditColumn
+from bootlace.table.columns import ActionColumn
 from flask_attachments import Attachment
 from flask_attachments import CompressionAlgorithm
 from flask_attachments.extension import settings
@@ -62,7 +62,7 @@ class AttachmentSchema(Schema):
 
 class AttachmentTable(Table):
 
-    filename = EditColumn("Filename")
+    filename = ActionColumn("Filename")
     compression = Column("Compression")
     size = Column("Size")
     mime = Column("MIME Type")

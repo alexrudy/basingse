@@ -1,6 +1,6 @@
 from bootlace.forms.fields import SLUG_VALIDATOR
+from bootlace.table.columns import ActionColumn
 from bootlace.table.columns import Column
-from bootlace.table.columns import EditColumn
 from flask import url_for
 from marshmallow import fields
 from sqlalchemy import String
@@ -23,7 +23,7 @@ class Page(Model):
         info=orm.info(
             form=orm.FormInfo(label="Title", validators=[DataRequired()]),
             schema=orm.auto(),
-            listview=EditColumn("Page"),
+            listview=ActionColumn("Page"),
         ),
     )
     slug: Mapped[str] = mapped_column(

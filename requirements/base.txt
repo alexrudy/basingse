@@ -18,7 +18,7 @@ bidict==0.23.1
     # via python-socketio
 blinker==1.8.2
     # via flask
-bootlace==0.2.1
+bootlace==0.2.2
     # via -r requirements/base.in
 click==8.1.7
     # via flask
@@ -101,7 +101,7 @@ packaging==24.0
     # via marshmallow
 pygments==2.18.0
     # via rich
-python-engineio==4.9.0
+python-engineio==4.9.1
     # via python-socketio
 python-socketio==5.11.2
     # via flask-socketio

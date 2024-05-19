@@ -30,9 +30,10 @@ sphinx==7.3.7
     # via
     #   -r requirements/docs.in
     #   sphinx-automodapi
+    #   sphinx-mdinclude
 sphinx-automodapi==0.17.0
     # via -r requirements/docs.in
-sphinx-mdinclude==0.6.0
+sphinx-mdinclude==0.6.1
     # via -r requirements/docs.in
 sphinxcontrib-applehelp==1.0.8
     # via sphinx

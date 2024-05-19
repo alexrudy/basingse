@@ -4,6 +4,7 @@
 <meta name="csrf" content="{{ csrf_token() }}">
 {% endblock %}
 
+
 {% block title %}Admin | {{ site_settings.title }}{% endblock %}
 
 {% import "admin/_breadcrumbs.html" as bread %}
@@ -30,7 +31,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('basingse.assets', filename=asset.url('js/basingse.admin.js')) }}"></script>
+{{ super() }}
 {% block scripts_admin_init %}
 <script>
     Basingse.admin.init({});

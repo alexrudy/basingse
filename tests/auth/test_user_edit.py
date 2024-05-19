@@ -52,7 +52,7 @@ def test_edit_user(app: Flask, author: User, client: LoginClient) -> None:
 
         return render_template("auth/user_edit.html", form=form, user=user)
 
-    client.login_session(author.email)  # type: ignore
+    client.login_session(author.email)
 
     with client.get(f"/user/{author.id}/edit/") as resp:
         assert resp == Ok()

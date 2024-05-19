@@ -21,10 +21,12 @@ from structlog.types import EventDict
 
 from basingse import svcs
 from basingse.app import configure_app
-from basingse.assets import AssetCollection
+from basingse.assets import AssetLocation
+from basingse.assets import AssetManifest
 from basingse.auth.testing import LoginClient
 from basingse.logging import log_queries
 from basingse.models import Model
+from basingse.resources import ResourceBundle
 from basingse.settings import BaSingSe
 from basingse.testing.responses import assertrepr_compare as responses_assertrepr_compare
 
@@ -104,7 +106,10 @@ def app(tmp_path: Path) -> Iterator[Flask]:
     bss = BaSingSe(logging=None)
     bss.init_app(app)
     assert bss.assets, "Assets should be initialized"
-    bss.assets.collection.append(AssetCollection("tests", Path("manifest.json"), Path("assets")))
+    bss.assets.append(AssetManifest(name="tests", location=AssetLocation("tests")))
+    assert bss.bundles
+    bss.bundles.add(ResourceBundle.from_manifest("tests", bss.assets["tests"]))
+
     setup_app_logging(app)
 
     with app.app_context():

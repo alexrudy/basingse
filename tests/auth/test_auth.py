@@ -79,7 +79,7 @@ def test_login_logout(admin: User, client: LoginClient) -> None:
 
 @pytest.mark.usefixtures("secure")
 def test_login_dev_logout(author: User, client: LoginClient) -> None:
-    client.login_session(author.email)  # type: ignore
+    client.login_session(author.email)
     assert current_user.is_authenticated
 
     client.logout()
@@ -168,7 +168,7 @@ def test_login_failure_not_active(modify: ModifyContext, author: User, client: L
 
 @pytest.mark.usefixtures("secure")
 def test_change_password(app: Flask, author: User, client: LoginClient) -> None:
-    client.login_session(author.email)  # type: ignore
+    client.login_session(author.email)
 
     resp = client.get("/auth/password/")
     assert resp == Ok()
@@ -215,12 +215,12 @@ def test_user_attributes(author: User, client: LoginClient) -> None:
     session = svcs.get(Session)
 
     session.add(author)
-    author.email = "test-user@basingse.test"  # type: ignore
+    author.email = "test-user@basingse.test"
     assert author.last_login_at == None
     session.commit()
 
     with freezegun.freeze_time("2022-08-02 12:15:00"):
-        client.login_session(author.email)  # type: ignore
+        client.login_session(author.email)
 
     session.refresh(author)
     assert author.last_login_at == pytz.utc.localize(dt.datetime(2022, 8, 2, 12, 15))
@@ -230,7 +230,7 @@ def test_user_attributes(author: User, client: LoginClient) -> None:
 @pytest.mark.usefixtures("secure")
 def test_user_activate_endpoints(author: User, admin: User, client: LoginClient) -> None:
 
-    client.login_session(admin.email)  # type: ignore
+    client.login_session(admin.email)
 
     log.info("GET /activate", user=author, active=author.is_active)
     with client.get(f"/auth/user/{author.id}/activate") as resp:
@@ -259,14 +259,14 @@ def test_user_activate_endpoints(author: User, admin: User, client: LoginClient)
 
 @pytest.mark.usefixtures("secure")
 def test_me_endpoint(author: User, client: LoginClient) -> None:
-    client.login_session(author.email)  # type: ignore
+    client.login_session(author.email)
 
     with client.get("/auth/me", headers={"accept": "application/json"}) as resp:
         assert resp == Ok()
         assert resp.json["id"] == str(author.id), "User should be the same"  # type: ignore
 
     with client.get("/auth/me", headers={"accept": "text/html"}) as resp:
-        assert resp == Redirect("/")  # type: ignore
+        assert resp == Redirect("/")
 
 
 @pytest.mark.usefixtures("secure")

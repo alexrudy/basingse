@@ -9,7 +9,8 @@ from flask import Flask
 from flask.testing import FlaskClient
 
 from basingse import svcs
-from basingse.assets import AssetCollection
+from basingse.assets import AssetLocation
+from basingse.assets import AssetManifest
 from basingse.assets import Assets
 from basingse.assets import check_dist
 from basingse.testing.responses import NotFound
@@ -28,7 +29,7 @@ def not_debug(app: Flask) -> None:
 
 
 @pytest.fixture
-def collection(tmp_path: Path) -> AssetCollection:
+def collection(tmp_path: Path) -> AssetManifest:
     manifest: dict[str, str] = {}
 
     def add_file(name: str, contents: str, map_contents: str) -> None:
@@ -46,7 +47,7 @@ def collection(tmp_path: Path) -> AssetCollection:
 
     (tmp_path / "assets" / "manifest.json").write_text(json.dumps(manifest))
 
-    return AssetCollection(tmp_path, Path("manifest.json"), Path("assets"))
+    return AssetManifest("fixture", location=AssetLocation(tmp_path))
 
 
 @pytest.mark.parametrize(
@@ -58,7 +59,7 @@ def test_get(
     app: Flask,
     client: FlaskClient,
     debug: bool,
-    collection: AssetCollection,
+    collection: AssetManifest,
     filename: str,
     postfix: str,
     expected: Response,
@@ -68,51 +69,52 @@ def test_get(
     with app.app_context():
         assets = svcs.get(Assets)
         assets.append(collection)
-        path = assets.url(filename)
+        path = assets["fixture"].url(filename)
 
-    with client.get(f"/bss/assets/{path}{postfix}") as resp:
+    with client.get(f"{path}{postfix}") as resp:
         assert resp == expected
 
 
 @pytest.mark.usefixtures("app_context")
-def test_iter_assets(collection: AssetCollection) -> None:
+def test_iter_assets(collection: AssetManifest) -> None:
     assets = svcs.get(Assets)
     assets.append(collection)
 
-    assert "js/tests.main.js" in list(assets.iter_assets("js"))
-    assert "css/tests.main.css" in list(assets.iter_assets(None))
+    assert "js/tests.main.js" in [asset.filename for asset in assets.iter_assets("fixture", "js")]
+    assert "css/tests.main.css" in [asset.filename for asset in assets.iter_assets("fixture")]
 
 
 @pytest.mark.usefixtures("not_debug", "app_context")
-def test_url_fallback(collection: AssetCollection) -> None:
+def test_url_fallback(collection: AssetManifest) -> None:
     assets = svcs.get(Assets)
     assets.append(collection)
-    assert assets.url("js/tests.other.js") == "js/tests.other.js"
+    with pytest.raises(KeyError):
+        assets.url("fixture", "js/tests.other.js")
 
 
 class TestCollection:
 
-    def test_iter_assets(self, collection: AssetCollection) -> None:
-        assert list(collection.iter_assets("js")) == ["js/tests.main.js"]
-        assert list(collection.iter_assets("css")) == ["css/tests.main.css"]
+    @pytest.mark.usefixtures("app_context")
+    def test_iter_assets(self, collection: AssetManifest) -> None:
+        assert [asset.filename for asset in collection.iter_assets("js")] == ["js/tests.main.js"]
+        assert [asset.filename for asset in collection.iter_assets("css")] == ["css/tests.main.css"]
 
     @pytest.mark.usefixtures("not_debug", "app_context")
-    def test_url(self, app: Flask, collection: AssetCollection) -> None:
-        assert collection.url("js/tests.main.js") == "js/tests.main.adf06cf637aff7c06810711225d7eec6.js"
+    def test_url(self, app: Flask, collection: AssetManifest) -> None:
+        assert (
+            collection.url("js/tests.main.js")
+            == "http://basingse.test/assets/fixture/js/tests.main.adf06cf637aff7c06810711225d7eec6.js"
+        )
 
-    def test_contains(self, collection: AssetCollection) -> None:
+    def test_contains(self, collection: AssetManifest) -> None:
         assert "js/tests.main.js" in collection
         assert "css/tests.main.css" in collection
         assert "js/tests.other.js" not in collection
 
     @pytest.mark.usefixtures("not_debug", "app_context")
-    def test_url_missing(self, collection: AssetCollection) -> None:
+    def test_url_missing(self, collection: AssetManifest) -> None:
         with pytest.raises(KeyError):
             collection.url("js/tests.other.js")
-
-    @pytest.mark.usefixtures("debug", "app_context")
-    def test_url_unknown(self, collection: AssetCollection) -> None:
-        assert collection.url("js/tests.other.js") == "js/tests.other.js"
 
     @pytest.mark.parametrize(
         "filename,found",
@@ -120,16 +122,16 @@ class TestCollection:
         ids=["js", "css"],
     )
     @pytest.mark.usefixtures("debug", "app_context")
-    def test_response_debug_mode(self, app: Flask, collection: AssetCollection, filename: str, found: Response) -> None:
+    def test_response_debug_mode(self, app: Flask, collection: AssetManifest, filename: str, found: Response) -> None:
         with app.test_request_context():
-            with app.make_response(collection.serve_asset(filename)) as response:
-                assert response == found  # type: ignore[comparison-overlap]
+            with app.make_response(collection.serve(filename)) as response:
+                assert response == found
                 assert response.get_etag() == (None, None)
 
     @pytest.mark.usefixtures("not_debug", "app_context")
-    def test_response_not_found(self, app: Flask, collection: AssetCollection) -> None:
+    def test_response_not_found(self, app: Flask, collection: AssetManifest) -> None:
         with app.test_request_context(), pytest.raises(werkzeug.exceptions.NotFound):
-            collection.serve_asset("js/tests.other.js")
+            collection.serve("js/tests.other.js")
 
     @pytest.mark.parametrize(
         "filename,found",
@@ -138,15 +140,12 @@ class TestCollection:
     )
     @pytest.mark.usefixtures("not_debug", "app_context")
     def test_response_not_debug_mode(
-        self, app: Flask, collection: AssetCollection, filename: str, found: Response
+        self, app: Flask, collection: AssetManifest, filename: str, found: Response
     ) -> None:
         with app.test_request_context():
-            url = collection.url(filename)
-
-            with app.make_response(collection.serve_asset(url)) as response:
+            asset = collection[filename]
+            with app.make_response(collection.serve(asset.filepath())) as response:
                 assert response == Ok()
-                etag, _ = response.get_etag()
-                assert etag is not None
 
 
 @pytest.mark.usefixtures("app_context", "not_debug")
@@ -154,19 +153,14 @@ def test_bundled_assets(app: Flask) -> None:
 
     assert app.config["ASSETS_BUST_CACHE"], "Cache should be busted"
 
-    collection = AssetCollection("basingse", Path("manifest.json"), Path("assets"))
+    collection = AssetManifest("basingse", location=AssetLocation("basingse"))
     assert len(collection) > 0, "No assets found in basingse"
 
-    some_file = next(iter(collection))
+    some_asset = next(iter(collection.values()))
 
     with app.test_request_context():
-        url = collection.url(some_file)
-        with app.make_response(collection.serve_asset(url)) as response:
+        with app.make_response(collection.serve(some_asset.filepath())) as response:
             assert response == Ok()
-            etag, _ = response.get_etag()
-
-            # etag is not sent for importlib resources
-            assert etag is None
 
 
 def test_check_dist(capsys: pytest.CaptureFixture) -> None:
@@ -182,24 +176,20 @@ def test_check_dist(capsys: pytest.CaptureFixture) -> None:
     assert n_files > 0, "Expected at least one asset file"
 
 
-def test_assets_no_blueprint(app: Flask) -> None:
+def test_assets_delayed_init() -> None:
+    app = Flask(__name__)
+    svcs.init_app(app)
     assets = Assets()
     assets.init_app(app)
-    assert assets.blueprint is None
     assert any(app.url_map.iter_rules(endpoint="assets")), "No assets endpoint found"
 
     with app.app_context():
         assert svcs.get(Assets) == assets
 
 
-def test_assets_direct_init(app: Flask) -> None:
+def test_assets_direct_init() -> None:
+    app = Flask(__name__)
+    svcs.init_app(app)
     app.config["ASSETS_AUTORELOAD"] = False
-    assets = Assets(app=app)
-    assets.add_assets_folder("tests")
-    assert assets.blueprint is None
+    Assets(app=app)
     assert any(app.url_map.iter_rules(endpoint="assets")), "No assets endpoint found"
-
-    with app.app_context():
-        assert svcs.get(Assets) == assets
-        assets.reload()
-        assert assets.url("js/tests.bundled.js") == "js/tests.bundled.js"

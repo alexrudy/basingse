@@ -1,0 +1,28 @@
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/maps";
+@import "bootstrap/scss/mixins";
+
+@import "bootstrap/scss/variables-dark";
+@import "bootstrap/scss/root";
+
+$dev-bar-color: #d2a7f2;
+$dev-bar-color-dark: #611885;
+
+[data-bs-theme="light"] .bss-devbar {
+    background-color: $dev-bar-color;
+}
+
+[data-bs-theme="dark"] .bss-devbar {
+    background-color: $dev-bar-color-dark;
+}
+
+.bss-devbar {
+    @include color-scheme(light) {
+        background-color: $dev-bar-color;
+    }
+
+    @include color-scheme(dark) {
+        background-color: $dev-bar-color-dark;
+    }
+}

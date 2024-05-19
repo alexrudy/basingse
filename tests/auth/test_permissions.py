@@ -29,7 +29,7 @@ def test_setup_administrator(app: Flask) -> None:
 
 def test_setup_existing_user_administrator(app: Flask, author: User) -> None:
     with app.app_context():
-        user = create_administrator(author.email, "password")  # type: ignore
+        user = create_administrator(author.email, "password")
         assert user is not None
         assert user.email == author.email
         assert user.compare_password("password")
@@ -44,7 +44,7 @@ def test_setup_existing_role_administrator(app: Flask, author: User) -> None:
         session.commit()
 
     with app.app_context():
-        user = create_administrator(author.email, "password")  # type: ignore
+        user = create_administrator(author.email, "password")
         assert user is not None
         assert user.email == author.email
         assert user.compare_password("password")
@@ -64,7 +64,7 @@ def test_setup_existing_administrator(app: Flask, author: User) -> None:
         assert user.is_administrator
 
     with app.app_context():
-        user = create_administrator(author.email, "password")  # type: ignore
+        user = create_administrator(author.email, "password")
         assert not user.is_administrator
 
 
@@ -115,7 +115,7 @@ def login_manager(app: Flask) -> LoginManager:
 
     with app.app_context():
         extension = get_extension()
-        extension.login_manager.unauthorized_handler(unauthorized)  # type: ignore
+        extension.login_manager.unauthorized_handler(unauthorized)
         return extension.login_manager
 
 

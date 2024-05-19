@@ -4,16 +4,13 @@
 {% block body %}
 <header>
     {% block navbar %}
-    {% include "_topbar.html" %}
     {% if navbar %}{{ render(navbar) }}{% endif %}
     {% endblock %}
 </header>
 <main class="container-lg flex-grow-1 mb-5">
-    <div class="row my-3">
-        <div class="col-5">
-            {% include "_flash.html" %}
-        </div>
-    </div>
+    {% block flash %}
+    {% include "_flash.html" %}
+    {% endblock flash %}
     {% block main %}{% endblock %}
 </main>
 {% endblock %}

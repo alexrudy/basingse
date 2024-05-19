@@ -1,3 +1,2 @@
-import "../scss/styles.scss";
-import "bootstrap";
+import "../scss/devbar.scss";
 import "./theme";

@@ -10,7 +10,7 @@ def test_portal_menu() -> None:
     menu = PortalMenuItem("Test", ".test", Icon("test"), "test.view")
 
     assert isinstance(menu.link, View)
-    assert menu.link.endpoint == ".test"
+    assert menu.link.endpoint.name == ".test"
     assert isinstance(menu.link.text, list)
     assert menu.link.text[-1] == "Test"
 

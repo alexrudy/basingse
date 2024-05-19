@@ -7,17 +7,17 @@
     {% block meta %}{% endblock %}
     <title>{% block title %}{% endblock %}</title>
 
-    {% if site_settings.logo.favicon %}
+    {% if site_settings.logo.favicon_id %}
     <link rel="icon" href="{{ url_for('customize.favicon') }}">
     {% else %}
     <link rel="icon" href="{{ url_for('basingse.static', filename='img/logo/icon32.png') }}">
     {% endif %}
 
-    {% for css in asset.iter_assets('css') %}
-    <link href="{{ url_for('basingse.assets', filename=asset.url(css)) }}" rel="stylesheet">
+    {% block style %}
+    {% for bundle in bundles.active() %}
+    {{ bundle.styles() }}
     {% endfor %}
-
-    {% block style %}{% endblock %}
+    {% endblock %}
 </head>
 
 {% from "_icon.html" import icon %}
@@ -28,11 +28,12 @@
     <footer>
         {% block footer %}
         {% endblock %}
-        <script src="{{ url_for('basingse.assets', filename=asset.url('js/basingse.main.js')) }}"></script>
-        {% if config.get("DEBUG") and config.get("DEBUG_SOCKETIO") %}
-        <script src="{{ url_for('basingse.assets', filename=asset.url('js/basingse.debug.js')) }}"></script>
-        {% endif %}
-        {% block scripts %}{% endblock %}
+
+        {% block scripts %}
+        {% for bundle in bundles.active() %}
+        {{ bundle.scripts() }}
+        {% endfor %}
+        {% endblock %}
     </footer>
 </body>
 

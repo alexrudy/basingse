@@ -13,6 +13,7 @@ module.exports = {
             import: './src/frontend/ts/main.ts'
         },
         debug: { import: './src/frontend/ts/debug.ts' },
+        bootstrap: { import: './src/frontend/ts/bootstrap.ts' },
     },
     devtool: false,
     module: {
@@ -71,7 +72,7 @@ module.exports = {
         new MiniCssExtractPlugin({ filename: 'css/basingse.[name].[contenthash].css' }),
         new SourceMapDevToolPlugin({
             filename: '[file].map',
-            publicPath: 'bss/assets/',
+            publicPath: 'assets/',
             append: (pathData, assetInfo) => {
 
                 let parts = pathData.filename.split('.');
@@ -79,9 +80,9 @@ module.exports = {
                 const bareName = parts.join('.');
 
                 if (pathData.filename.endsWith('.css')) {
-                    return `/*# sourceMappingURL=/bss/assets/${bareName}.map */`
+                    return `/*# sourceMappingURL=/assets/${bareName}.map */`
                 }
-                return `//# sourceMappingURL=/bss/assets/${bareName}.map`
+                return `//# sourceMappingURL=/assets/${bareName}.map`
             }
         }),
     ],

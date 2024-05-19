@@ -1,18 +1,22 @@
-import dataclasses as dc
+import contextlib
 import importlib.resources
-import io
 import json
 from collections.abc import Iterator
+from collections.abc import Mapping
+from importlib.resources.abc import Traversable
 from pathlib import Path
 from typing import Any
+from typing import BinaryIO
+from typing import cast
 
+import attrs
 import structlog
-from flask import Blueprint
 from flask import current_app
 from flask import Flask
 from flask import send_file
-from flask import send_from_directory
+from flask import url_for
 from flask.typing import ResponseReturnValue
+from werkzeug.exceptions import NotFound
 
 from . import svcs
 
@@ -23,148 +27,233 @@ _ASSETS_EXTENSION_KEY = "basingse.assets"
 _ASSETS_BUST_CACHE_KEY = "ASSETS_BUST_CACHE"
 
 
-@dc.dataclass
-class AssetCollection:
-    location: str | Path
-    manifest: Path
-    directory: Path
-    assets: dict[str, str] = dc.field(init=False)
-    targets: set[str] = dc.field(init=False)
+@contextlib.contextmanager
+def handle_asset_errors() -> Iterator[None]:
+    try:
+        yield
+    except FileNotFoundError as e:
+        raise NotFound() from e
+    except KeyError as e:
+        raise NotFound() from e
 
-    def __post_init__(self) -> None:
-        self.assets = self._get_assets()
-        self.targets = {v for v in self.assets.values()}
 
-    def _get_assets(self) -> dict[str, str]:
-        return json.loads(self.read_text(str(self.manifest)))
+@attrs.define(frozen=True)
+class AssetLocation:
+    """Where the assets are located."""
 
-    def read_text(self, filename: str) -> str:
+    #: The module or package where the assets are located
+    location: Path | str | None = attrs.field(default=None)
+
+    #: The location of the assets
+    directory: Path = attrs.field(default=Path("assets"))
+
+    def path(self, filename: str | Path) -> Traversable:
+        """Get the traversal path to the filename."""
         if isinstance(self.location, Path):
-            root = self.location / self.directory / filename
-            return root.read_text()
+            return self.location / self.directory / filename
+        if self.location is None:
+            return self.directory / filename
 
-        return importlib.resources.files(self.location).joinpath(str(self.directory), filename).read_text()
+        return importlib.resources.files(self.location).joinpath(str(self.directory), str(filename))
+
+
+@attrs.define(frozen=True)
+class Asset:
+    """A single asset file"""
+
+    #: The name of the asset on disk
+    filename: str
+
+    #: The manifest that contains this asset
+    manifest: "AssetManifest"
+
+    def has_extension(self, extension: str) -> bool:
+        """Check if the asset has the given extension."""
+        if not extension.startswith("."):
+            extension = f".{extension}"
+        return Path(self.filename).suffix == extension
+
+    def url(self, **kwargs: Any) -> str:
+        """Build the URL for the asset."""
+        return self.manifest.url(self.filename, **kwargs)
+
+    def filepath(self) -> str:
+        return self.manifest.filepath(self.filename)
+
+    def serve(self) -> ResponseReturnValue:
+        """Serve the asset."""
+        return self.manifest.serve(self.filename)
+
+    def __str__(self) -> str:
+        return self.url()
+
+
+@attrs.define(frozen=True)
+class AssetManifest(Mapping[str, Asset]):
+    """
+    Webpack's manifest.json file.
+
+    This file contains the mapping of the original asset filename to the versioned asset filename.
+    """
+
+    #: The name of this manifest in the extension
+    name: str
+
+    #: The module or package where the assets are located
+    location: AssetLocation
+
+    #: Name of the manifest file
+    manifest_path: Path = attrs.field(default=Path("manifest.json"))
+
+    manifest: dict[str, str] = attrs.field(factory=dict)
+
+    def __attrs_post_init__(self) -> None:
+        self.manifest.clear()
+        self.manifest.update(self._get_manifest())
+
+    def _get_manifest(self) -> dict[str, str]:
+        return json.loads(self.path(self.manifest_path).read_text())
+
+    def path(self, filename: str | Path) -> Traversable:
+        return self.location.path(filename)
+
+    def filepath(self, filename: str) -> str:
+        return self.manifest[filename]
 
     def reload(self) -> None:
-        self.assets = self._get_assets()
-        self.targets = {v for v in self.assets.values()}
+        self.manifest.clear()
+        self.manifest.update(self._get_manifest())
 
-    def __contains__(self, filename: str) -> bool:
-        return filename in self.assets or filename in self.targets
+    def __contains__(self, filename: object) -> bool:
+        return filename in self.manifest
 
-    def __len__(self) -> int:
-        return len(self.assets)
+    def __getitem__(self, filename: str) -> Asset:
+        """Get the path to the asset, either from the manifest or the original path."""
+        if filename not in self.manifest:
+            raise KeyError(filename)
+        return Asset(filename, self)
 
     def __iter__(self) -> Iterator[str]:
-        return iter(self.assets)
+        return iter(self.manifest)
 
-    def url(self, filename: str) -> str:
-        if not current_app.config[_ASSETS_BUST_CACHE_KEY]:
-            return filename
-        return self.assets[filename]
+    def __len__(self) -> int:
+        return len(self.manifest)
 
-    def iter_assets(self, extension: str | None) -> Iterator[str]:
-        for filename in self.assets:
-            if extension is None or filename.endswith(extension):
-                yield filename
+    def iter_assets(self, extension: str | None = None) -> Iterator[Asset]:
+        if extension is not None and not extension.startswith("."):
+            extension = f".{extension}"
 
-    def serve_asset(self, filename: str) -> ResponseReturnValue:
+        for filename in self.manifest.keys():
+            if extension is None or Path(filename).suffix == extension:
+                yield Asset(filename, self)
+
+    def url(self, filename: str, **kwargs: Any) -> str:
+        """Build the URL for the asset.
+
+        Parameters
+        ----------
+        filename : str
+            The name of the asset to serve, with no hash attached.
+        """
         if current_app.config[_ASSETS_BUST_CACHE_KEY]:
-            max_age = current_app.get_send_file_max_age(filename)
+            try:
+                filename = self.manifest[filename]
+            except KeyError:
+                logger.debug("Asset not found in manifest", filename=filename, manifest=self.manifest)
+                raise
         else:
-            max_age = None
+            if filename not in self.manifest:
+                logger.debug("Asset not found in manifest", filename=filename, manifest=self.manifest)
+                raise KeyError(filename)
 
-        if not current_app.config[_ASSETS_BUST_CACHE_KEY] and filename in self.assets:
-            filename = self.assets[filename]
+        return url_for("assets", bundle=self.name, filename=filename, **kwargs)
+
+    @handle_asset_errors()
+    def serve(self, filename: str) -> ResponseReturnValue:
+        """Serve an asset from the manifest.
+
+        Parameters
+        ----------
+        filename : str
+            The name of the asset to serve.
+        """
+        if not current_app.config[_ASSETS_BUST_CACHE_KEY]:
+            try:
+                filename = self.manifest[filename]
+            except KeyError:
+                logger.debug("Asset not found in manifest", filename=filename, manifest=self.manifest)
+                raise
+        elif filename not in self.manifest.values():
+            logger.debug("Asset not found in manifest", filename=filename, manifest=self.manifest)
+            raise KeyError(filename)
 
         conditional = current_app.config[_ASSETS_BUST_CACHE_KEY]
-        etag = current_app.config[_ASSETS_BUST_CACHE_KEY]
-        if isinstance(self.location, Path):
-            return send_from_directory(
-                self.location / self.directory, filename, max_age=max_age, conditional=conditional, etag=etag
-            )
 
-        data = io.BytesIO(importlib.resources.files(self.location).joinpath(str(self.directory), filename).read_bytes())
-        return send_file(data, download_name=filename, max_age=max_age, conditional=conditional, etag=etag)
+        asset = self.path(filename)
+
+        if not asset.is_file():
+            logger.debug("Asset not found at location", filename=filename, location=self.location)
+            raise FileNotFoundError(filename)
+
+        return send_file(cast(BinaryIO, asset.open("rb")), download_name=asset.name, conditional=conditional)
 
 
-@dc.dataclass()
+@attrs.define(init=False)
 class Assets:
 
-    module: str | None = None
-    collection: list[AssetCollection] = dc.field(default_factory=list)
-    blueprint: Blueprint | None = dc.field(
-        default=None,
-    )
-    app: dc.InitVar[Flask | None] = dc.field(
-        default=None,
-        init=True,
-    )
+    manifests: dict[str, AssetManifest] = attrs.field(factory=dict)
 
-    _blueprint_has_endpoint: bool = dc.field(default=False, init=False, repr=False)
+    def __init__(self, app: Flask | None = None) -> None:
+        self.manifests = {}
+        self.append(AssetManifest(name="basingse", location=AssetLocation("basingse")))
+        self.append(AssetManifest(name="admin", location=AssetLocation("basingse")))
 
-    def __post_init__(self, app: Flask | None = None) -> None:
-        if self.blueprint is not None and not self._blueprint_has_endpoint:
-            self.blueprint.add_url_rule("/assets/<path:filename>", "assets", self.serve_asset)
-            self._blueprint_has_endpoint = True
         if app is not None:
             self.init_app(app)
 
     def init_app(self, app: Flask) -> None:
-        module = self.module or app.config.get("ASSETS_MODULE", "basingse")
         app.config.setdefault("ASSETS_BUST_CACHE", not app.config["DEBUG"])
-        app.config.setdefault("ASSETS_AUTORELOAD", app.config["DEBUG"])
-
-        # Always include local assets
-        self.collection.append(AssetCollection(module, Path("manifest.json"), Path("assets")))
-
-        if self.blueprint is not None:
-            app.register_blueprint(self.blueprint)
-            assert any(app.url_map.iter_rules(endpoint=f"{self.blueprint.name}.assets")), "No assets endpoint found"
-        else:
-            app.add_url_rule("/assets/<path:filename>", "assets", self.serve_asset)
-            assert any(app.url_map.iter_rules(endpoint="assets")), "No assets endpoint found"
-
-        if app.config.get("ASSETS_AUTORELOAD", False):
+        if app.config.setdefault("ASSETS_AUTORELOAD", app.config["DEBUG"]):
             app.before_request(self.reload)
+
+        app.add_url_rule("/assets/<bundle>/<path:filename>", "assets", self.serve_asset)
 
         app.extensions[_ASSETS_EXTENSION_KEY] = self
         svcs.register_value(app, Assets, self)
 
         app.context_processor(self.context_processor)
 
-    def append(self, collection: AssetCollection) -> None:
-        self.collection.append(collection)
-
-    def add_assets_folder(self, location: str | Path) -> None:
-        self.collection.append(AssetCollection(location, Path("manifest.json"), Path("assets")))
-
     def context_processor(self) -> dict[str, Any]:
-        return {"asset": self}
+        return {"assets": self}
 
-    def iter_assets(self, extension: str | None) -> Iterator[str]:
-        for collection in self.collection:
-            yield from collection.iter_assets(extension)
+    def append(self, manifest: AssetManifest) -> None:
+        self.manifests[manifest.name] = manifest
 
-    def url(self, filename: str) -> str:
-        if not current_app.config[_ASSETS_BUST_CACHE_KEY]:
-            return filename
-        for collection in self.collection:
-            if filename in collection:
-                return collection.url(filename)
-        return filename
+    def __getitem__(self, bundle: str) -> AssetManifest:
+        return self.manifests[bundle]
 
-    def serve_asset(self, filename: str) -> ResponseReturnValue:
-        for collection in self.collection:
-            if filename in collection:
-                return collection.serve_asset(filename)
+    def __contains__(self, bundle: str) -> bool:
+        return bundle in self.manifests
 
-        logger.warning("Asset not found", filename=filename, debug=True)
-        return "Not Found", 404
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.manifests)
+
+    def __len__(self) -> int:
+        return len(self.manifests)
+
+    def iter_assets(self, bundle: str, extension: str | None = None) -> Iterator[Asset]:
+        return self.manifests[bundle].iter_assets(extension)
+
+    def url(self, bundle: str, filename: str, **kwargs: Any) -> str:
+        return self.manifests[bundle].url(filename, **kwargs)
+
+    def serve_asset(self, bundle: str, filename: str) -> ResponseReturnValue:
+        manifest = self.manifests[bundle]
+        return manifest.serve(filename)
 
     def reload(self) -> None:
-        for collection in self.collection:
-            collection.reload()
+        for manifest in self.manifests.values():
+            manifest.reload()
 
 
 def check_dist() -> None:

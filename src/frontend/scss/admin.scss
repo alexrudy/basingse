@@ -1,0 +1,32 @@
+@import "bootstrap/scss/functions";
+
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/maps";
+@import "bootstrap/scss/mixins";
+
+@import "bootstrap/scss/variables-dark";
+@import "bootstrap/scss/root";
+
+.codex-editor {
+    border-radius: $border-radius;
+    border-color: var(--bs-border-color);
+    border-style: solid;
+    border-width: 1px;
+    margin: 0 auto;
+}
+
+
+.ce-block>div {
+    border-bottom-color: var(--bs-border-color);
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
+}
+
+// Form fields for uploading
+div.upload-group img {
+    object-fit: scale-down;
+    height: 38px;
+    display: block;
+    padding: 0px;
+    width: unset;
+}

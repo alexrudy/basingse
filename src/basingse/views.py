@@ -6,6 +6,7 @@ from flask import abort
 from flask import Blueprint
 from flask import flash
 from flask import Flask
+from flask import jsonify
 from flask import render_template
 from flask.typing import ResponseReturnValue
 from flask_login import current_user
@@ -40,7 +41,7 @@ def home() -> ResponseReturnValue:
     if (homepage := session.get(Page, settings.homepage_id)) is None:  # pragma: nocover
         no_homepage(settings)
 
-    return render_template("page.html", page=homepage)
+    return render_template(["home.html", "page.html"], page=homepage)
 
 
 def health() -> ResponseReturnValue:
@@ -57,11 +58,12 @@ def health() -> ResponseReturnValue:
             failing.append({svc.name: repr(e)})
             code = 500
 
-    return {"ok": ok, "failing": failing}, code
+    return jsonify({"ok": ok, "failing": failing}), code
 
 
 @dc.dataclass(frozen=True)
 class CoreSettings:
     def init_app(self, app: Flask) -> None:
+        app.register_blueprint(core)
         app.add_url_rule("/", "home", home)
         app.add_url_rule("/healthcheck", "health", health)

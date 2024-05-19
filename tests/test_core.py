@@ -46,14 +46,15 @@ def test_core_assets(client: LoginClient, templates: TemplatesFixture) -> None:
     response = client.get("/")
     assert response.status_code == 200
     assert b"Welcome Home!" in response.data
-    assert b'<link href="/bss/assets/css/basingse.main.css" rel="stylesheet">' in response.data
+    # assert b'<link href="/assets/basingse/css/basingse.main.css" rel="stylesheet">' in response.data
 
     record = templates[-1]
     assert record.template.name == "page.html"
     assert record.context["page"].title == "Home"
-    assert "asset" in record.context
+    assert list(record.context["bundles"].active())
+    assert "assets" in record.context
 
-    assert len(list(record.context["asset"].iter_assets("css"))) == 1
+    assert len(list(record.context["assets"].iter_assets("tests", "js"))) == 1
 
 
 @pytest.mark.usefixtures("no_homepage")

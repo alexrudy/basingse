@@ -22,6 +22,9 @@ sync: prepare
     [[ -f requirements/local.txt ]] && pip install -r requirements/local.txt
     tox -p auto --notest
 
+alias install := sync
+alias develop := sync
+
 # Sort imports
 isort:
     -pre-commit run reorder-python-imports --all-files
@@ -34,6 +37,9 @@ test:
 test-all:
     tox -p auto
 
+alias tox := test-all
+alias t := test-all
+
 # Run lints
 lint:
     pre-commit run --all-files
@@ -45,6 +51,9 @@ mypy:
 # run the flask application
 serve:
     flask run
+
+alias s := serve
+alias run := serve
 
 # Build docs
 docs:
@@ -61,7 +70,7 @@ clean-docs:
     rm -rf docs/api
 
 # Clean aggressively
-clean-all: clean
+clean-all: clean clean-docs
     rm -rf .direnv
     rm -rf .venv
     rm -rf .tox

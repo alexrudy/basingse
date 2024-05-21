@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from collections.abc import Mapping
+from collections.abc import MutableMapping
 from typing import Any
 
 import attrs
@@ -11,7 +11,7 @@ from basingse.assets import Assets
 
 
 @attrs.define
-class AssetBundles(Mapping[str, "ResourceBundle"]):
+class AssetBundles(MutableMapping[str, "ResourceBundle"]):
 
     bundles: dict[str, "ResourceBundle"] = attrs.field(factory=dict)
 
@@ -29,6 +29,13 @@ class AssetBundles(Mapping[str, "ResourceBundle"]):
 
     def __len__(self) -> int:
         return len(self.bundles)
+
+    def __setitem__(self, key: str, value: ResourceBundle) -> None:
+        assert key == value.name, "Key must be the same as the bundle name"
+        self.bundles.__setitem__(key, value)
+
+    def __delitem__(self, key: str) -> None:
+        self.bundles.__delitem__(key)
 
     def init_app(self, app: Flask) -> None:
         app.context_processor(self.context_processor)

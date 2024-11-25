@@ -106,7 +106,7 @@ def app(tmp_path: Path) -> Iterator[Flask]:
     bss = BaSingSe(logging=None)
     bss.init_app(app)
     assert bss.assets, "Assets should be initialized"
-    bss.assets.append(AssetManifest(name="tests", location=AssetLocation("tests")))
+    bss.assets.add(AssetManifest(name="tests", location=AssetLocation("tests")))
     assert bss.bundles
     bss.bundles.add(ResourceBundle.from_manifest("tests", bss.assets["tests"]))
 

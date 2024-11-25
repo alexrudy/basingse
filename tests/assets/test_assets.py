@@ -68,7 +68,7 @@ def test_get(
     app.config["ASSETS_BUST_CACHE"] = not debug
     with app.app_context():
         assets = svcs.get(Assets)
-        assets.append(collection)
+        assets.add(collection)
         path = assets["fixture"].url(filename)
 
     with client.get(f"{path}{postfix}") as resp:
@@ -78,7 +78,7 @@ def test_get(
 @pytest.mark.usefixtures("app_context")
 def test_iter_assets(collection: AssetManifest) -> None:
     assets = svcs.get(Assets)
-    assets.append(collection)
+    assets.add(collection)
 
     assert "js/tests.main.js" in [asset.filename for asset in assets.iter_assets("fixture", "js")]
     assert "css/tests.main.css" in [asset.filename for asset in assets.iter_assets("fixture")]
@@ -87,7 +87,7 @@ def test_iter_assets(collection: AssetManifest) -> None:
 @pytest.mark.usefixtures("not_debug", "app_context")
 def test_url_fallback(collection: AssetManifest) -> None:
     assets = svcs.get(Assets)
-    assets.append(collection)
+    assets.add(collection)
     with pytest.raises(KeyError):
         assets.url("fixture", "js/tests.other.js")
 

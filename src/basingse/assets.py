@@ -1,6 +1,7 @@
 import contextlib
 import importlib.resources
 import json
+import re
 from collections.abc import Iterator
 from collections.abc import Mapping
 from importlib.resources.abc import Traversable
@@ -127,6 +128,12 @@ class AssetManifest(Mapping[str, Asset]):
         self.manifest.update(self._get_manifest())
 
     def __contains__(self, filename: object) -> bool:
+        if isinstance(filename, Path):
+            filename = filename.as_posix()
+        if not isinstance(filename, str):
+            return False
+        filename = parse_filename(filename)
+        logger.debug("Checking if asset is in manifest", filename=filename, manifest=set(self.manifest.keys()))
         return filename in self.manifest
 
     def __getitem__(self, filename: str) -> Asset:
@@ -206,6 +213,7 @@ class AssetManifest(Mapping[str, Asset]):
 
 @attrs.define(init=False)
 class Assets(Mapping[str, Asset]):
+    """A collection of assets, served via multiple manifests."""
 
     manifests: set[AssetManifest]
 
@@ -267,6 +275,7 @@ class Assets(Mapping[str, Asset]):
         return collection
 
     def url(self, filename: str, **kwargs: Any) -> str:
+
         for manifest in self.manifests:
             if filename in manifest:
                 return manifest.url(filename, **kwargs)
@@ -276,6 +285,8 @@ class Assets(Mapping[str, Asset]):
         for manifest in self.manifests:
             if filename in manifest:
                 return manifest.serve(filename)
+
+        logger.debug("Asset not found", filename=filename)
         raise NotFound(filename)
 
     def reload(self) -> None:
@@ -287,3 +298,19 @@ def check_dist() -> None:
     """Check the dist directory for the presence of asset files."""
     manifest = importlib.resources.files("basingse").joinpath("assets", "manifest.json").read_text()
     print(f"{len(json.loads(manifest))} asset files found")
+
+
+def parse_filename(filename: str) -> str:
+    """Parse the filename"""
+    path = Path(filename)
+
+    parts = path.name.split(".")
+    if len(parts) < 3:
+        return path.as_posix()
+
+    module, name, hash, *extensions = parts
+
+    if not re.match(r"^[a-f0-9]{32}$", hash):
+        return path.as_posix()
+
+    return path.with_name(f"{module}.{name}.{'.'.join(extensions)}").as_posix()

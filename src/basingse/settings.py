@@ -20,8 +20,6 @@ from .markdown import MarkdownOptions
 from .models import Model
 from .models import SQLAlchemy
 from .page.settings import PageSettings
-from .resources.settings import AssetBundles
-from .resources.settings import builtin_bundles
 from .utils.urls import rewrite_endpoint
 from .utils.urls import rewrite_update
 from .utils.urls import rewrite_url
@@ -55,7 +53,6 @@ class BaSingSe:
     assets: Assets | None = dc.field(default_factory=Assets)
     auth: Authentication | None = Authentication()
     attachments: Attachments | None = Attachments(registry=Model.registry)
-    bundles: AssetBundles | None = dc.field(default_factory=AssetBundles)
     customize: CustomizeSettings | None = CustomizeSettings()
     page: PageSettings | None = PageSettings()
     core: CoreSettings | None = CoreSettings()
@@ -72,9 +69,6 @@ class BaSingSe:
         svcs.init_app(app)
 
         config = app.config.get_namespace("BASINGSE_")
-
-        if self.assets is not None and self.bundles is not None:
-            builtin_bundles(self.bundles, self.assets)
 
         for field in dc.fields(self):
             attr = getattr(self, field.name)

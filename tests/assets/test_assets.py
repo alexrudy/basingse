@@ -9,7 +9,6 @@ from flask import Flask
 from flask.testing import FlaskClient
 
 from basingse import svcs
-from basingse.assets import AssetLocation
 from basingse.assets import AssetManifest
 from basingse.assets import Assets
 from basingse.assets import check_dist
@@ -47,7 +46,7 @@ def collection(tmp_path: Path) -> AssetManifest:
 
     (tmp_path / "assets" / "manifest.json").write_text(json.dumps(manifest))
 
-    return AssetManifest("fixture", location=AssetLocation(tmp_path))
+    return AssetManifest(location=tmp_path)
 
 
 @pytest.mark.parametrize(
@@ -66,10 +65,11 @@ def test_get(
 ) -> None:
 
     app.config["ASSETS_BUST_CACHE"] = not debug
+    # Get URL from context, then request it.
     with app.app_context():
         assets = svcs.get(Assets)
-        assets.append(collection)
-        path = assets["fixture"].url(filename)
+        assets.add(collection)
+        path = assets.url(filename)
 
     with client.get(f"{path}{postfix}") as resp:
         assert resp == expected
@@ -78,32 +78,32 @@ def test_get(
 @pytest.mark.usefixtures("app_context")
 def test_iter_assets(collection: AssetManifest) -> None:
     assets = svcs.get(Assets)
-    assets.append(collection)
+    assets.add(collection)
 
-    assert "js/tests.main.js" in [asset.filename for asset in assets.iter_assets("fixture", "js")]
-    assert "css/tests.main.css" in [asset.filename for asset in assets.iter_assets("fixture")]
+    assert Path("js/tests.main.js") in [asset.filename for asset in assets.iter_assets("tests", "js")]
+    assert Path("css/tests.main.css") in [asset.filename for asset in assets.iter_assets("tests")]
 
 
 @pytest.mark.usefixtures("not_debug", "app_context")
 def test_url_fallback(collection: AssetManifest) -> None:
     assets = svcs.get(Assets)
-    assets.append(collection)
+    assets.add(collection)
     with pytest.raises(KeyError):
-        assets.url("fixture", "js/tests.other.js")
+        assets.url("js/tests.other.js")
 
 
 class TestCollection:
 
     @pytest.mark.usefixtures("app_context")
     def test_iter_assets(self, collection: AssetManifest) -> None:
-        assert [asset.filename for asset in collection.iter_assets("js")] == ["js/tests.main.js"]
-        assert [asset.filename for asset in collection.iter_assets("css")] == ["css/tests.main.css"]
+        assert [asset.filename for asset in collection.iter_assets("js")] == [Path("js/tests.main.js")]
+        assert [asset.filename for asset in collection.iter_assets("css")] == [Path("css/tests.main.css")]
 
     @pytest.mark.usefixtures("not_debug", "app_context")
     def test_url(self, app: Flask, collection: AssetManifest) -> None:
         assert (
             collection.url("js/tests.main.js")
-            == "http://basingse.test/assets/fixture/js/tests.main.adf06cf637aff7c06810711225d7eec6.js"
+            == "http://basingse.test/assets/js/tests.main.adf06cf637aff7c06810711225d7eec6.js"
         )
 
     def test_contains(self, collection: AssetManifest) -> None:
@@ -153,7 +153,7 @@ def test_bundled_assets(app: Flask) -> None:
 
     assert app.config["ASSETS_BUST_CACHE"], "Cache should be busted"
 
-    collection = AssetManifest("basingse", location=AssetLocation("basingse"))
+    collection = AssetManifest(location="basingse")
     assert len(collection) > 0, "No assets found in basingse"
 
     some_asset = next(iter(collection.values()))

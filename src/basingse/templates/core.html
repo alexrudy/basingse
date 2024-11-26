@@ -14,9 +14,11 @@
     {% endif %}
 
     {% block style %}
-    {% for bundle in bundles.active() %}
-    {{ bundle.styles() }}
-    {% endfor %}
+    {{ assets.resources('basingse.bootstrap', '.css') | safe }}
+    {{ assets.resources('basingse.main', '.css') | safe }}
+    {% if config.get('DEBUG') %}
+    {{ assets.resources('basingse.debug', '.css') | safe }}
+    {% endif %}
     {% endblock %}
 </head>
 
@@ -30,9 +32,11 @@
         {% endblock %}
 
         {% block scripts %}
-        {% for bundle in bundles.active() %}
-        {{ bundle.scripts() }}
-        {% endfor %}
+        {{ assets.resources('basingse.bootstrap', '.js') | safe }}
+        {{ assets.resources('basingse.main', '.js') | safe }}
+        {% if config.get('DEBUG') %}
+        {{ assets.resources('basingse.debug', '.js') | safe }}
+        {% endif %}
         {% endblock %}
     </footer>
 </body>

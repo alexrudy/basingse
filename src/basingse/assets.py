@@ -1,6 +1,7 @@
 import contextlib
 import importlib.resources
 import json
+import re
 from collections.abc import Iterator
 from collections.abc import Mapping
 from importlib.resources.abc import Traversable
@@ -11,11 +12,15 @@ from typing import cast
 
 import attrs
 import structlog
+from dominate import tags
+from dominate.dom_tag import dom_tag
+from dominate.util import container
 from flask import current_app
 from flask import Flask
 from flask import send_file
 from flask import url_for
 from flask.typing import ResponseReturnValue
+from markupsafe import Markup
 from werkzeug.exceptions import NotFound
 
 from . import svcs
@@ -38,8 +43,55 @@ def handle_asset_errors() -> Iterator[None]:
 
 
 @attrs.define(frozen=True)
-class AssetLocation:
-    """Where the assets are located."""
+class Asset:
+    """A single asset file"""
+
+    #: The name of the asset on disk
+    filename: Path
+
+    #: The manifest that contains this asset
+    manifest: "AssetManifest"
+
+    def has_extension(self, extension: str) -> bool:
+        """Check if the asset has the given extension."""
+        if not extension.startswith("."):
+            extension = f".{extension}"
+        return self.filename.suffix == extension
+
+    def url(self, **kwargs: Any) -> str:
+        """Build the URL for the asset."""
+        return self.manifest.url(str(self.filename), **kwargs)
+
+    def filepath(self) -> str:
+        return self.manifest.filepath(str(self.filename))
+
+    def serve(self) -> ResponseReturnValue:
+        """Serve the asset."""
+        return self.manifest.serve(str(self.filename))
+
+    def resource(self) -> dom_tag:
+        """Render the asset as a DOM element."""
+        if self.has_extension(".js"):
+            return tags.script(src=self.url())
+        if self.has_extension(".css"):
+            return tags.link(rel="stylesheet", href=self.url())
+
+        return tags.a(href=self.url())
+
+    def __html__(self) -> Markup:
+        return Markup(self.resource())
+
+    def __str__(self) -> str:
+        return self.url()
+
+
+@attrs.define(frozen=True, hash=False)
+class AssetManifest(Mapping[str, Asset]):
+    """
+    Webpack's manifest.json file.
+
+    This file contains the mapping of the original asset filename to the versioned asset filename.
+    """
 
     #: The module or package where the assets are located
     location: Path | str | None = attrs.field(default=None)
@@ -56,52 +108,6 @@ class AssetLocation:
 
         return importlib.resources.files(self.location).joinpath(str(self.directory), str(filename))
 
-
-@attrs.define(frozen=True)
-class Asset:
-    """A single asset file"""
-
-    #: The name of the asset on disk
-    filename: str
-
-    #: The manifest that contains this asset
-    manifest: "AssetManifest"
-
-    def has_extension(self, extension: str) -> bool:
-        """Check if the asset has the given extension."""
-        if not extension.startswith("."):
-            extension = f".{extension}"
-        return Path(self.filename).suffix == extension
-
-    def url(self, **kwargs: Any) -> str:
-        """Build the URL for the asset."""
-        return self.manifest.url(self.filename, **kwargs)
-
-    def filepath(self) -> str:
-        return self.manifest.filepath(self.filename)
-
-    def serve(self) -> ResponseReturnValue:
-        """Serve the asset."""
-        return self.manifest.serve(self.filename)
-
-    def __str__(self) -> str:
-        return self.url()
-
-
-@attrs.define(frozen=True)
-class AssetManifest(Mapping[str, Asset]):
-    """
-    Webpack's manifest.json file.
-
-    This file contains the mapping of the original asset filename to the versioned asset filename.
-    """
-
-    #: The name of this manifest in the extension
-    name: str
-
-    #: The module or package where the assets are located
-    location: AssetLocation
-
     #: Name of the manifest file
     manifest_path: Path = attrs.field(default=Path("manifest.json"))
 
@@ -114,9 +120,6 @@ class AssetManifest(Mapping[str, Asset]):
     def _get_manifest(self) -> dict[str, str]:
         return json.loads(self.path(self.manifest_path).read_text())
 
-    def path(self, filename: str | Path) -> Traversable:
-        return self.location.path(filename)
-
     def filepath(self, filename: str) -> str:
         return self.manifest[filename]
 
@@ -125,13 +128,19 @@ class AssetManifest(Mapping[str, Asset]):
         self.manifest.update(self._get_manifest())
 
     def __contains__(self, filename: object) -> bool:
+        if isinstance(filename, Path):
+            filename = filename.as_posix()
+        if not isinstance(filename, str):
+            return False
+        filename = parse_filename(filename)
+        logger.debug("Checking if asset is in manifest", filename=filename, manifest=set(self.manifest.keys()))
         return filename in self.manifest
 
     def __getitem__(self, filename: str) -> Asset:
         """Get the path to the asset, either from the manifest or the original path."""
         if filename not in self.manifest:
             raise KeyError(filename)
-        return Asset(filename, self)
+        return Asset(Path(filename), self)
 
     def __iter__(self) -> Iterator[str]:
         return iter(self.manifest)
@@ -139,13 +148,17 @@ class AssetManifest(Mapping[str, Asset]):
     def __len__(self) -> int:
         return len(self.manifest)
 
+    def __hash__(self) -> int:
+        return hash((self.location, self.directory, self.manifest_path))
+
     def iter_assets(self, extension: str | None = None) -> Iterator[Asset]:
         if extension is not None and not extension.startswith("."):
             extension = f".{extension}"
 
         for filename in self.manifest.keys():
-            if extension is None or Path(filename).suffix == extension:
-                yield Asset(filename, self)
+            filepath = Path(filename)
+            if extension is None or filepath.suffix == extension:
+                yield Asset(filepath, self)
 
     def url(self, filename: str, **kwargs: Any) -> str:
         """Build the URL for the asset.
@@ -166,7 +179,7 @@ class AssetManifest(Mapping[str, Asset]):
                 logger.debug("Asset not found in manifest", filename=filename, manifest=self.manifest)
                 raise KeyError(filename)
 
-        return url_for("assets", bundle=self.name, filename=filename, **kwargs)
+        return url_for("assets", filename=filename, **kwargs)
 
     @handle_asset_errors()
     def serve(self, filename: str) -> ResponseReturnValue:
@@ -199,14 +212,14 @@ class AssetManifest(Mapping[str, Asset]):
 
 
 @attrs.define(init=False)
-class Assets:
+class Assets(Mapping[str, Asset]):
+    """A collection of assets, served via multiple manifests."""
 
-    manifests: dict[str, AssetManifest] = attrs.field(factory=dict)
+    manifests: set[AssetManifest]
 
     def __init__(self, app: Flask | None = None) -> None:
-        self.manifests = {}
-        self.append(AssetManifest(name="basingse", location=AssetLocation("basingse")))
-        self.append(AssetManifest(name="admin", location=AssetLocation("basingse")))
+        self.manifests = set()
+        self.add(AssetManifest(location="basingse"))
 
         if app is not None:
             self.init_app(app)
@@ -216,7 +229,7 @@ class Assets:
         if app.config.setdefault("ASSETS_AUTORELOAD", app.config["DEBUG"]):
             app.before_request(self.reload)
 
-        app.add_url_rule("/assets/<bundle>/<path:filename>", "assets", self.serve_asset)
+        app.add_url_rule("/assets/<path:filename>", "assets", self.serve_asset)
 
         app.extensions[_ASSETS_EXTENSION_KEY] = self
         svcs.register_value(app, Assets, self)
@@ -226,33 +239,58 @@ class Assets:
     def context_processor(self) -> dict[str, Any]:
         return {"assets": self}
 
-    def append(self, manifest: AssetManifest) -> None:
-        self.manifests[manifest.name] = manifest
+    def add(self, manifest: AssetManifest) -> None:
+        self.manifests.add(manifest)
 
-    def __getitem__(self, bundle: str) -> AssetManifest:
-        return self.manifests[bundle]
+    def __getitem__(self, filename: str) -> Asset:
+        for manifest in self.manifests:
+            if filename in manifest:
+                return manifest[filename]
+        raise KeyError(filename)
 
-    def __contains__(self, bundle: str) -> bool:
-        return bundle in self.manifests
+    def __contains__(self, filename: object) -> bool:
+        for manifest in self.manifests:
+            if filename in manifest:
+                return True
+        return False
 
     def __iter__(self) -> Iterator[str]:
-        return iter(self.manifests)
+        for manifest in self.manifests:
+            yield from manifest
 
     def __len__(self) -> int:
         return len(self.manifests)
 
     def iter_assets(self, bundle: str, extension: str | None = None) -> Iterator[Asset]:
-        return self.manifests[bundle].iter_assets(extension)
+        for manifest in self.manifests:
+            for asset in manifest.iter_assets(extension):
+                if asset.filename.name.startswith(bundle):
+                    yield asset
 
-    def url(self, bundle: str, filename: str, **kwargs: Any) -> str:
-        return self.manifests[bundle].url(filename, **kwargs)
+    def resources(self, bundle: str, extension: str | None = None) -> dom_tag:
+        """Render the assets as a DOM element."""
+        collection = container()
+        for asset in self.iter_assets(bundle, extension):
+            collection.add(asset.resource())
+        return collection
 
-    def serve_asset(self, bundle: str, filename: str) -> ResponseReturnValue:
-        manifest = self.manifests[bundle]
-        return manifest.serve(filename)
+    def url(self, filename: str, **kwargs: Any) -> str:
+
+        for manifest in self.manifests:
+            if filename in manifest:
+                return manifest.url(filename, **kwargs)
+        raise KeyError(filename)
+
+    def serve_asset(self, filename: str) -> ResponseReturnValue:
+        for manifest in self.manifests:
+            if filename in manifest:
+                return manifest.serve(filename)
+
+        logger.debug("Asset not found", filename=filename)
+        raise NotFound(filename)
 
     def reload(self) -> None:
-        for manifest in self.manifests.values():
+        for manifest in self.manifests:
             manifest.reload()
 
 
@@ -260,3 +298,19 @@ def check_dist() -> None:
     """Check the dist directory for the presence of asset files."""
     manifest = importlib.resources.files("basingse").joinpath("assets", "manifest.json").read_text()
     print(f"{len(json.loads(manifest))} asset files found")
+
+
+def parse_filename(filename: str) -> str:
+    """Parse the filename"""
+    path = Path(filename)
+
+    parts = path.name.split(".")
+    if len(parts) < 3:
+        return path.as_posix()
+
+    module, name, hash, *extensions = parts
+
+    if not re.match(r"^[a-f0-9]{32}$", hash):
+        return path.as_posix()
+
+    return path.with_name(f"{module}.{name}.{'.'.join(extensions)}").as_posix()

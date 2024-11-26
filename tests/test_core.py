@@ -51,10 +51,9 @@ def test_core_assets(client: LoginClient, templates: TemplatesFixture) -> None:
     record = templates[-1]
     assert record.template.name == "page.html"
     assert record.context["page"].title == "Home"
-    assert list(record.context["bundles"].active())
     assert "assets" in record.context
 
-    assert len(list(record.context["assets"].iter_assets("tests", "js"))) == 1
+    assert len(list(record.context["assets"].iter_assets("basingse", "js"))) >= 1
 
 
 @pytest.mark.usefixtures("no_homepage")

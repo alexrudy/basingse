@@ -26,10 +26,24 @@ from werkzeug.exceptions import NotFound
 from . import svcs
 
 
-logger = structlog.get_logger()
+class AssetLogger(structlog.BoundLogger):
+
+    def _proxy_to_logger(self, method_name: str, event: str | None = None, **event_kw: Any) -> None:
+
+        try:
+            allowed = current_app.config.get(_ASSETS_DEBUG_LOADING, False)
+        except RuntimeError:
+            allowed = False
+
+        if allowed or method_name != "debug":
+            return super()._proxy_to_logger(method_name, event, **event_kw)
+
+
+logger = structlog.wrap_logger(structlog.get_logger(), wrapper_class=AssetLogger)
 
 _ASSETS_EXTENSION_KEY = "basingse.assets"
 _ASSETS_BUST_CACHE_KEY = "ASSETS_BUST_CACHE"
+_ASSETS_DEBUG_LOADING = "ASSETS_DEBUG_LOADING"
 
 
 @contextlib.contextmanager
@@ -249,6 +263,12 @@ class Assets(Mapping[str, Asset]):
         raise KeyError(filename)
 
     def __contains__(self, filename: object) -> bool:
+        if isinstance(filename, Path):
+            filename = filename.as_posix()
+
+        if not isinstance(filename, str):
+            return False
+
         for manifest in self.manifests:
             if filename in manifest:
                 return True
@@ -300,6 +320,9 @@ def check_dist() -> None:
     print(f"{len(json.loads(manifest))} asset files found")
 
 
+_FILENAME_WITH_HASH = re.compile(r"^[a-f0-9]{32}$")
+
+
 def parse_filename(filename: str) -> str:
     """Parse the filename"""
     path = Path(filename)
@@ -310,7 +333,7 @@ def parse_filename(filename: str) -> str:
 
     module, name, hash, *extensions = parts
 
-    if not re.match(r"^[a-f0-9]{32}$", hash):
+    if not re.match(_FILENAME_WITH_HASH, hash):
         return path.as_posix()
 
     return path.with_name(f"{module}.{name}.{'.'.join(extensions)}").as_posix()

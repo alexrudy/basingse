@@ -3,6 +3,10 @@ import { io } from "socket.io-client";
 function main() {
     const socket = io("ws://localhost:5010");
 
+    socket.on("connect_error", (error: any) => {
+        console.log("debug socket.io connection error", error);
+    });
+
     socket.on("connect", () => {
         console.log("debug socket.io connected");
     });

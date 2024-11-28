@@ -5,12 +5,14 @@ from typing import TYPE_CHECKING
 import attrs
 import click
 import structlog
+from bootlace.endpoint import Endpoint
 from bootlace.icon import Icon
 from bootlace.links import View as ViewLink
 from bootlace.nav import NavStyle
 from bootlace.nav.elements import Link
 from bootlace.nav.elements import Nav
 from bootlace.util import as_tag
+from bootlace.util import is_active_blueprint
 from bootlace.util import render
 from flask import Blueprint
 from flask import current_app
@@ -40,16 +42,37 @@ class PortalMenuItem(Link):
     """
 
     permissions: str | None = None
+    active_for_blueprint: str | None = None
 
     # This ordering is frozen for backwards compatibility
-    def __init__(self, label: str, view: str, icon: str | Icon, permissions: str) -> None:
+    def __init__(
+        self,
+        label: str,
+        view: str | Endpoint,
+        icon: str | Icon,
+        permissions: str,
+        active_for_blueprint: str | bool | None = True,
+    ) -> None:
         if isinstance(icon, str):
             icon = Icon(icon)
 
         link = ViewLink(endpoint=view, text=[icon, " ", label])
+        if isinstance(active_for_blueprint, bool):
+            self.active_for_blueprint = link.blueprint if active_for_blueprint else None
+        else:
+            self.active_for_blueprint = active_for_blueprint
 
         super().__init__(link=link)
         self.permissions = permissions
+
+    @property
+    def active(self) -> bool:
+
+        blueprint: str | None = self.active_for_blueprint and getattr(self.link, "blueprint", None)
+        if blueprint is None:
+            return super().active
+
+        return is_active_blueprint(blueprint)
 
     @property
     def enabled(self) -> bool:

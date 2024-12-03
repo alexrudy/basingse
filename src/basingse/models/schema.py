@@ -1,5 +1,6 @@
 import enum
 import functools
+import warnings
 from typing import Any
 from typing import cast
 from typing import TYPE_CHECKING
@@ -15,15 +16,22 @@ from marshmallow import Schema as BaseSchema
 from sqlalchemy.orm import Session
 
 from basingse import svcs
+from basingse.models import orm
 from basingse.models.info import _Attribute
+from basingse.models.info import Auto
 from basingse.models.info import ColumnInfo
 from basingse.models.info import FormInfo
+from basingse.models.info import OrmInfo
 from basingse.models.info import SchemaInfo
 
 if TYPE_CHECKING:
     from . import Model
 
 E = TypeVar("E", bound=enum.Enum)
+
+
+class OrmInfoWarning(UserWarning):
+    pass
 
 
 class Schema(BaseSchema):
@@ -78,10 +86,37 @@ def collect_attributes(
                 attrs[name] = process_info(name, None, value, info_type)  # type: ignore[arg-type]
 
     for name, column in model.__table__.columns.items():
+        if isinstance(column.info, Auto):
+            column.info = orm.info(schema=SchemaInfo(), form=FormInfo(), listview=ColumnInfo())  # type: ignore
+
+        if not isinstance(column.info, (dict, OrmInfo)):
+            warnings.warn(
+                OrmInfoWarning(
+                    f"Unexpected info for {model.__name__}.{name}: .info is {column.info!r} (type {type(column.info)})"
+                ),
+                stacklevel=2,
+            )
+
+            continue
+
         if value := column.info.get(key):
-            attrs[name] = process_info(name, column, value, info_type)
+            attrs[name] = process_info(name, column, cast(A, value), info_type)
 
     for name, relationship in model.__mapper__.relationships.items():
+
+        if isinstance(relationship.info, Auto):
+            relationship.info = orm.info(schema=SchemaInfo(), form=FormInfo(), listview=ColumnInfo())  # type: ignore
+
+        if not isinstance(relationship.info, (dict, OrmInfo)):
+            warnings.warn(
+                OrmInfoWarning(
+                    f"Unexpected info for {model.__name__}.{name}: .info is {relationship.info!r} (type {type(relationship.info)})"
+                ),
+                stacklevel=2,
+            )
+
+            continue
+
         if value := relationship.info.get(key):
             attrs[name] = process_info(name, relationship, value, info_type)
 

@@ -32,6 +32,7 @@
 
 {% block scripts %}
 {{ super() }}
+{{ assets.resources('basingse.admin', '.js') | safe }}
 {% block scripts_admin_init %}
 <script>
     Basingse.admin.init({});

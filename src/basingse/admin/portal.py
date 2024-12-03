@@ -9,10 +9,13 @@ from bootlace.endpoint import Endpoint
 from bootlace.icon import Icon
 from bootlace.links import View as ViewLink
 from bootlace.nav import NavStyle
+from bootlace.nav.core import NavElement
+from bootlace.nav.elements import Dropdown
 from bootlace.nav.elements import Link
 from bootlace.nav.elements import Nav
 from bootlace.util import as_tag
 from bootlace.util import is_active_blueprint
+from bootlace.util import MaybeTaggable
 from bootlace.util import render
 from flask import Blueprint
 from flask import current_app
@@ -21,18 +24,40 @@ from flask_login import current_user
 from jinja2 import Template
 from markupsafe import Markup
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 from wtforms import FileField
 from wtforms import Form
 
 from basingse import svcs
 from basingse.htmx import HtmxProperties
+from basingse.models import Session
 
 
 if TYPE_CHECKING:
     from basingse.admin.extension import AdminView  # noqa: F401
 
 logger = structlog.get_logger()
+
+
+@attrs.define
+class PortalDropdown(Dropdown):
+
+    permissions: str | None = None
+
+    def __init__(self, *, title: MaybeTaggable, icon: str | Icon | None = None, permissions: str | None = None) -> None:
+
+        if isinstance(icon, str):
+            icon = Icon(icon)
+        if icon:
+            title = [icon, " ", title]
+
+        super().__init__(title=title)
+        self.permissions = permissions
+
+    @property
+    def enabled(self) -> bool:
+        if self.permissions is None:
+            return True
+        return current_user.can(self.permissions)
 
 
 @attrs.define(init=False)
@@ -108,7 +133,7 @@ class Portal(Blueprint):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.sidebar: list[PortalMenuItem] = []
+        self.sidebar: list[NavElement] = []
         self.admins: "list[type[AdminView]]" = []
         self.context_processor(self.context)
         self.importer_group = click.Group(

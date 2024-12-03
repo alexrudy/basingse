@@ -99,7 +99,7 @@ class Asset:
         return self.url()
 
 
-@attrs.define(frozen=True, hash=False)
+@attrs.define(frozen=False, hash=False)
 class AssetManifest(Mapping[str, Asset]):
     """
     Webpack's manifest.json file.
@@ -138,8 +138,7 @@ class AssetManifest(Mapping[str, Asset]):
         return self.manifest[filename]
 
     def reload(self) -> None:
-        self.manifest.clear()
-        self.manifest.update(self._get_manifest())
+        self.manifest = self._get_manifest()
 
     def __contains__(self, filename: object) -> bool:
         if isinstance(filename, Path):

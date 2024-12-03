@@ -22,6 +22,10 @@ def auto() -> Auto:
     return Auto()
 
 
+def autoinfo() -> dict[str, Any]:
+    return info(schema=auto(), form=auto(), listview=auto())
+
+
 def info(
     *,
     schema: SchemaInfo | fields.Field | Auto | None = None,

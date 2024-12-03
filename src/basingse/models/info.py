@@ -192,6 +192,9 @@ class ColumnInfo:
     attribute: str | None = None
 
     def field(self, name: str, column: _Attribute) -> Column:
+        if self.heading is None:
+            self.heading = name.replace("_", " ").title()
+
         if isinstance(column, (sa.Column, sa.sql.elements.KeyedColumnElement)):
             return self._field_for_column(column)
         elif isinstance(column, orm.relationships.RelationshipProperty):

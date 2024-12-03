@@ -4,6 +4,7 @@ from typing import TypeVar
 
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import select
+from sqlalchemy.sql.expression import ColumnExpressionArgument
 
 from . import Model
 from basingse import svcs
@@ -29,11 +30,14 @@ def query_one(session: Session, cls: type[M], field: str, value: Any) -> M | Non
     return session.scalar(select(cls).filter(getattr(cls, field), value).limit(1))
 
 
-def query_select_factory(cls: type[M]) -> Callable[[], list[M]]:
+def query_select_factory(cls: type[M], order_by: None | ColumnExpressionArgument | str = None) -> Callable[[], list[M]]:
     """Create a query factory to select from a given class."""
 
     def query() -> list[M]:
         session = svcs.get(Session)
-        return list(session.scalars(select(cls)))
+        q = select(cls)
+        if order_by is not None:
+            q = q.order_by(order_by)
+        return list(session.scalars(q))
 
     return query

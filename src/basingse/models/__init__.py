@@ -190,6 +190,10 @@ class SQLAlchemy:
         return svcs.get(Engine)
 
     @property
+    def engines(self) -> dict[str, Engine]:
+        return {"default": svcs.get(Engine)}
+
+    @property
     def session(self) -> Session:
         return svcs.get(Session)
 
@@ -221,7 +225,7 @@ class SQLAlchemy:
 
         svcs.register_factory(app, Session, functools.partial(session_factory, Session))
 
-        svcs.register_factory(app, BaseSession, functools.partial(session_factory, Session))
+        svcs.register_factory(app, BaseSession, functools.partial(svcs.get, Session))
 
         # We fake our way through as if we were the default SQLAlchemy extension
         app.extensions["sqlalchemy"] = self

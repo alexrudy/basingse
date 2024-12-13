@@ -12,6 +12,7 @@ from basingse import svcs
 from basingse.assets import AssetManifest
 from basingse.assets import Assets
 from basingse.assets import check_dist
+from basingse.assets import parse_filename
 from basingse.testing.responses import NotFound
 from basingse.testing.responses import Ok
 from basingse.testing.responses import Response
@@ -65,6 +66,7 @@ def test_get(
 ) -> None:
 
     app.config["ASSETS_BUST_CACHE"] = not debug
+    app.config["ASSETS_DEBUG_LOADING"] = True
     # Get URL from context, then request it.
     with app.app_context():
         assets = svcs.get(Assets)
@@ -90,6 +92,19 @@ def test_url_fallback(collection: AssetManifest) -> None:
     assets.add(collection)
     with pytest.raises(KeyError):
         assets.url("js/tests.other.js")
+
+
+@pytest.mark.parametrize(
+    "filename, expected",
+    [
+        ("img/chalice.lake-sunset-bkg.c6d3cb3c519cf0d39d2d.jpg", "img/chalice.lake-sunset-bkg.jpg"),
+        ("img/chalice.lake-sunset-bkg.c6d3cb3c519cf0d39d2d.jpg.map", "img/chalice.lake-sunset-bkg.jpg.map"),
+        ("img/chalice.lake-sunset-bkg.jpg", "img/chalice.lake-sunset-bkg.jpg"),
+        ("css/tests.main.7c16d7abf39269d0a6fd444dfbef74cd.css.map", "css/tests.main.css.map"),
+    ],
+)
+def test_parse_filename(filename: str, expected: str) -> None:
+    assert parse_filename(filename) == expected
 
 
 class TestCollection:

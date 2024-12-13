@@ -207,11 +207,17 @@ class AssetManifest(Mapping[str, Asset]):
             try:
                 filename = self.manifest[filename]
             except KeyError:
-                logger.debug("Asset not found in manifest", filename=filename, manifest=self.manifest)
-                raise
+                if filename in self.manifest.values():
+                    pass
+                else:
+                    logger.debug("Asset not found in manifest", filename=filename, manifest=self.manifest)
+                    raise
         elif filename not in self.manifest.values():
-            logger.debug("Asset not found in manifest", filename=filename, manifest=self.manifest)
-            raise KeyError(filename)
+            if filename in self.manifest:
+                filename = self.manifest[filename]
+            else:
+                logger.debug("Asset not found in manifest", filename=filename, manifest=self.manifest)
+                raise KeyError(filename)
 
         conditional = current_app.config[_ASSETS_BUST_CACHE_KEY]
 
@@ -319,7 +325,7 @@ def check_dist() -> None:
     print(f"{len(json.loads(manifest))} asset files found")
 
 
-_FILENAME_WITH_HASH = re.compile(r"^[a-f0-9]{32}$")
+_FILENAME_WITH_HASH = re.compile(r"^[a-f0-9]{20,32}$")
 
 
 def parse_filename(filename: str) -> str:

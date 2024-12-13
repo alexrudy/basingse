@@ -134,7 +134,7 @@ _LOG_METHOD_ARGS = {"args", "exc_info", "extra", "stack_info"}
 
 
 def render_to_log_kwargs(logger: logging.Logger, name: str, event_dict: EventDict) -> EventDict:
-    msg = event_dict.pop("event")
+    msg = event_dict.pop("event", "")
     msg = f"{msg!s} " + " ".join(
         f"{k}={event_dict.pop(k)!r}" for k in list(event_dict.keys()) if k not in _LOG_METHOD_ARGS
     )

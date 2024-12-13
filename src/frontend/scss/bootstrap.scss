@@ -36,3 +36,11 @@ $link-color-dark: white;
 @import "bootstrap/scss/accordion";
 
 @import "bootstrap/scss/utilities/api";
+
+.bi-inline {
+    width: 1em;
+    height: 1em;
+
+    display: inline-block;
+    vertical-align: -0.125em;
+}

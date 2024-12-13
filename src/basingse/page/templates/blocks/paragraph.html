@@ -1,1 +1,5 @@
+{% if use_markdown_in_page %}
+{{ blk.data.text|markdown }}
+{% else %}
 <p>{{ blk.data.text|safe }}</p>
+{% endif %}

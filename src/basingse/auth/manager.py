@@ -9,6 +9,7 @@ from flask import typing
 from flask_login import LoginManager
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from werkzeug.wrappers import Request
 
 from .models import AnonymousUser
 from .models import User
@@ -29,6 +30,18 @@ def load_auth(token: str) -> User | None:
     session = svcs.get(Session)
     log.debug("Loading user", token=token)
     return session.execute(select(User).where(User.token == token).limit(1)).scalar_one_or_none()
+
+
+def request_loader(request: Request) -> User | None:
+    """Loads an Authentication from the DB for use with flask-login
+
+    If the auth doesn't exist, flask-login will transparently
+    handle issues
+    """
+    token = request.headers.get("Authorization", None)
+    if token is None:
+        return None
+    return load_auth(token.removeprefix("Bearer "))
 
 
 def unauthorized(manager: LoginManager) -> IntoResponse:
@@ -55,3 +68,4 @@ def init_extension(manager: LoginManager) -> None:
     manager.anonymous_user = AnonymousUser
     manager.unauthorized_handler(functools.partial(unauthorized, manager=manager))
     manager.user_loader(load_auth)
+    manager.request_loader(request_loader)

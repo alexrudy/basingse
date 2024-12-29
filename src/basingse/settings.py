@@ -1,4 +1,5 @@
 import dataclasses as dc
+from collections.abc import Iterable
 from typing import Any
 
 import humanize
@@ -8,6 +9,8 @@ from bootlace import Bootlace
 from bootlace import render
 from flask import Flask
 from flask_attachments import Attachments
+from werkzeug.utils import find_modules
+from werkzeug.utils import import_string
 
 from . import attachments as attmod  # noqa: F401
 from . import svcs
@@ -86,3 +89,20 @@ class BaSingSe:
 
                 attr.init_app(app)
                 self.initailized[field.name] = True
+
+    def auto_import(self, app: Flask, name: str, avoid: None | Iterable[str] = None) -> None:
+
+        # Truncate .app if we are in a .app module (not package) so that users can pass __name__
+        if name.endswith(".app") and __file__.endswith("app.py"):
+            name = name[:-4]
+
+        avoid = {"tests", "test", "testing", "wsgi", "app"} if avoid is None else set(avoid)
+
+        for module in find_modules("signalbox", include_packages=True, recursive=True):
+
+            if set(module.split(".")).intersection():
+                continue
+
+            module = import_string(module)
+            if hasattr(module, "init_app"):
+                module.init_app(app)

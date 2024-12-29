@@ -39,7 +39,6 @@ from . import orm
 from . import schema
 from basingse import svcs
 
-alembic = Alembic()
 
 CONVENTION = {
     "ix": "ix_%(column_0_label)s",
@@ -65,7 +64,7 @@ def tablename(name: str) -> str:
 class Base(DeclarativeBase):
     __abstract__ = True
 
-    __metadata__: ClassVar[MetaData] = MetaData(naming_convention=CONVENTION)
+    metadata: ClassVar[MetaData] = MetaData(naming_convention=CONVENTION)
 
     @declared_attr.directive
     def __tablename__(cls) -> str:  # noqa: B902
@@ -163,6 +162,10 @@ class Database:
     """Fake to emulate the behavior of the default SQLAlchemy extension"""
 
     @property
+    def metadata(self) -> MetaData:
+        return Model.metadata
+
+    @property
     def engine(self) -> Engine:
         return svcs.get(Engine)
 
@@ -232,3 +235,7 @@ class SQLAlchemy:
         alembic.init_app(app)
         if dbgroup := app.cli.commands.get("db"):
             dbgroup.add_command(init)  # type: ignore
+
+
+alembic = Alembic()
+alembic.metadatas["default"] = Model.metadata

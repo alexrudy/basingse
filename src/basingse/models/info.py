@@ -10,6 +10,7 @@ from typing import TypeVar
 
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
+import sqlalchemy.sql.elements
 import wtforms
 from bootlace.table import columns
 from bootlace.table.base import ColumnBase as Column
@@ -135,13 +136,13 @@ class FormInfo:
         if relationship.uselist:
             return wtforms.SelectMultipleField(
                 label=self.label,
-                description=self.description,
+                description=self.description or "",
                 validators=self.validators,
             )
         else:
             return wtforms.SelectField(
                 label=self.label,
-                description=self.description,
+                description=self.description or "",
                 validators=self.validators,
             )
 

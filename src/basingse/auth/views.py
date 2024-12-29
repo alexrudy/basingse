@@ -109,6 +109,7 @@ def password() -> Any:
     form = ChangePasswordForm()
     if form.validate_on_submit():
         user = current_user._get_current_object()
+        assert user is not None, "User is missing but @fresh_login_required should prevent this"
         if not user.compare_password(form.old_password.data):
             flash("Incorrect current password", category="error")
         else:
@@ -155,12 +156,14 @@ def session_reset_token(id: uuid.UUID) -> Any:
 
 
 @bp.route("/me")
+@bp.route("/@me")
 @login_required
 def me() -> Any:
-    if request.accept_mimetypes.accept_html:
-        return redirect(get_extension().profile, id=current_user.id)
-    schema = current_user.__schema__()()
-    return jsonify(schema.dump(current_user))
+
+    if request.accept_mimetypes.best_match(["text/html", "application/json"]) == "application/json":
+        schema = current_user.__schema__()()
+        return jsonify(schema.dump(current_user))
+    return redirect(get_extension().profile, id=current_user.id)
 
 
 @bp.route("/logout/")

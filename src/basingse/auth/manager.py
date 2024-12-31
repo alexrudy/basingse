@@ -1,6 +1,7 @@
 import functools
 
 import structlog
+from blinker import signal
 from flask import abort
 from flask import flash
 from flask import redirect
@@ -19,6 +20,7 @@ from basingse import svcs
 IntoResponse = typing.ResponseReturnValue
 
 log = structlog.get_logger(__name__)
+request_load = signal("request-load")
 
 
 def load_auth(token: str) -> User | None:
@@ -38,6 +40,11 @@ def request_loader(request: Request) -> User | None:
     If the auth doesn't exist, flask-login will transparently
     handle issues
     """
+    callbacks = request_load.send(request)
+    for _, user in callbacks:
+        if user is not None:
+            return user
+
     token = request.headers.get("Authorization", None)
     if token is None:
         return None

@@ -9,6 +9,7 @@ from flask_wtf.csrf import CSRFProtect
 from itsdangerous import URLSafeTimedSerializer
 
 from .admin import UserAdmin  # noqa: F401
+from .models import User
 from basingse.utils.settings import BlueprintOptions
 
 log = structlog.get_logger(__name__)
@@ -80,6 +81,10 @@ class Authentication:
         app.register_blueprint(views.bp, **dc.asdict(self.blueprint))
 
         utils.init_app(app)
+
+    def set_request_user(self, user: User) -> None:
+        """Sets the authenticated user for a request"""
+        self.login_manager._update_request_context_with_user(user)
 
     @property
     def bcrypt(self) -> Bcrypt:

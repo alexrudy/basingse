@@ -35,6 +35,9 @@ class DebugDemoter:
         if current_app.debug:
             return event_dict
 
+        if isinstance(event_dict["level"], str):
+            event_dict["level"] = logging.getLevelNamesMapping()[event_dict["level"].upper()]
+
         if event_dict["level"] > logging.DEBUG:
             event_dict["level"] = logging.DEBUG
 
@@ -81,7 +84,6 @@ def configure_structlog() -> None:
         processors=[
             structlog.contextvars.merge_contextvars,
             structlog.processors.add_log_level,
-            DebugDemoter(),
             structlog.processors.StackInfoRenderer(),
             structlog.dev.set_exc_info,
             structlog.processors.TimeStamper(),

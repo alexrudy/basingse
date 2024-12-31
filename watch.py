@@ -72,11 +72,20 @@ class SocketIOHandler(PatternMatchingEventHandler):
         ignore_directories: bool = False,
         case_sensitive: bool = False,
     ) -> None:
-        super().__init__(patterns, ignore_patterns, ignore_directories, case_sensitive)
+        super().__init__(
+            patterns=patterns,
+            ignore_patterns=ignore_patterns,
+            ignore_directories=ignore_directories,
+            case_sensitive=case_sensitive,
+        )
         self.socketio = socketio
 
     def on_any_event(self, event: FileSystemEvent) -> None:
-        path = Path(event.src_path).relative_to(Path(__file__).parent)
+        src_path = event.src_path
+        if isinstance(src_path, bytes):
+            src_path = src_path.decode()
+
+        path = Path(src_path).relative_to(Path(__file__).parent)
         parts = path.name.split(".")
         if len(parts) > 2:
             del parts[1]
@@ -96,7 +105,12 @@ class ShellCommandHandler(PatternMatchingEventHandler):
         ignore_directories: bool = False,
         case_sensitive: bool = False,
     ) -> None:
-        super().__init__(patterns, ignore_patterns, ignore_directories, case_sensitive)
+        super().__init__(
+            patterns=patterns,
+            ignore_patterns=ignore_patterns,
+            ignore_directories=ignore_directories,
+            case_sensitive=case_sensitive,
+        )
         self.command = command
         self.queue = queue
 
@@ -190,10 +204,10 @@ def main() -> int:
         )
         sync_and_install = ShellCommandHandler(["just", "sync"], shell_manager.queue, patterns=["*.in"])
 
-        observer.schedule(webpack, path=src / "frontend", recursive=True)
-        observer.schedule(webpack_config, path=root, recursive=False)
-        observer.schedule(sync_and_install, path=requirements, recursive=True)
-        observer.schedule(socketio_handler, path=src / "basingse" / "assets", recursive=True)
+        observer.schedule(webpack, path=str(src / "frontend"), recursive=True)
+        observer.schedule(webpack_config, path=str(root), recursive=False)
+        observer.schedule(sync_and_install, path=str(requirements), recursive=True)
+        observer.schedule(socketio_handler, path=str(src / "basingse" / "assets"), recursive=True)
 
         stack.enter_context(stopping(observer))
         observer.start()

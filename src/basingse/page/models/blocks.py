@@ -6,6 +6,7 @@ from typing import ClassVar
 from typing import Protocol
 from typing import Type
 from typing import TypeVar
+from uuid import UUID
 
 import marshmallow_dataclass
 from jinja2 import Template
@@ -105,6 +106,44 @@ class Paragraph:
 
     def render(self) -> str:
         return "blocks/paragraph.html"
+
+
+@dc.dataclass
+class File:
+    url: str
+    id: UUID
+
+
+@block
+class Image:
+    __kind__: ClassVar[str] = "image"
+
+    file: File
+    caption: str
+    withBorder: bool
+    withBackground: bool
+    stretched: bool
+
+    def render(self) -> str:
+        return "blocks/image.html"
+
+
+@block
+class HorizontalRule:
+    __kind__: ClassVar[str] = "horizontalRule"
+
+    def render(self) -> str:
+        return "blocks/horizontal-rule.html"
+
+
+@block
+class BlockQuote:
+    __kind__: ClassVar[str] = "blockQuote"
+
+    text: str
+
+    def render(self) -> str:
+        return "blocks/block-quote.html"
 
 
 @dc.dataclass

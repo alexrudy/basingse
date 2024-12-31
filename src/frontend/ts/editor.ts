@@ -1,6 +1,17 @@
 import EditorJS from "@editorjs/editorjs";
 import Header from "@editorjs/header";
 import Paragraph from "@editorjs/paragraph";
+import { BlockQuote } from "./blocks/blockquote";
+import { HorizontalRule } from "./blocks/rule";
+import Image from "@editorjs/image";
+import { get_csrf } from "./csrf";
+
+export function get_editor_token(): string | null {
+    const token = document.querySelector(
+        'meta[name="editorjs-token"]',
+    ) as HTMLMetaElement;
+    return token?.content;
+}
 
 export function createEditor(tools: object) {
     document.querySelectorAll<HTMLElement>(".editor-js").forEach((element) => {
@@ -19,6 +30,21 @@ export function createEditor(tools: object) {
                     class: Paragraph,
                     inlineToolbar: true,
                 },
+                image: {
+                    class: Image,
+                    config: {
+                        endpoints: {
+                            byFile: "/admin/upload",
+                            byUrl: "/admin/fetch",
+                        },
+                        additionalRequestHeaders: {
+                            "X-CSRFToken": get_csrf(),
+                            AUTHORIZATION: `Bearer ${get_editor_token()}`,
+                        },
+                    },
+                },
+                quote: BlockQuote,
+                hr: HorizontalRule,
                 ...tools,
             },
             placeholder: "Write your page here!",

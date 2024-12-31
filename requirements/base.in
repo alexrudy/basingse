@@ -8,6 +8,7 @@ Flask-SocketIO
 Flask-WTF
 Flask!=3.0.1,>=2
 flask-attachments
+httpx
 humanize
 itsdangerous
 marshmallow

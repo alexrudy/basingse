@@ -4,6 +4,7 @@ from flask import Blueprint
 from flask import Flask
 
 from . import admin  # noqa: F401
+from .extension import EditorJS
 from basingse.utils.settings import BlueprintOptions
 
 
@@ -17,6 +18,9 @@ class PageSettings:
 
         def markdown_in_context() -> bool:
             return self.markdown
+
+        extension = EditorJS()
+        extension.init_app(app)  # type: ignore
 
         if isinstance(app, Flask):
             app.add_template_global(markdown_in_context, "use_markdown_in_page")

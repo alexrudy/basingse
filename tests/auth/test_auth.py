@@ -273,7 +273,7 @@ def test_me_endpoint(author: User, client: LoginClient) -> None:
 def test_user_reset_session(author: User, admin: User, app: Flask) -> None:
     with app.test_client(use_cookies=True) as author_client:
         author_client.login(author.email, "badpassword")  # type: ignore
-        with author_client.get("/auth/me") as resp:
+        with author_client.get("/auth/me", headers={"accept": "application/json"}) as resp:
             assert resp == Ok()
             assert resp.json["id"] == str(author.id), "User should be the same"  # type: ignore
             assert current_user.id == author.id, "Author should be logged in"

@@ -174,14 +174,16 @@ class Portal(Blueprint):
 
 @click.command(name="all")
 @click.option("--clear/--no-clear")
-@click.argument("filename", type=click.File("r"))
+@click.argument("filename", type=click.File("r"), nargs=-1)
 @with_appcontext
 @click.pass_context
-def import_all(ctx: click.Context, filename: IO[str], clear: bool) -> None:
+def import_all(ctx: click.Context, filename: list[IO[str]], clear: bool) -> None:
     """Import all items known from a YAML file"""
     import yaml
 
-    data = yaml.safe_load(filename)
+    data = {}
+    for file in filename:
+        data.update(yaml.safe_load(file))
     session = svcs.get(Session)
     portal = svcs.get(Portal)
 

@@ -30,9 +30,10 @@ from svcs._core import (
 
 
 def init_app(app: Flask) -> None:
-    app.extensions[_REGISTRY_KEY] = Registry()
-    app.teardown_appcontext(teardown)
-    atexit.register(close_registry, app)
+    if _REGISTRY_KEY not in app.extensions:
+        app.extensions[_REGISTRY_KEY] = Registry()
+        app.teardown_appcontext(teardown)
+        atexit.register(close_registry, app)
 
 
 def register_factory(

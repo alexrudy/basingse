@@ -18,6 +18,9 @@ class PageSettings:
         def markdown_in_context() -> bool:
             return self.markdown
 
-        bp.add_app_template_global(markdown_in_context, "use_markdown_in_page")
+        if isinstance(app, Flask):
+            app.add_template_global(markdown_in_context, "use_markdown_in_page")
+        else:
+            app.add_app_template_global(markdown_in_context, "use_markdown_in_page")
 
         app.register_blueprint(bp, **dc.asdict(self.blueprint))

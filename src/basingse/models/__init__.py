@@ -11,6 +11,7 @@ from typing import ClassVar
 
 import click
 import structlog
+from alembic.ddl import sqlite
 from bootlace.table import Table as ListView
 from flask import abort
 from flask import flash
@@ -237,5 +238,7 @@ class SQLAlchemy:
             dbgroup.add_command(init)  # type: ignore
 
 
+# Force alembic to run sqlite in transaction
+sqlite.SQLiteImpl.transactional_ddl = True
+
 alembic = Alembic()
-alembic.metadatas["default"] = Model.metadata

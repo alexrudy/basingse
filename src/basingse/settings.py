@@ -66,29 +66,32 @@ class BaSingSe:
     bootlace: Bootlace | None = Bootlace()
     admin: AdminSettings | None = AdminSettings()
 
-    initailized: dict[str, bool] = dc.field(default_factory=dict)
+    initialized: dict[str, bool] = dc.field(default_factory=dict)
 
-    def init_app(self, app: Flask) -> None:
-        svcs.init_app(app)
+    def init_field(self, app: Flask, name: str) -> None:
+        attr = getattr(self, name)
+        if attr is None:
+            return
 
         config = app.config.get_namespace("BASINGSE_")
 
+        if dc.is_dataclass(attr):
+            cfg = config.get(name, {})
+            if any(cfg):
+                attr = dc.replace(attr, **cfg)
+
+        if hasattr(attr, "init_app"):
+            if self.initialized.get(name, False):
+                raise RuntimeError(f"{name} already initialized")
+
+            attr.init_app(app)
+            self.initialized[name] = True
+
+    def init_app(self, app: Flask) -> None:
+        svcs.init_app(app)
         for field in dc.fields(self):
-            attr = getattr(self, field.name)
-            if attr is None:
-                continue
-
-            if dc.is_dataclass(attr):
-                cfg = config.get(field.name, {})
-                if any(cfg):
-                    attr = dc.replace(attr, **cfg)
-
-            if hasattr(attr, "init_app"):
-                if self.initailized.get(field.name, False):
-                    raise RuntimeError(f"{field.name} already initialized")
-
-                attr.init_app(app)
-                self.initailized[field.name] = True
+            if not self.initialized.get(field.name, False):
+                self.init_field(app, field.name)
 
     def auto_import(self, app: Flask, name: str, avoid: None | Iterable[str] = None) -> None:
 
@@ -98,9 +101,9 @@ class BaSingSe:
 
         avoid = {"tests", "test", "testing", "wsgi", "app"} if avoid is None else set(avoid)
 
-        for module in find_modules("signalbox", include_packages=True, recursive=True):
+        for module in find_modules(name, include_packages=True, recursive=True):
 
-            if set(module.split(".")).intersection():
+            if set(module.split(".")).intersection(avoid):
                 continue
 
             module = import_string(module)

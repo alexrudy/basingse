@@ -26,7 +26,7 @@ def app() -> Flask:
     app.config["TESTING"] = True
 
     @app.route("/admin/form_test_endpoint")
-    def form_test_endpoint():
+    def form_test_endpoint() -> str:
         return "Hello"
 
     return app

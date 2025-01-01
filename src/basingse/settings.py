@@ -75,7 +75,7 @@ class BaSingSe:
 
         config = app.config.get_namespace("BASINGSE_")
 
-        if dc.is_dataclass(attr):
+        if dc.is_dataclass(attr) and not isinstance(attr, type):
             cfg = config.get(name, {})
             if any(cfg):
                 attr = dc.replace(attr, **cfg)

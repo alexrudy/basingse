@@ -1,5 +1,5 @@
 attrs
-bootlace
+bootlace>=0.3.0
 dominate
 Flask-Alembic
 Flask-BCrypt

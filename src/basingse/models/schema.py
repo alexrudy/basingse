@@ -105,7 +105,7 @@ def collect_attributes(
     for name, relationship in model.__mapper__.relationships.items():
 
         if isinstance(relationship.info, Auto):
-            relationship.info = orm.info(schema=SchemaInfo(), form=FormInfo(), listview=ColumnInfo())  # type: ignore
+            relationship.info = orm.info(schema=SchemaInfo(), form=FormInfo(), listview=ColumnInfo())
 
         if not isinstance(relationship.info, (dict, OrmInfo)):
             warnings.warn(

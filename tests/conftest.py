@@ -101,7 +101,7 @@ def app(tmp_path: Path) -> Iterator[Flask]:
     app = TestingFlask(__name__)
     app.test_client_class = LoginClient
     configure_app(app, config={"ENV": "test", "ASSETS_FOLDER": None, "ATTACHMENTS_CACHE_DIRECTORY": str(tmp_path)})
-    bss = BaSingSe(logging=None)
+    bss = BaSingSe(logging=None)  # type: ignore
     bss.init_app(app)
     assert bss.assets, "Assets should be initialized"
     bss.assets.add(AssetManifest(location="tests"))

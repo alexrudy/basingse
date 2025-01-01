@@ -292,6 +292,7 @@ class AdminView(View, Generic[M]):
             return jsonify(data=schema.dump(items))
 
         context["items"] = items
+        context[self.model.__tablename__] = items
         return render_template(template, **context)
 
     def render_delete(self, next: str = ".list") -> IntoResponse:

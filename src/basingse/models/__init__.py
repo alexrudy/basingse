@@ -59,6 +59,10 @@ def tablename(name: str) -> str:
         if c.isupper():
             word += "_"
         word += c.lower()
+    if word.endswith("y"):
+        return word[:-1] + "ies"
+    if word.endswith("s"):
+        return word
     return word + "s"
 
 

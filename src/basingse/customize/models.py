@@ -169,7 +169,7 @@ class SocialLink(Model):
     Social links
     """
 
-    site_id = mapped_column(Uuid(), ForeignKey("site_settingss.id", ondelete="CASCADE"), nullable=False)
+    site_id = mapped_column(Uuid(), ForeignKey("site_settings.id", ondelete="CASCADE"), nullable=False)
     site = relationship(
         SiteSettings,
         uselist=False,

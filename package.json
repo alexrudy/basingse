@@ -1,5 +1,6 @@
 {
     "name": "basingse-frontend",
+    "main": "basingse",
     "version": "0.0.0",
     "private": true,
     "description": "Frontend compiler for basingse",
@@ -10,7 +11,9 @@
         "build": "webpack --config webpack.config.js --mode=development",
         "test": "jest",
         "watch": "webpack --watch",
-        "all": "npm run format && npm run lint && npm run build && npm test"
+        "all": "npm run format && npm run lint && npm run build && npm test",
+        "postinstall": "tsc",
+        "tsc": "tsc"
     },
     "keywords": [],
     "author": "opensource@alexrudy.net",

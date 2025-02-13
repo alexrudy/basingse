@@ -246,6 +246,7 @@ class AdminView(View, Generic[M]):
             kwargs.setdefault(arg, args[arg])
 
         kwargs["action"] = action = kwargs.pop("action")
+        kwargs.setdefault("next", ".list")
         self.logger.debug("Dispatching", action=action)
         response = self.dispatch_action(**kwargs)
         if request.headers.get("HX-Request"):
@@ -284,6 +285,7 @@ class AdminView(View, Generic[M]):
         if request_accepts_json():
             schema = self.schema()
             return jsonify(schema.dump(obj))
+
         return redirect_next(next)
 
     def render_list(self, items: Iterable[M], template: str | list[str | Template], **context: Any) -> IntoResponse:
@@ -307,7 +309,7 @@ class AdminView(View, Generic[M]):
         if request_accepts_json():
             if form.errors:
                 return jsonify(errors=form.errors, error="Submission contains invalid data"), 400
-            return self.render_single(obj, form)
+            return self.render_single(obj, "edit.html", form=form)
 
         context[self.name] = obj
         context["form"] = form
@@ -347,7 +349,7 @@ class AdminView(View, Generic[M]):
             response=self.render_form(obj, form, [f"admin/{self.name}/edit.html", "admin/portal/edit.html"])
         )
 
-    def process_submit(self, *, obj: M, form: F, signal: Signal) -> IntoResponse:
+    def process_submit(self, *, obj: M, form: F, signal: Signal, next: str) -> IntoResponse:
         if request.method in ["POST", "PATCH", "PUT"] and request.is_json:
             if not isinstance(request.json, dict):
                 raise BadRequest("JSON data must be an object")
@@ -355,7 +357,7 @@ class AdminView(View, Generic[M]):
             return self.render_save(obj)
         else:
             obj = self.process_form(obj=obj, form=form, signal=signal)
-            return self.render_save(obj)
+            return self.render_save(obj, next=next)
 
     @action(permission="view", url="/<key>/", methods=["GET"])
     def view(self, **kwargs: Any) -> IntoResponse:
@@ -363,9 +365,9 @@ class AdminView(View, Generic[M]):
         return self.render_single(obj, [f"admin/{self.name}/view.html", "admin/portal/view.html"])
 
     @action(permission="edit", url="/<key>/edit/", methods=["GET", "POST", "PATCH", "PUT"])
-    def edit(self, **kwargs: Any) -> IntoResponse:
+    def edit(self, *, next: str, **kwargs: Any) -> IntoResponse:
         obj = self.single(**kwargs)
-        return self.process_submit(obj=obj, form=self.form(obj=obj), signal=on_update)
+        return self.process_submit(obj=obj, form=self.form(obj=obj), signal=on_update, next=next)
 
     @action(permission="view", url="/<key>/preview/", methods=["GET"])
     def preview(self, **kwargs: Any) -> IntoResponse:
@@ -376,9 +378,9 @@ class AdminView(View, Generic[M]):
         )
 
     @action(permission="edit", url="/new/", methods=["GET", "POST", "PUT"])
-    def new(self, **kwargs: Any) -> IntoResponse:
+    def new(self, *, next: str, **kwargs: Any) -> IntoResponse:
         obj = self.blank(**kwargs)
-        return self.process_submit(obj=obj, form=self.form(obj=obj), signal=on_new, **kwargs)
+        return self.process_submit(obj=obj, form=self.form(obj=obj), signal=on_new, next=next)
 
     @action(name="list", permission="view", url="/list/", methods=["GET"])
     def listview(self, **kwargs: Any) -> IntoResponse:

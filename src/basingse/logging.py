@@ -54,8 +54,10 @@ class RequestInfo:
     method: str
 
     def __repr__(self) -> str:
-
-        return f"<{self.method} {self.path} from {self.peer} ({self.host}) [id={self.id}]>"
+        if self.id:
+            return f"<{self.method} {self.path} from {self.peer} ({self.host}) [id={self.id}]>"
+        else:
+            return f"<{self.method} {self.path} from {self.peer} ({self.host})>"
 
     @classmethod
     def build(cls) -> "RequestInfo":
@@ -94,6 +96,9 @@ def configure_structlog() -> None:
         logger_factory=structlog.PrintLoggerFactory(),
         cache_logger_on_first_use=False,
     )
+
+    wkz = logging.getLogger("werkzeug")
+    wkz.addHandler(logging.NullHandler())
 
     install(show_locals=True)
 

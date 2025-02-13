@@ -85,8 +85,10 @@ def redirect_next(default: str = "home", **kwargs: Any) -> Response:
         if parse.urlsplit(url).netloc == "":
             return base_redirect(url)
 
-    if not default.startswith("/"):
+    if default and not default.startswith("/"):
         default = url_for(default, **kwargs)
+    if not default:
+        default = url_for("home")
 
     return base_redirect(default)
 

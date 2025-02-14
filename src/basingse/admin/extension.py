@@ -361,16 +361,19 @@ class AdminView(View, Generic[M]):
 
     @action(permission="view", url="/<key>/", methods=["GET"])
     def view(self, **kwargs: Any) -> IntoResponse:
+        kwargs.pop("next", ".list")
         obj = self.single(**kwargs)
         return self.render_single(obj, [f"admin/{self.name}/view.html", "admin/portal/view.html"])
 
     @action(permission="edit", url="/<key>/edit/", methods=["GET", "POST", "PATCH", "PUT"])
-    def edit(self, *, next: str, **kwargs: Any) -> IntoResponse:
+    def edit(self, **kwargs: Any) -> IntoResponse:
+        next = kwargs.pop("next", ".list")
         obj = self.single(**kwargs)
         return self.process_submit(obj=obj, form=self.form(obj=obj), signal=on_update, next=next)
 
     @action(permission="view", url="/<key>/preview/", methods=["GET"])
     def preview(self, **kwargs: Any) -> IntoResponse:
+        kwargs.pop("next", ".list")
         obj = self.single(**kwargs)
         return self.render_single(
             obj,
@@ -393,13 +396,14 @@ class AdminView(View, Generic[M]):
 
     @action(permission="delete", methods=["GET", "DELETE"], url="/<key>/delete/")
     def delete(self, **kwargs: Any) -> IntoResponse:
+        next = kwargs.pop("next", ".list")
         session = get(Session)
         obj = self.single(**kwargs)
 
         session.delete(obj)
         session.commit()
         on_delete.send(self.__class__, **kwargs)
-        return self.render_delete()
+        return self.render_delete(next=next)
 
     @classmethod
     def _parent_redirect_to(cls, action: str, **kwargs: Any) -> IntoResponse:

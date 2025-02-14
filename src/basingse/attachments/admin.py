@@ -56,6 +56,7 @@ class AttachmentAdmin(AdminView[M]):
         attachments=True,
     )
     def delete_attachment(self, *, attachment: UUID, **kwargs: Any) -> IntoResponse:
+        kwargs.pop("next", ".list")
 
         if not hasattr(self.model, "partial"):
             # Pre-emptive, partial is not an argument to .single()

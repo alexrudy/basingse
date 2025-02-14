@@ -1,6 +1,11 @@
 import dataclasses as dc
-from collections.abc import Iterable
+import functools
+from collections.abc import Callable
+from collections.abc import Iterator
+from collections.abc import Mapping
 from typing import Any
+from typing import Protocol
+from typing import TypeVar
 
 import humanize
 import structlog
@@ -8,15 +13,13 @@ from bootlace import as_tag
 from bootlace import Bootlace
 from bootlace import render
 from flask import Flask
-from flask_attachments import Attachments
-from werkzeug.utils import find_modules
-from werkzeug.utils import import_string
 
-from . import attachments as attmod  # noqa: F401
 from . import svcs
 from .admin.settings import AdminSettings
 from .assets import Assets
+from .attachments import Attachments
 from .auth.extension import Authentication
+from .autoimport import AutoImport
 from .customize.settings import CustomizeSettings
 from .logging import Logging
 from .markdown import MarkdownOptions
@@ -29,7 +32,9 @@ from .utils.urls import rewrite_url
 from .views import CoreSettings
 
 
-logger = structlog.get_logger()
+logger = structlog.get_logger(__name__)
+
+NAMESPACE = "BASINGSE"
 
 
 @dc.dataclass(frozen=True)
@@ -50,62 +55,105 @@ def context() -> dict[str, Any]:
     }
 
 
-@dc.dataclass
-class BaSingSe:
+class Settings(Protocol):
 
-    assets: Assets = dc.field(default_factory=Assets)
-    auth: Authentication = Authentication()
-    attachments: Attachments = Attachments(registry=Model.registry)
-    customize: CustomizeSettings = CustomizeSettings()
-    page: PageSettings = PageSettings()
-    core: CoreSettings = CoreSettings()
-    sqlalchemy: SQLAlchemy = SQLAlchemy()
-    logging: Logging = Logging()
-    markdown: MarkdownOptions = MarkdownOptions()
-    context: Context | None = Context()
-    bootlace: Bootlace | None = Bootlace()
-    admin: AdminSettings | None = AdminSettings()
+    def init_app(self, app: Flask) -> None: ...
 
-    initialized: dict[str, bool] = dc.field(default_factory=dict)
 
-    def init_field(self, app: Flask, name: str) -> None:
-        attr = getattr(self, name)
-        if attr is None:
-            return
+class BaSingSe(Mapping[str, Settings]):
 
-        config = app.config.get_namespace("BASINGSE_")
+    EXTENSIONS: dict[str, Callable[[], Settings]] = {
+        "autoimport": AutoImport,
+        "assets": Assets,
+        "auth": Authentication,
+        "attachments": functools.partial(Attachments, registry=Model.registry),
+        "customize": CustomizeSettings,
+        "page": PageSettings,
+        "core": CoreSettings,
+        "sqlalchemy": SQLAlchemy,
+        "logging": Logging,
+        "markdown": MarkdownOptions,
+        "context": Context,
+        "bootlace": Bootlace,
+        "admin": AdminSettings,
+    }
 
-        if dc.is_dataclass(attr) and not isinstance(attr, type):
-            cfg = config.get(name, {})
-            if any(cfg):
-                attr = dc.replace(attr, **cfg)
+    def __init__(self, all: bool = False) -> None:
+        self._extensions = {}
+        self._initialized = set()
+        if all:
+            self.enable_all()
 
-        if hasattr(attr, "init_app"):
-            if self.initialized.get(name, False):
-                raise RuntimeError(f"{name} already initialized")
+    def __getitem__(self, key: object) -> Settings:
+        if not isinstance(key, str):
+            raise TypeError(f"Key must be a string, not {type(key).__name__}")
+        try:
+            return self._extensions[key]
+        except KeyError:
+            if key in self.EXTENSIONS:
+                self._extensions[key] = settings = self.EXTENSIONS[key]()
+                return settings
+            raise
 
-            attr.init_app(app)
-            self.initialized[name] = True
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.EXTENSIONS)
+
+    def __len__(self) -> int:
+        return len(self.EXTENSIONS)
+
+    def __contains__(self, key: object) -> bool:
+        return key in self.EXTENSIONS
+
+    def __getattr__(self, name: str) -> Settings:
+        try:
+            return self._extensions[name]
+        except KeyError:
+            raise AttributeError(name) from None
+
+    def __delitem__(self, key: object) -> None:
+        del self._extensions[key]
+
+    def enable(self, *extensions: str) -> "BaSingSe":
+        for extension in extensions:
+            self._extensions[extension] = self.EXTENSIONS[extension]()
+        return self
+
+    def enable_all(self) -> "BaSingSe":
+        for extension in self.EXTENSIONS:
+            self.enable(extension)
+        return self
+
+    def disable(self, *extensions: str) -> "BaSingSe":
+        for extension in extensions:
+            del self._extensions[extension]
+        return self
 
     def init_app(self, app: Flask) -> None:
+
+        config = app.config.get_namespace(f"{NAMESPACE}_")
+
         svcs.init_app(app)
-        for field in dc.fields(self):
-            if not self.initialized.get(field.name, False):
-                self.init_field(app, field.name)
-
-    def auto_import(self, app: Flask, name: str, avoid: None | Iterable[str] = None) -> None:
-
-        # Truncate .app if we are in a .app module (not package) so that users can pass __name__
-        if name.endswith(".app") and __file__.endswith("app.py"):
-            name = name[:-4]
-
-        avoid = {"tests", "test", "testing", "wsgi", "app"} if avoid is None else set(avoid)
-
-        for module in find_modules(name, include_packages=True, recursive=True):
-
-            if set(module.split(".")).intersection(avoid):
+        for ext in self._extensions.keys():
+            if ext in self._initialized:
                 continue
+            logger.debug("Initializing extension", extension=ext)
+            extension = apply_config(config, ext, self._extensions[ext])
+            extension.init_app(app)
+            self._initialized.add(ext)
 
-            module = import_string(module)
-            if hasattr(module, "init_app"):
-                module.init_app(app)
+
+E = TypeVar("E", bound=Settings)
+
+
+def apply_config(config: dict[str, Any], name: str, extension: E) -> E:
+    extension_config = config.get(name, {})
+    if dc.is_dataclass(extension):
+
+        for field in dc.fields(extension):
+            key = f"{name}_{field.name}"
+            if key in config:
+                extension_config[field.name] = config[key]
+
+        extension = dc.replace(extension, **extension_config)
+
+    return extension

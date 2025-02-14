@@ -42,9 +42,11 @@ def init_app(app: Flask, options: BlueprintOptions) -> None:
     if not portal._got_registered_once:
         portal.register_blueprint(bp, **dc.asdict(options))
         portal.sidebar.append(menu)
+    else:
+        log.warning("Already registered portal", app=app, portal=portal)
 
 
-@bp.route("/settings/edit", methods=["GET", "POST"])
+@bp.route("/settings/edit/", methods=["GET", "POST"])
 def edit() -> IntoResponse:
     session = svcs.get(Session)
     query = select(SiteSettings).where(SiteSettings.active).limit(1)
@@ -66,7 +68,7 @@ def edit() -> IntoResponse:
     return render_template("admin/settings/edit.html", form=form, settings=settings)
 
 
-@bp.route("/settings/delete-logo/<uuid:attachment_id>")
+@bp.route("/settings/delete-logo/<uuid:attachment_id>/")
 def delete_logo(attachment_id: UUID) -> IntoResponse:
     session = svcs.get(Session)
 
@@ -87,7 +89,7 @@ def delete_logo(attachment_id: UUID) -> IntoResponse:
     return render_template("admin/settings/_logo.html", form=form, settings=settings, logo=form.logo)
 
 
-@bp.route("/settings/social/delete-image/<uuid:id>")
+@bp.route("/settings/social/delete-image/<uuid:id>/")
 def delete_social_image(id: UUID) -> IntoResponse:
     session = svcs.get(Session)
 
@@ -112,7 +114,7 @@ def render_social_partial() -> IntoResponse:
     return render_template("admin/settings/_social.html", links=links, settings=settings)
 
 
-@bp.post("/settings/social/order-links")
+@bp.post("/settings/social/order-links/")
 def social_link_order() -> IntoResponse:
     new_order = request.get_json()["item"]
     session = svcs.get(Session)
@@ -134,7 +136,7 @@ def social_link_order() -> IntoResponse:
     return ("", 204)
 
 
-@bp.get("/settings/social/append-link")
+@bp.get("/settings/social/append-link/")
 def social_link_append() -> IntoResponse:
     session = svcs.get(Session)
     query = select(func.count(SocialLink.id))
@@ -150,7 +152,7 @@ def social_link_append() -> IntoResponse:
     return render_social_partial()
 
 
-@bp.get("/settings/social/delete-link/<uuid:id>")
+@bp.get("/settings/social/delete-link/<uuid:id>/")
 def social_link_delete(id: UUID) -> IntoResponse:
     session = svcs.get(Session)
 

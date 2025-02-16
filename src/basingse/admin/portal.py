@@ -19,8 +19,8 @@ from bootlace.util import MaybeTaggable
 from bootlace.util import render
 from flask import Blueprint
 from flask import current_app
-from flask import Flask
 from flask.cli import with_appcontext
+from flask.sansio.app import App
 from flask_login import current_user
 from jinja2 import Template
 from markupsafe import Markup
@@ -159,7 +159,7 @@ class Portal(Blueprint):
         if view.nav is not None:
             self.sidebar.append(view.nav)
 
-    def register(self, app: Flask, options: dict[str, Any]) -> None:
+    def register(self, app: App, options: dict[str, Any]) -> None:
         logger.info("Registering Admin Portal")
         return super().register(app, options)
 

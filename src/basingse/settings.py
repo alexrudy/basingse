@@ -79,8 +79,8 @@ class BaSingSe(Mapping[str, Settings]):
     }
 
     def __init__(self, all: bool = False) -> None:
-        self._extensions = {}
-        self._initialized = set()
+        self._extensions: dict[str, Settings] = {}
+        self._initialized: set[str] = set()
         if all:
             self.enable_all()
 
@@ -111,6 +111,8 @@ class BaSingSe(Mapping[str, Settings]):
             raise AttributeError(name) from None
 
     def __delitem__(self, key: object) -> None:
+        if not isinstance(key, str):
+            raise TypeError(f"Key must be a string, not {type(key).__name__}")
         del self._extensions[key]
 
     def enable(self, *extensions: str) -> "BaSingSe":

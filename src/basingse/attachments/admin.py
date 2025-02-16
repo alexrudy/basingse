@@ -1,4 +1,5 @@
 from typing import Any
+from typing import cast
 from typing import ClassVar
 from typing import TypeVar
 from uuid import UUID
@@ -17,10 +18,12 @@ from basingse.admin.extension import AdminView
 from basingse.models import Model
 
 M = TypeVar("M", bound=Model)
+I = TypeVar("I", bound=Model)  # noqa: E741
 
 
-class AttachmentAdmin(AdminView[M]):
-    """Admin base-class which supports managing attachments."""
+class AttachmentAdmin(AdminView[M, I]):
+    """Admin base-class which supports managing attachments related
+    to the target model."""
 
     #: The template to use for attachments
     attachments: ClassVar[str | None] = None
@@ -31,40 +34,34 @@ class AttachmentAdmin(AdminView[M]):
         methods=["GET"],
         attachments=True,
     )
-    def attachment_field(self, field: str, **kwargs: Any) -> IntoResponse:
+    def attachment_field(self, id: I, field: str) -> IntoResponse:
         field_id = field
-        obj = self.single(**kwargs)
+        obj = self.single(id=id)
         form = type(self).form(obj=obj)
-        return self.render_attachment_field(form, field_id, **{self.name: obj}, **kwargs)
+        return self.render_attachment_field(form, field_id, context={self.name: obj})
 
-    def render_attachment_field(self, form: Form, field: str, **kwargs: Any) -> IntoResponse:
-        field_id = field
+    def render_attachment_field(self, form: Form, field_id: str, context: dict[str, Any] | None = None) -> IntoResponse:
         field = next(field for field in form if field.id == field_id)
         if field is None:
             return "", 404
-        return render_template(
-            ["admin/{self.name}/_attachment_field.html", "admin/attachment/_field.html"],
-            form=form,
-            field=field,
-            **kwargs,
-        )
+
+        if context is None:
+            context = {}
+        context["form"] = form
+        context["field"] = field
+
+        return render_template(["admin/{self.name}/_attachment_field.html", "admin/attachment/_field.html"], **context)
 
     @action(
         permission="edit",
-        url="/<key>/delete-attachment/<uuid:attachment>/",
+        url="/<key>/delete-attachment/<uuid:attachment_id>/",
         methods=["GET", "DELETE"],
         attachments=True,
     )
-    def delete_attachment(self, *, attachment: UUID, **kwargs: Any) -> IntoResponse:
-        kwargs.pop("next", ".list")
-
-        if not hasattr(self.model, "partial"):
-            # Pre-emptive, partial is not an argument to .single()
-            kwargs.pop("partial", None)
-
+    def delete_attachment(self, *, id: I, attachment_id: UUID) -> IntoResponse:
         session = svcs.get(Session)
-        obj = self.single(**kwargs)
-        attachment = session.scalar(select(Attachment).where(Attachment.id == attachment))
+        obj = self.single(id=id)
+        attachment = session.scalar(select(Attachment).where(Attachment.id == attachment_id))
         if attachment is not None:
             session.delete(attachment)
             session.commit()
@@ -74,6 +71,6 @@ class AttachmentAdmin(AdminView[M]):
         form = type(self).form(obj=obj)
 
         if "HX-Request" in request.headers and "field" in request.args:
-            return self.render_attachment_field(form, request.args["field"], **{self.name: obj}, **kwargs)
+            return self.render_attachment_field(form, request.args["field"], **cast(dict[str, Any], {self.name: obj}))
 
-        return render_template(["admin/{self.name}/edit.html", "admin/portal/edit.html"], form=form, **{self.name: obj})
+        return self.render("edit", item=obj, context={"form": form})

@@ -15,6 +15,7 @@ from wtforms import Form
 
 from .forms import AttachmentForm
 from basingse.admin.extension import AdminView
+from basingse.admin.extension import ViewKey
 from basingse.admin.portal import PortalMenuItem
 from basingse.admin.views import portal
 from basingse.models.schema import Schema
@@ -70,7 +71,7 @@ class AttachmentTable(Table):
 
 class AttachmentsAdmin(AdminView, blueprint=portal):
     url = "attachment"
-    key = "<uuid:id>"
+    key = ViewKey("<uuid:id>")
     name = "attachment"
     model = Attachment
     nav = PortalMenuItem("Attachments", "admin.attachment.list", "file-earmark", "attachment.view")

@@ -69,10 +69,10 @@ repos:
         files: ^src/frontend/.*\.(js|jsx|ts|tsx)$
   - repo: local
     hooks:
-      - id: reformat_feature_files
+      - id: prettier
         name: prettier
         language: node
-        types_or: [javascript, ts]
+        types_or: [javascript, ts, css, scss]
         additional_dependencies:
           - prettier@3.3.3
         entry: npm run format-check

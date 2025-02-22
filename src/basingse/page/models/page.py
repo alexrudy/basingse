@@ -13,9 +13,10 @@ from ..forms import EditorField
 from .blocks import BlockContent
 from basingse.models import Model
 from basingse.models import orm
+from basingse.publish import PublishMixin
 
 
-class Page(Model):
+class Page(Model, PublishMixin):
     title: Mapped[str] = mapped_column(
         String(),
         nullable=False,

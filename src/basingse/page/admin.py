@@ -37,9 +37,13 @@ class PageAdmin(AdminView, blueprint=portal):
     model = Page
     nav = PortalMenuItem("Pages", "admin.page.list", "file-text", "page.view")
 
-    def query(self, **kwargs: Any) -> Any:
+    def query(self) -> Any:
         session = svcs.get(Session)
-        return session.scalars(select(Page).order_by(Page.slug))
+        return session.scalars(select(Page).order_by(Page.slug).execution_options(include_upublished=True))
+
+    def single(self, id: str) -> Any:
+        session = svcs.get(Session)
+        return session.scalars(select(Page).where(Page.id == id).execution_options(include_upublished=True))
 
 
 F = TypeVar("F", bound=Callable[..., ResponseReturnValue])
@@ -106,7 +110,7 @@ def require_editor_token() -> Callable[[F], F]:
     return decorator
 
 
-@portal.route("/upload", methods=["POST"])
+@portal.post("/upload")
 @require_editor_token()
 def upload() -> ResponseReturnValue:
     """Upload a file"""
@@ -135,7 +139,7 @@ def upload() -> ResponseReturnValue:
     )
 
 
-@portal.route("/fetch", methods=["POST"])
+@portal.post("/fetch")
 @require_editor_token()
 def fetch() -> ResponseReturnValue:
     """Fetch a file from a URL and save it as an attachment"""

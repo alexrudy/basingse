@@ -39,7 +39,7 @@ menu = PortalMenuItem("Settings", "admin.customize.edit", "gear", "customize.edi
 def init_app(app: Flask, options: BlueprintOptions) -> None:
     from ...admin.views import portal
 
-    if not portal._got_registered_once:
+    if not bp._got_registered_once:
         portal.register_blueprint(bp, **dc.asdict(options))
         portal.sidebar.append(menu)
     else:

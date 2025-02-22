@@ -97,6 +97,7 @@ def default_settings(session: Session) -> SiteSettings:
     if homepage is None:
         contents = json.dumps(default_homepage())
         homepage = Page(slug="home", title="Home", contents=contents)
+        homepage.publish()
         session.add(homepage)
 
     default_settings = SiteSettings(active=True, title="Website", homepage=homepage)

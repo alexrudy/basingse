@@ -34,6 +34,7 @@ def bad_request(exception: BaseException | int) -> IntoResponse:
         else:
             message = exception.description
     else:
+        log.exception("Bad request", exc_info=True)
         message = "This request went sour. We don't know why."
 
     return render_template("admin/bad_request.html", message=message)

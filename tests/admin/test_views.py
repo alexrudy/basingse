@@ -56,8 +56,8 @@ def client(app: Flask) -> Iterator[FlaskClient]:
 )
 def test_action_definition(attribute: str, action: Action) -> None:
     attr = getattr(AdminView, attribute)
-    assert hasattr(attr, "action"), f"{attribute} has no action attribute"
-    assert attr.action == action, f"{attribute} action does not match {action}"
+    assert hasattr(attr, "action"), f"{attribute} has no .action attribute"
+    assert attr.action == action, f"{attribute} .action does not match {action}"
 
 
 @pytest.mark.usefixtures("post")
@@ -158,7 +158,8 @@ class TestCustomAction:
         response = client.get("/tests/admin/posts/destructive/?arbitrary=arg")
         assert response == Ok()
         assert response.json, "Expected JSON response"
-        assert response.json["args"]["arbitrary"] == "arg", "Expected to get arguments back"
+        print(response.json)
+        assert response.json["args"]["arbitrary"] == "arg", f"Expected to get arguments back in {response.json!r}"
 
     def test_regular_action(self, client: FlaskClient) -> None:
 
@@ -166,7 +167,8 @@ class TestCustomAction:
         assert response == Ok()
 
         assert response.json, "Expected JSON response"
-        assert response.json["args"]["arbitrary"] == "arg", "Expected to get arguments back"
+        print(response.json)
+        assert response.json["args"]["arbitrary"] == "arg", f"Expected to get arguments back in {response.json!r}"
 
 
 @pytest.mark.usefixtures("post")
@@ -243,7 +245,7 @@ class TestAdminViewJSON:
         assert response.json is not None, "Expected JSON response"
         assert "error" in response.json, "Expected error in JSON response"
 
-        post = svcs.get(Session).get(FakePost, post.id)
+        post: FakePost | None = svcs.get(Session).get(FakePost, post.id)
         assert post, "post not found"
         assert post.content == "World"
         assert post.title == "Hello"
@@ -254,7 +256,7 @@ class TestAdminViewJSON:
         assert response.json is not None, "Expected JSON response"
         assert "error" in response.json, "Expected error in JSON response"
 
-        post = svcs.get(Session).get(FakePost, post.id)
+        post: FakePost | None = svcs.get(Session).get(FakePost, post.id)
         assert post, "post not found"
         assert post.content == "World"
         assert post.title == "Hello"
@@ -266,7 +268,7 @@ class TestAdminViewJSON:
         assert response.json["title"] == "Goodbye"
         assert response.json["content"] == "World!"
 
-        post = svcs.get(Session).get(FakePost, post.id)
+        post: FakePost | None = svcs.get(Session).get(FakePost, post.id)
         assert post, "post not found"
         assert post.content == "World!"
         assert post.title == "Goodbye"
@@ -278,7 +280,7 @@ class TestAdminViewJSON:
         assert response.json["title"] == "Goodbye"
         assert response.json["content"] == "World!"
 
-        post = svcs.get(Session).get(FakePost, post.id)
+        post: FakePost | None = svcs.get(Session).get(FakePost, post.id)
         assert post, "post not found"
         assert post.content == "World!"
         assert post.title == "Goodbye"

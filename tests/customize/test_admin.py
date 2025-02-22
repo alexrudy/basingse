@@ -32,17 +32,17 @@ class TestSiteSettings:
         with app.app_context():
             _ = get_site_settings()
 
-        resp = client.get("/admin/settings/edit")
+        resp = client.get("/admin/settings/edit/")
         assert resp.status_code == 200
 
     def test_admin_edit_get(self, client: FlaskClient) -> None:
-        resp = client.get("/admin/settings/edit")
+        resp = client.get("/admin/settings/edit/")
         assert resp.status_code == 200
 
     def test_admin_edit_post(self, app: Flask, client: FlaskClient) -> None:
-        resp = client.post("/admin/settings/edit", data={"title": "New Title", "active": "1"})
+        resp = client.post("/admin/settings/edit/", data={"title": "New Title", "active": "1"})
         assert resp.status_code == 302
-        assert resp.location == "/admin/settings/edit"
+        assert resp.location == "/admin/settings/edit/"
 
         with app.app_context():
             settings = get_site_settings()
@@ -62,9 +62,9 @@ class TestSiteSettings:
             "links-1-url": "https://twitter.com",
         }
 
-        resp = client.post("/admin/settings/edit", data=data)
+        resp = client.post("/admin/settings/edit/", data=data)
         assert resp.status_code == 302
-        assert resp.location == "/admin/settings/edit"
+        assert resp.location == "/admin/settings/edit/"
 
         with app.app_context():
             settings = get_site_settings()
@@ -80,7 +80,7 @@ class TestSiteSettings:
             settings = get_site_settings()
             id = settings.logo.large.id
 
-        resp = client.get(f"/admin/settings/delete-logo/{id}")
+        resp = client.get(f"/admin/settings/delete-logo/{id}/")
         assert resp.status_code == 200
 
         with app.app_context():
@@ -105,7 +105,7 @@ class TestSocialLinks:
 
     def test_admin_delete_missing_social_image(self, app: Flask, client: FlaskClient) -> None:
 
-        resp = client.get("/admin/settings/social/delete-image/00000000-0000-0000-0000-000000000000")
+        resp = client.get("/admin/settings/social/delete-image/00000000-0000-0000-0000-000000000000/")
         assert resp.status_code == 200
 
         with app.app_context():
@@ -114,7 +114,7 @@ class TestSocialLinks:
 
     def test_admin_delete_social_image(self, app: Flask, client: FlaskClient, social_link: SocialLink) -> None:
 
-        resp = client.get(f"/admin/settings/social/delete-image/{social_link.image_id}")
+        resp = client.get(f"/admin/settings/social/delete-image/{social_link.image_id}/")
         assert resp.status_code == 200
 
     def test_admin_link_order(self, app: Flask, client: FlaskClient, social_link: SocialLink) -> None:
@@ -134,7 +134,7 @@ class TestSocialLinks:
             ]
         }
 
-        resp = client.post("/admin/settings/social/order-links", json=data)
+        resp = client.post("/admin/settings/social/order-links/", json=data)
         assert resp.status_code == 204
 
         with app.app_context():
@@ -143,7 +143,7 @@ class TestSocialLinks:
             assert links[0].name == "Test"
             assert links[1].name == "Another Test"
 
-        resp = client.post("/admin/settings/social/order-links", json={"item": data["item"][::-1]})
+        resp = client.post("/admin/settings/social/order-links/", json={"item": data["item"][::-1]})
         assert resp.status_code == 204
 
         with app.app_context():
@@ -161,12 +161,12 @@ class TestSocialLinks:
             ]
         }
 
-        resp = client.post("/admin/settings/social/order-links", json=data)
+        resp = client.post("/admin/settings/social/order-links/", json=data)
         assert resp.status_code == 400
 
     def test_admin_link_append(self, app: Flask, client: FlaskClient, social_link: SocialLink) -> None:
 
-        resp = client.get("/admin/settings/social/append-link")
+        resp = client.get("/admin/settings/social/append-link/")
         assert resp.status_code == 200
 
         with app.app_context():
@@ -179,7 +179,7 @@ class TestSocialLinks:
 
     def test_admin_delete_link(self, app: Flask, client: FlaskClient, social_link: SocialLink) -> None:
 
-        resp = client.get(f"/admin/settings/social/delete-link/{social_link.id}")
+        resp = client.get(f"/admin/settings/social/delete-link/{social_link.id}/")
         assert resp.status_code == 200
 
         with app.app_context():

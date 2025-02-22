@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 from typing import cast
 
+import click.testing
 import pytest
 import structlog
 from flask import Flask
@@ -22,6 +23,7 @@ from structlog.types import EventDict
 from basingse import svcs
 from basingse.app import configure_app
 from basingse.assets import AssetManifest
+from basingse.assets import Assets
 from basingse.auth.testing import LoginClient
 from basingse.logging import log_queries
 from basingse.models import Model
@@ -34,6 +36,8 @@ logger = structlog.get_logger()
 
 def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption("--log-queries", action="store_true", help="Log all queries")
+    parser.addoption("--log-svcs", action="store_true", help="Enable logging for svcs")
+    parser.addoption("--show-routes", action="store_true", help="Show routes")
 
 
 def pytest_configure(config: pytest.Config) -> None:
@@ -45,9 +49,14 @@ def pytest_assertrepr_compare(config: Any, op: str, left: Any, right: Any) -> li
 
 
 @pytest.fixture(autouse=True, scope="session")
-def setup_svcs_logging() -> None:
+def setup_svcs_logging(request: pytest.FixtureRequest) -> None:
     svcs_logger = logging.getLogger("svcs")
-    svcs_logger.addHandler(logging.NullHandler())
+    if request.config.getoption("--log-svcs"):
+        svcs_logger.setLevel(logging.DEBUG)
+        svcs_logger.addHandler(logging.StreamHandler())
+    else:
+        svcs_logger.addHandler(logging.NullHandler())
+
     svcs_logger.propagate = False
 
 
@@ -75,8 +84,8 @@ def setup_app_logging(app: Flask) -> None:
         sender.logger.debug(response.status_code, path=request.path)
 
 
-@pytest.fixture(scope="function")
-def app(tmp_path: Path) -> Iterator[Flask]:
+@pytest.fixture()
+def app(tmp_path: Path, request: pytest.FixtureRequest) -> Iterator[Flask]:
     import glob
     from werkzeug.utils import cached_property
     from jinja2.loaders import BaseLoader
@@ -101,16 +110,24 @@ def app(tmp_path: Path) -> Iterator[Flask]:
     app = TestingFlask(__name__)
     app.test_client_class = LoginClient
     configure_app(app, config={"ENV": "test", "ASSETS_FOLDER": None, "ATTACHMENTS_CACHE_DIRECTORY": str(tmp_path)})
-    bss = BaSingSe(logging=None)  # type: ignore
+    bss = BaSingSe(all=True).disable("logging", "autoimport")
     bss.init_app(app)
-    assert bss.assets, "Assets should be initialized"
-    bss.assets.add(AssetManifest(location="tests"))
+    assets = cast(Assets, bss.assets)
+    assets.add(AssetManifest(location="tests"))
 
     setup_app_logging(app)
 
     with app.app_context():
         engine = svcs.get(Engine)
         Model.metadata.create_all(engine)
+
+    if request.config.getoption("--show-routes"):
+        from flask.cli import FlaskGroup
+
+        runner = click.testing.CliRunner()
+        cli = FlaskGroup(create_app=lambda: app)
+        result = runner.invoke(cli, "routes")
+        print(result.output)
 
     yield app
 

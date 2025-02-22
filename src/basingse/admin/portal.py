@@ -20,6 +20,7 @@ from bootlace.util import render
 from flask import Blueprint
 from flask import current_app
 from flask.cli import with_appcontext
+from flask.sansio.app import App
 from flask_login import current_user
 from jinja2 import Template
 from markupsafe import Markup
@@ -157,6 +158,10 @@ class Portal(Blueprint):
             self.exporter_group.add_command(view.export_subcommand())
         if view.nav is not None:
             self.sidebar.append(view.nav)
+
+    def register(self, app: App, options: dict[str, Any]) -> None:
+        logger.info("Registering Admin Portal")
+        return super().register(app, options)
 
     def _render_nav(self) -> Markup:
         ul = as_tag(Nav([item for item in self.sidebar if item.enabled], style=NavStyle.PILLS))

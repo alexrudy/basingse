@@ -84,10 +84,10 @@ def test_healthcheck(client: LoginClient) -> None:
     response = client.get("/healthcheck")
     assert response.status_code == 200
     assert response.json is not None, "Expected JSON response"
-    available = set(response.json["ok"])
+    available = {key for key, value in response.json.items() if value["status"] == "ok"}
     assert "sqlalchemy.engine.base.Engine" in available
 
-    failing = set(response.json["failing"])
+    failing = {key for key, value in response.json.items() if value["status"] != "ok"}
     assert not failing
 
 
@@ -96,12 +96,10 @@ def test_failing_healthcheck(client: LoginClient) -> None:
     response = client.get("/healthcheck")
     assert response.status_code == 500
     assert response.json is not None, "Expected JSON response"
-    available = set(response.json["ok"])
+    available = {key for key, value in response.json.items() if value["status"] == "ok"}
     assert "sqlalchemy.engine.base.Engine" in available
 
-    failing = set()
-    for f in response.json["failing"]:
-        failing.update(f.keys())
+    failing = {key for key, value in response.json.items() if value["status"] != "ok"}
 
     assert "tests.test_core.unhealthy_service.<locals>.FailingService" in failing
 

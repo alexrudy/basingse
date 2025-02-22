@@ -6,6 +6,7 @@ import structlog
 from bootlace.table import Column
 from flask import Flask
 from flask import jsonify
+from flask import request
 from flask.typing import ResponseValue
 from marshmallow import validate
 from sqlalchemy.orm import make_transient
@@ -17,6 +18,7 @@ from wtforms.validators import Length
 from basingse import svcs
 from basingse.admin.extension import action
 from basingse.admin.extension import AdminView
+from basingse.admin.extension import ViewKey
 from basingse.admin.portal import Portal
 from basingse.models import Model
 from basingse.models import orm
@@ -53,7 +55,7 @@ def adminview(portal: Portal, app: Flask) -> type[AdminView]:
 
     class FakePostAdmin(AdminView, blueprint=portal):
         url = "posts"
-        key = "<uuid:id>"
+        key = ViewKey("<uuid:id>")
         name = "post"
 
         permission = "post"
@@ -62,11 +64,11 @@ def adminview(portal: Portal, app: Flask) -> type[AdminView]:
 
         @action(permission="delete", methods=["GET", "DELETE"], url="/destructive/")
         def destructive(self, **kwargs: Any) -> ResponseValue:
-            return jsonify(action="destructive", args=kwargs)
+            return jsonify(action="destructive", view_args=kwargs, args=request.args)
 
         @action(permission="view", methods=["GET"], url="/partial/")
         def partial(self, **kwargs: Any) -> ResponseValue:
-            return jsonify(action="partial", args=kwargs)
+            return jsonify(action="partial", view_args=kwargs, args=request.args)
 
     app.register_blueprint(portal)
     return FakePostAdmin

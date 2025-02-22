@@ -34,6 +34,7 @@ def page(app: Flask) -> Page:
         }
 
         page.blocks = BlockContent.Schema().load(content)
+        page.publish()
 
         session.add(page)
         session.commit()

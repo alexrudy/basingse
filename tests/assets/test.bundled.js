@@ -1,1 +1,1 @@
-console.log('test bundled');
+console.log("test bundled");

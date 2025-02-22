@@ -20,6 +20,7 @@ from .extension import get_extension
 from .models import Page
 from basingse import svcs
 from basingse.admin.extension import AdminView
+from basingse.admin.extension import ViewKey
 from basingse.admin.portal import PortalMenuItem
 from basingse.admin.views import portal
 from basingse.auth.extension import get_extension as get_auth_extension
@@ -31,14 +32,18 @@ logger = structlog.get_logger()
 
 class PageAdmin(AdminView, blueprint=portal):
     url = "pages"
-    key = "<uuid:id>"
+    key = ViewKey("<uuid:id>")
     name = "page"
     model = Page
     nav = PortalMenuItem("Pages", "admin.page.list", "file-text", "page.view")
 
-    def query(self, **kwargs: Any) -> Any:
+    def query(self) -> Any:
         session = svcs.get(Session)
-        return session.scalars(select(Page).order_by(Page.slug))
+        return session.scalars(select(Page).order_by(Page.slug).execution_options(include_upublished=True))
+
+    def single(self, id: str) -> Any:
+        session = svcs.get(Session)
+        return session.scalars(select(Page).where(Page.id == id).execution_options(include_upublished=True))
 
 
 F = TypeVar("F", bound=Callable[..., ResponseReturnValue])
@@ -105,7 +110,7 @@ def require_editor_token() -> Callable[[F], F]:
     return decorator
 
 
-@portal.route("/upload", methods=["POST"])
+@portal.post("/upload")
 @require_editor_token()
 def upload() -> ResponseReturnValue:
     """Upload a file"""
@@ -134,7 +139,7 @@ def upload() -> ResponseReturnValue:
     )
 
 
-@portal.route("/fetch", methods=["POST"])
+@portal.post("/fetch")
 @require_editor_token()
 def fetch() -> ResponseReturnValue:
     """Fetch a file from a URL and save it as an attachment"""

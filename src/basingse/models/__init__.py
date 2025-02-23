@@ -18,6 +18,7 @@ from flask import flash
 from flask import Flask
 from flask.cli import with_appcontext
 from flask_alembic import Alembic
+from flask_wtf import FlaskForm as Form
 from sqlalchemy import create_engine
 from sqlalchemy import DateTime
 from sqlalchemy import event
@@ -33,7 +34,6 @@ from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import Session as BaseSession
 from sqlalchemy.pool import ConnectionPoolEntry
-from wtforms import Form
 
 from . import info
 from . import orm
@@ -157,7 +157,7 @@ def set_sqlite_foreignkey_pragma(dbapi_connection: DBAPIConnection, connection_r
 @click.command("init")
 @with_appcontext
 def init() -> None:
-    """Initialize the database"""
+    """Initialize the database, create all tables"""
     engine = svcs.get(Engine)
     Model.metadata.create_all(engine)
 

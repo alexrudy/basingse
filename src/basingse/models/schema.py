@@ -146,14 +146,14 @@ def build_model_listview(model: "type[Model]") -> type[Table]:
 
 
 @functools.cache
-def build_model_form(model: "type[Model]") -> type[wtforms.Form]:
+def build_model_form(model: "type[Model]") -> type[FlaskForm]:
     fields: dict[str, wtforms.Field] = collect_attributes(model, "form", FormInfo)
 
     if "submit" not in fields:
         fields["submit"] = wtforms.SubmitField("Save")
 
     for i, field in enumerate(fields.values()):
-        field.creation_counter = i
+        field.creation_counter = i  # pyright: ignore
 
     form = type(model.__name__ + "Form", (FlaskForm,), fields)
     return form

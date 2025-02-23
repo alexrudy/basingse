@@ -20,7 +20,6 @@ from .extension import get_extension
 from .models import Page
 from basingse import svcs
 from basingse.admin.extension import AdminView
-from basingse.admin.extension import ViewKey
 from basingse.admin.portal import PortalMenuItem
 from basingse.admin.views import portal
 from basingse.auth.extension import get_extension as get_auth_extension
@@ -32,7 +31,7 @@ logger = structlog.get_logger()
 
 class PageAdmin(AdminView, blueprint=portal):
     url = "pages"
-    key = ViewKey("<uuid:id>")
+    key = "<uuid:id>"
     name = "page"
     model = Page
     nav = PortalMenuItem("Pages", "admin.page.list", "file-text", "page.view")

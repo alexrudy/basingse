@@ -38,7 +38,6 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import HTTPException
-from wtforms import Form
 
 from basingse.admin.portal import Portal
 from basingse.admin.portal import PortalMenuItem
@@ -238,7 +237,9 @@ class AdminView(View, Generic[M, I]):
     url: ClassVar[str]
 
     #: Url template for identifying an individual instance
-    key: ClassVar[ViewKey]
+    key: ClassVar[str]
+
+    _bss_key: ClassVar[ViewKey]
 
     #: The name of this admin view
     name: ClassVar[str]
@@ -271,13 +272,11 @@ class AdminView(View, Generic[M, I]):
         if blueprint is not None:
             # indicates that we are in a concrete subclass.
             # otherwise we assume we are in an abstract subclass
-
-            if isinstance(cls.key, str):
-                cls.key = ViewKey(cls.key)
+            cls._bss_key = ViewKey(cls.key)
 
             if not hasattr(cls, "permission"):
                 cls.permission = cls.name
-            cls.register_blueprint(blueprint, namespace, cls.url, cls.key)
+            cls.register_blueprint(blueprint, namespace, cls.url, cls._bss_key)
         elif any(hasattr(cls, attr) for attr in {"url", "key", "model", "name"}):
             raise NotImplementedError("Concrete subclasses must pass the blueprint to the class definition")
 
@@ -290,7 +289,7 @@ class AdminView(View, Generic[M, I]):
         return cls.model.__listview__()()
 
     @classmethod
-    def form(cls, obj: M | None = None, **options: Any) -> Form:
+    def form(cls, obj: M | None = None, **options: Any) -> FormBase:
         return cls.model.__form__()(obj=obj, **options)
 
     def dispatch_request(self, *, action: str | None = None, **kwargs: Any) -> IntoResponse:
@@ -311,13 +310,14 @@ class AdminView(View, Generic[M, I]):
             self.logger.error(f"Unimplemented method {action!r}", path=request.path, debug=True)
             abort(400, description=f"Unimplemented method {action!r}")
 
-        if request.method not in method.action.methods:
+        settings = cast(Action, method.action)  # pyright: ignore
+        if request.method not in settings.methods:
             self.logger.error(f"Method not allowed {action!r}", path=request.path, method=request.method, debug=True)
             abort(405, description=f"Method not allowed {request.method}")
 
-        if not check_permissions(self.permission, method.action.permission):
-            self.logger.error(f"Permission denied {action!r}", path=request.path, permission=method.action.permission)
-            abort(401, description=f"Permission denied {method.action.permission}")
+        if not check_permissions(self.permission, settings.permission):
+            self.logger.error(f"Permission denied {action!r}", path=request.path, permission=settings.permission)
+            abort(401, description=f"Permission denied {settings.permission}")
 
         return method(self, **kwargs)
 
@@ -332,7 +332,7 @@ class AdminView(View, Generic[M, I]):
     def single(self, id: I) -> M:
         assert request.view_args is not None, f"Processing unknown view, expected endpoint in {self.bp}"
         filters = _get_model_attrs_from_request(self.model)
-        filters[self.key.name] = id
+        filters[self._bss_key.name] = id
         log.debug(f"query single {self.name}", filters=filters)
         session = get(Session)
         if (single := session.scalars(select(self.model).filter_by(**filters)).first()) is None:
@@ -387,7 +387,7 @@ class AdminView(View, Generic[M, I]):
             if not isinstance(data, dict):
                 raise BadRequest("No JSON data provided")
             schema = self.schema(instance=obj)
-            obj = schema.load(data)
+            obj = schema.load(data)  # pyright: ignore
             return obj
         else:
             form = self.form(obj=obj)
@@ -552,7 +552,7 @@ class AdminView(View, Generic[M, I]):
             # No endpoint - can't inject identity
             return
 
-        key = cls.key.name
+        key = cls._bss_key.name
 
         if request.view_args and (id := request.view_args.get(key, None)) is not None:
             if current_app.url_map.is_endpoint_expecting(endpoint, key):
@@ -570,9 +570,9 @@ class AdminView(View, Generic[M, I]):
 
         if isinstance(items, list):
             schema = cls.schema(many=True)
-            return schema.load(items)
+            return schema.load(items)  # pyright: ignore
         schema = cls.schema()
-        return [schema.load(items)]
+        return [schema.load(items)]  # pyright: ignore
 
     @classmethod
     def import_subcommand(cls) -> click.Command:
@@ -609,7 +609,7 @@ class AdminView(View, Generic[M, I]):
 
         items = session.scalars(select(cls.model)).all()
         schema = cls.schema(many=True)
-        return schema.dump(items)
+        return schema.dump(items)  # pyright: ignore
 
     @classmethod
     def export_subcommand(cls) -> click.Command:

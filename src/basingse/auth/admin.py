@@ -6,14 +6,13 @@ from sqlalchemy.orm import Session
 from .models import User
 from basingse import svcs
 from basingse.admin.extension import AdminView
-from basingse.admin.extension import ViewKey
 from basingse.admin.portal import PortalMenuItem
 from basingse.admin.views import portal
 
 
 class UserAdmin(AdminView, blueprint=portal):
     url = "users"
-    key = ViewKey("<uuid:id>")
+    key = "<uuid:id>"
     name = "user"
     model = User
     nav = PortalMenuItem("Users", "admin.user.list", "person-badge", "user.view")

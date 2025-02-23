@@ -18,7 +18,6 @@ from wtforms.validators import Length
 from basingse import svcs
 from basingse.admin.extension import action
 from basingse.admin.extension import AdminView
-from basingse.admin.extension import ViewKey
 from basingse.admin.portal import Portal
 from basingse.models import Model
 from basingse.models import orm
@@ -55,7 +54,7 @@ def adminview(portal: Portal, app: Flask) -> type[AdminView]:
 
     class FakePostAdmin(AdminView, blueprint=portal):
         url = "posts"
-        key = ViewKey("<uuid:id>")
+        key = "<uuid:id>"
         name = "post"
 
         permission = "post"

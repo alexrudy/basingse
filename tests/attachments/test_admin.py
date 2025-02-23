@@ -25,7 +25,6 @@ from wtforms import validators
 
 from basingse import svcs
 from basingse.admin.extension import AdminView
-from basingse.admin.extension import ViewKey
 from basingse.admin.portal import Portal
 from basingse.attachments.admin import AttachmentAdmin
 from basingse.attachments.forms import AttachmentField
@@ -78,7 +77,7 @@ def adminview(portal: Portal, app: Flask) -> type[AdminView]:
 
     class FakeProfileAdmin(AttachmentAdmin, blueprint=portal):
         url = "profiles"
-        key = ViewKey("<uuid:id>")
+        key = "<uuid:id>"
         name = "profile"
 
         permission = "profile"

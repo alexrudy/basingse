@@ -1,15 +1,23 @@
 import atexit
 from collections.abc import Awaitable
 from collections.abc import Callable
+from enum import StrEnum
+from typing import NotRequired
 from typing import overload
+from typing import TypedDict
 
+import structlog
 from flask import current_app
 from flask import Flask
 from flask import g
+from flask import jsonify
 from flask.ctx import _AppCtxGlobals
 from flask.ctx import has_app_context
+from flask.typing import ResponseReturnValue
 from svcs import Container
 from svcs import Registry
+
+logger = structlog.get_logger(__name__)
 
 _CONTAINER_KEY = "svcs"
 _REGISTRY_KEY = "svcs.registry"
@@ -34,6 +42,8 @@ def init_app(app: Flask) -> None:
         app.extensions[_REGISTRY_KEY] = Registry()
         app.teardown_appcontext(teardown)
         atexit.register(close_registry, app)
+
+        app.add_url_rule("/healthcheck", "health", health, methods=["GET"])
 
 
 def register_factory(
@@ -206,3 +216,31 @@ def svcs_from(g: _AppCtxGlobals) -> Container:
         setattr(g, _CONTAINER_KEY, con)
 
     return con
+
+
+class ServiceStatus(StrEnum):
+    OK = "ok"
+    FAILING = "failing"
+
+
+class ServiceHealth(TypedDict):
+    status: ServiceStatus
+    error: NotRequired[str]
+
+
+def health() -> ResponseReturnValue:
+    services: dict[str, ServiceHealth] = {}
+    code = 200
+
+    for svc in get_pings():
+        try:
+            svc.ping()
+
+        except Exception as e:
+            logger.debug("Healthcheck failed", service=svc.name, error=e)
+            services[svc.name] = {"status": ServiceStatus.FAILING, "error": str(e)}
+            code = 500
+        else:
+            services[svc.name] = {"status": ServiceStatus.OK}
+
+    return jsonify(services), code

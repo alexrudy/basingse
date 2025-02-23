@@ -3,7 +3,6 @@ import dataclasses as dc
 from flask import Blueprint
 from flask import Flask
 
-from . import admin  # noqa: F401
 from .extension import EditorJS
 from basingse.utils.settings import BlueprintOptions
 
@@ -15,6 +14,7 @@ class PageSettings:
 
     def init_app(self, app: Flask | Blueprint) -> None:
         from .views import bp
+        from . import admin  # noqa: F401
 
         def markdown_in_context() -> bool:
             return self.markdown

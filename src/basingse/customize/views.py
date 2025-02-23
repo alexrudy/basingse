@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .models import LogoSize
-from .services import SiteSettings
+from .models import SiteSettings
 from basingse import svcs
 from basingse.page.models import Page
 

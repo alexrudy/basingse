@@ -2,13 +2,18 @@
 
 {% block meta %}
 <meta name="csrf" content="{{ csrf_token() }}">
-{% if current_user.is_authenticated %}
+{% if current_user.is_authenticated and editorjs_token is defined %}
 <meta name="editorjs-token" content="{{ editorjs_token() }}">
 {% endif %}
 {% endblock %}
 
-
-{% block title %}Admin | {{ site_settings.title }}{% endblock %}
+{% block title %}
+{% if site_settings is defined %}
+Admin | {{ site_settings.title }}
+{% else %}
+Admin
+{% endif %}
+{% endblock %}
 
 {% import "admin/_breadcrumbs.html" as bread %}
 

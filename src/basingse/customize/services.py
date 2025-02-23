@@ -124,3 +124,4 @@ def init_app(app: Flask) -> None:
     get_site_settings.clear()
     get_social_links.clear()
     app.context_processor(template_context)
+    svcs.register_factory(app, SiteSettings, get_site_settings)

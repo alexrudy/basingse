@@ -7,7 +7,7 @@
     {% block meta %}{% endblock %}
     <title>{% block title %}{% endblock %}</title>
 
-    {% if site_settings.logo.favicon_id %}
+    {% if site_settings is defined and site_settings.logo.favicon_id %}
     <link rel="icon" href="{{ url_for('customize.favicon') }}">
     {% else %}
     <link rel="icon" href="{{ url_for('basingse.static', filename='img/logo/icon32.png') }}">

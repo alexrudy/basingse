@@ -1,5 +1,7 @@
 {% extends base_template %}
 
-{% block main %}
+{% if site_settings is defined %}
 <h1>Welcome to {{ site_settings.title }}</h1>
-{% endblock %}
+{% else %}
+<h1>Welcome</h1>
+{% endif %}

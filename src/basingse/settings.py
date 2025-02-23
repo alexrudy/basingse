@@ -110,6 +110,9 @@ class BaSingSe(Mapping[str, Settings]):
         except KeyError:
             raise AttributeError(name) from None
 
+    def __setitem__(self, name: str, value: Settings) -> None:
+        self._extensions[name] = value
+
     def __delitem__(self, key: object) -> None:
         if not isinstance(key, str):
             raise TypeError(f"Key must be a string, not {type(key).__name__}")

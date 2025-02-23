@@ -10,7 +10,7 @@ from werkzeug.utils import import_string
 logger = structlog.get_logger(__name__)
 
 
-@dc.dataclass(frozen=True)
+@dc.dataclass()
 class AutoImport:
 
     avoid: None | Iterable[str] = None

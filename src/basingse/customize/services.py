@@ -46,8 +46,7 @@ def session_for_customize(session: Session | None = None) -> Iterator[Session]:
         yield session
 
 
-@cached
-def get_site_settings(session: Session | None = None) -> SiteSettings:
+def _get_site_settings(session: Session | None = None) -> SiteSettings:
     """Get the site settings"""
     with session_for_customize(session) as session:
         settings: SiteSettings | None = session.execute(
@@ -60,6 +59,11 @@ def get_site_settings(session: Session | None = None) -> SiteSettings:
             session.commit()
         make_transient(settings)
     return settings
+
+
+@cached
+def get_site_settings(session: Session | None = None) -> SiteSettings:
+    return _get_site_settings(session)
 
 
 @cached
@@ -124,4 +128,4 @@ def init_app(app: Flask) -> None:
     get_site_settings.clear()
     get_social_links.clear()
     app.context_processor(template_context)
-    svcs.register_factory(app, SiteSettings, get_site_settings)
+    svcs.register_factory(app, SiteSettings, _get_site_settings)

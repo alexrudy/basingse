@@ -34,7 +34,7 @@ def test_add_parameter_to_url_external(app: Flask) -> None:
     [
         ("http://basingse.test", None, "http://basingse.test", 302),
         ("/", "/admin/", "/?next=Ii9hZG1pbi8i.pciz_82d2nWBdEOFFMwHrg1H3ok", 302),
-        ("home", None, "/", 302),
+        ("customize.home", None, "/", 302),
     ],
     ids=["external", "next", "view"],
 )
@@ -57,9 +57,9 @@ def test_wrap_redirect(app: Flask, url: str, next: str | None, location: str, co
     "next, kwargs, expected",
     [
         (None, {}, "/"),
-        (None, {"default": "home"}, "/"),
+        (None, {"default": "customize.home"}, "/"),
         (None, {"default": "/a/"}, "/a/"),
-        (None, {"default": "home", "foo": "bar"}, "/"),
+        (None, {"default": "customize.home", "foo": "bar"}, "/"),
         ("/admin/", {}, "/admin/"),
         ("http://example.com/", {}, "/"),
     ],

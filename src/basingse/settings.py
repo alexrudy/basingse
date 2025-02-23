@@ -146,6 +146,8 @@ class BaSingSe(Mapping[str, Settings]):
             extension.init_app(app)
             self._initialized.add(ext)
 
+        svcs.register_value(app, type(self), self)
+
 
 E = TypeVar("E", bound=Settings)
 

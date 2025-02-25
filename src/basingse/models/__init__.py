@@ -102,12 +102,9 @@ class Base(DeclarativeBase):
         return detected
 
 
-class Model(Base):
+class TimestampsMixin:
     __abstract__ = True
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(), primary_key=True, default=uuid.uuid4, info=orm.info(schema=info.SchemaInfo(required=False))
-    )
     created: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), info=orm.info(schema=info.SchemaInfo(dump_only=True))
     )
@@ -116,6 +113,14 @@ class Model(Base):
         onupdate=func.now(),
         default=func.now(),
         info=orm.info(schema=info.SchemaInfo(dump_only=True)),
+    )
+
+
+class Model(Base):
+    __abstract__ = True
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(), primary_key=True, default=uuid.uuid4, info=orm.info(schema=info.SchemaInfo(required=False))
     )
 
     def __repr__(self) -> str:

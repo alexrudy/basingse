@@ -2,7 +2,11 @@
 
 
 {% block title %}
+{% if site_settings is defined %}
 Bad Request | Admin | {{ site_settings.title }}
+{% else %}
+Bad Request | Admin
+{% endif %}
 {% endblock %}
 
 {% block main %}

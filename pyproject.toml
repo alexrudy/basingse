@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling", "hatch-requirements-txt", "hatch-vcs"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
 name = "basingse"
-dynamic = ["version", "dependencies"]
+dynamic = ["version"]
 description = "Opinionated Authentication for Flask Apps"
 readme = "README.md"
 license = "BSD-3-Clause"
@@ -20,12 +20,35 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
 ]
+dependencies = [
+    "attrs>=25.1.0",
+    "bootlace>=0.3.0",
+    "dominate>=2.9.1",
+    "flask>=2,!=3.0.1",
+    "flask-alembic>=3.1.1",
+    "flask-attachments>=0.2.2",
+    "flask-bcrypt>=1.0.1",
+    "flask-login>=0.6.3",
+    "flask-socketio>=5.5.1",
+    "flask-wtf>=1.2.2",
+    "httpx>=0.28.1",
+    "humanize>=4.12.1",
+    "itsdangerous>=2.2.0",
+    "markdown-it-py[plugins]>=3.0.0",
+    "marshmallow>=3.26.1",
+    "marshmallow-dataclass>=8.7.1",
+    "pytz>=2025.1",
+    "pyyaml>=6.0.2",
+    "rich>=13.9.4",
+    "sqlalchemy>=1.4",
+    "structlog>=25.1.0",
+    "svcs>=25.1.0",
+    "wtforms-sqlalchemy>=0.4.2",
+    "wtforms[email]>=3.2.1",
+]
 
 [tool.hatch.metadata]
 allow-direct-references = true
-
-[tool.hatch.metadata.hooks.requirements_txt]
-files = ["requirements/base.in"]
 
 [project.urls]
 Repository = "https://github.com/alexrudy/basingse"
@@ -56,3 +79,35 @@ assets = "src/basingse/assets"
 
 [tool.black]
 line-length = 120
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "build>=1.2.2.post1",
+    "bump2version>=1.0.1",
+    "flake8>=7.1.2",
+    "hatchling>=1.27.0",
+    "pre-commit>=4.1.0",
+    "tox>=4.24.1",
+    "tox-uv>=1.25.0",
+    "twine>=6.1.0",
+    "watchdog>=6.0.0",
+]
+docs = [
+    "sphinx>=8.2.1",
+    "sphinx-automodapi>=0.18.0",
+    "sphinx-mdinclude>=0.6.2",
+]
+testing = [
+    "freezegun>=1.5.1",
+    "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
+    "pytest-xdist>=3.6.1",
+]
+typing = [
+    "mypy>=1.15.0",
+    "sqlalchemy[mypy]>=2.0.38",
+    "types-pytz>=2025.1.0.20250204",
+    "types-pyyaml>=6.0.12.20241230",
+    "typing-extensions>=4.8.0",
+]

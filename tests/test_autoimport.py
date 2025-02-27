@@ -1,7 +1,6 @@
 import dataclasses as dc
 from typing import Any
 from typing import cast
-from typing import Never
 
 import pytest
 from flask import Flask
@@ -44,13 +43,13 @@ class FakeSetup:
         try:
             return self.modules[name]
         except KeyError:
-            raise ImportError(f"Module {name} not found")
+            raise ImportError(f"Module {name} not found") from None
 
     def __getitem__(self, name: str) -> FakeModule:
         return self.modules[name]
 
 
-def test_no_modules(monkeypatch: pytest.MonkeyPatch):
+def test_no_modules(monkeypatch: pytest.MonkeyPatch) -> None:
 
     setup = FakeSetup()
     monkeypatch.setattr("basingse.autoimport.find_modules", setup.find_modules)
@@ -66,7 +65,7 @@ def test_no_modules(monkeypatch: pytest.MonkeyPatch):
     assert record.avoid == DEFAULT_AVOID
 
 
-def test_imports(monkeypatch: pytest.MonkeyPatch):
+def test_imports(monkeypatch: pytest.MonkeyPatch) -> None:
 
     setup = FakeSetup()
     setup.modules["simple"] = FakeModule()
@@ -88,7 +87,7 @@ def test_imports(monkeypatch: pytest.MonkeyPatch):
     assert record.avoid == DEFAULT_AVOID
 
 
-def test_imports_via_init_app(monkeypatch: pytest.MonkeyPatch):
+def test_imports_via_init_app(monkeypatch: pytest.MonkeyPatch) -> None:
 
     setup = FakeSetup()
     setup.modules["simple"] = FakeModule()
@@ -112,7 +111,7 @@ def test_imports_via_init_app(monkeypatch: pytest.MonkeyPatch):
     assert record.avoid == DEFAULT_AVOID
 
 
-def test_imports_avoid(monkeypatch: pytest.MonkeyPatch):
+def test_imports_avoid(monkeypatch: pytest.MonkeyPatch) -> None:
     MODULE = "a.real.module"
     module = FakeModule()
 
@@ -143,5 +142,5 @@ def test_imports_avoid(monkeypatch: pytest.MonkeyPatch):
         (AutoImportModuleRecord(name="foo", skipped=True, initialized=True), "<foo skipped>"),
     ],
 )
-def test_module_record_repr(record: AutoImportModuleRecord, expected: str):
+def test_module_record_repr(record: AutoImportModuleRecord, expected: str) -> None:
     assert repr(record) == expected

@@ -141,7 +141,6 @@ class BaSingSe(Mapping[str, Settings]):
         for ext in self._extensions.keys():
             if ext in self._initialized:
                 continue
-            logger.debug("Initializing extension", extension=ext)
             extension = apply_config(config, ext, self._extensions[ext])
             extension.init_app(app)
             self._initialized.add(ext)

@@ -26,7 +26,6 @@ B = TypeVar("B", bound=BlockData)
 
 
 class BlockDataField(fields.Field):
-
     __registry__: ClassVar[dict[str, Type[BaseSchema]]] = {}
 
     def _serialize(self, value: BlockData | None, attr: Any, obj: Any, **kwargs: Any) -> Any:
@@ -37,7 +36,11 @@ class BlockDataField(fields.Field):
         return schema.dump(value)
 
     def _deserialize(
-        self, value: dict[str, Any] | None, attr: str | None, data: Mapping[str, Any] | None, **kwargs: Any
+        self,
+        value: dict[str, Any] | None,
+        attr: str | None,
+        data: Mapping[str, Any] | None,
+        **kwargs: Any,
     ) -> BlockData | None:
         if value is None:
             return None

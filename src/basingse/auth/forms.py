@@ -25,7 +25,8 @@ from basingse.models import Session
 
 PASSWORD_MINIMUM_LENGTH = 6
 PASSWORD_VALIDATOR = Length(
-    min=PASSWORD_MINIMUM_LENGTH, message=f"Passwords must be at least {PASSWORD_MINIMUM_LENGTH} characters long"
+    min=PASSWORD_MINIMUM_LENGTH,
+    message=f"Passwords must be at least {PASSWORD_MINIMUM_LENGTH} characters long",
 )
 
 
@@ -47,7 +48,11 @@ class ChangePasswordForm(FlaskForm):
         validators=[DataRequired(), PASSWORD_VALIDATOR],
     )
     confirm = PasswordField(
-        "Confirm new Password", validators=[DataRequired(), EqualTo("new_password", message="Passwords must match")]
+        "Confirm new Password",
+        validators=[
+            DataRequired(),
+            EqualTo("new_password", message="Passwords must match"),
+        ],
     )
     submit = SubmitField("Submit")
 
@@ -64,7 +69,6 @@ def get_query_roles() -> Iterable[Role]:
 
 
 class BSListWidget(widgets.ListWidget):
-
     def __init__(self, prefix_label: bool = False) -> None:
         self.ul_class = "list-group"
         super().__init__(prefix_label=prefix_label)

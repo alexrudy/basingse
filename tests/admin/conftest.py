@@ -26,7 +26,6 @@ logger = structlog.get_logger()
 
 
 class FakePost(Model):
-
     title: Mapped[str] = mapped_column(
         default="",
         nullable=False,
@@ -37,7 +36,8 @@ class FakePost(Model):
         ),
     )
     content: Mapped[str] = mapped_column(
-        default="", info=orm.info(schema=orm.auto(), form=orm.auto(), listview=Column("Content"))
+        default="",
+        info=orm.info(schema=orm.auto(), form=orm.auto(), listview=Column("Content")),
     )
 
 
@@ -51,7 +51,6 @@ def portal(app: Flask) -> Portal:
 
 @pytest.fixture
 def adminview(portal: Portal, app: Flask) -> type[AdminView]:
-
     class FakePostAdmin(AdminView, blueprint=portal):
         url = "posts"
         key = "<uuid:id>"

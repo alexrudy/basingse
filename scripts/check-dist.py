@@ -15,7 +15,6 @@ import click
 
 @dataclasses.dataclass
 class VirtualEnv:
-
     path: Path
 
     def run(self, *args: object) -> None:
@@ -76,11 +75,18 @@ def virtualenv(root: Path, name: str) -> Iterator[VirtualEnv]:
 
 
 def check_dist(ctx: click.Context, package: str, dist: str, assets: bool = False) -> None:
-
     with ctx.scope(), tempfile.TemporaryDirectory() as tmp_directory:
         tmpdir = Path(tmp_directory)
         distdir = tmpdir / "dist"
-        run(sys.executable, "-m", "build", BUILD_COMMAND_ARG[dist], ".", "--outdir", distdir)
+        run(
+            sys.executable,
+            "-m",
+            "build",
+            BUILD_COMMAND_ARG[dist],
+            ".",
+            "--outdir",
+            distdir,
+        )
 
         with virtualenv(tmpdir, "venv-dist") as venv:
             venv.run("-m", "pip", "install", "--upgrade", "pip")
@@ -105,7 +111,14 @@ def check_dist(ctx: click.Context, package: str, dist: str, assets: bool = False
 @click.option("-t", "--timeout", default=60.0, help="Timeout for checking distribution")
 @click.argument("toxinidir", type=str, required=True)
 @click.pass_context
-def main(ctx: click.Context, toxinidir: str, verbose: bool, quiet: bool, assets: bool, timeout: float) -> None:
+def main(
+    ctx: click.Context,
+    toxinidir: str,
+    verbose: bool,
+    quiet: bool,
+    assets: bool,
+    timeout: float,
+) -> None:
     """Check distribution for package"""
     if os.environ.get("CI") == "true":
         verbose = True

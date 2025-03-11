@@ -28,7 +28,9 @@ from basingse.auth.testing import LoginClient
 from basingse.logging import log_queries
 from basingse.models import Model
 from basingse.settings import BaSingSe
-from basingse.testing.responses import assertrepr_compare as responses_assertrepr_compare
+from basingse.testing.responses import (
+    assertrepr_compare as responses_assertrepr_compare,
+)
 
 
 logger = structlog.get_logger()
@@ -91,7 +93,6 @@ def app(tmp_path: Path, request: pytest.FixtureRequest) -> Iterator[Flask]:
     from jinja2.loaders import BaseLoader
 
     class TestingFlask(Flask):
-
         def __repr__(self) -> str:
             return f"<TestingFlask {self.import_name} {id(self)}>"
 
@@ -109,7 +110,14 @@ def app(tmp_path: Path, request: pytest.FixtureRequest) -> Iterator[Flask]:
 
     app = TestingFlask(__name__)
     app.test_client_class = LoginClient
-    configure_app(app, config={"ENV": "test", "ASSETS_FOLDER": None, "ATTACHMENTS_CACHE_DIRECTORY": str(tmp_path)})
+    configure_app(
+        app,
+        config={
+            "ENV": "test",
+            "ASSETS_FOLDER": None,
+            "ATTACHMENTS_CACHE_DIRECTORY": str(tmp_path),
+        },
+    )
     bss = BaSingSe(all=True).disable("logging", "autoimport")
     bss.init_app(app)
     assets = cast(Assets, bss.assets)

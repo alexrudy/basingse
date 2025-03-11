@@ -42,8 +42,16 @@ def collection(tmp_path: Path) -> AssetManifest:
         manifest[f"{extension}/{base}.{extension}"] = f"{extension}/{base}.{hash}.{extension}"
         manifest[f"{extension}/{base}.{extension}.map"] = f"{extension}/{base}.{hash}.{extension}.map"
 
-    add_file("tests.main.js", "console.log('hello world');", "# sourceMappingURL=tests.main.js.map")
-    add_file("tests.main.css", "body { background-color: red; }", "# sourceMappingURL=tests.main.css.map")
+    add_file(
+        "tests.main.js",
+        "console.log('hello world');",
+        "# sourceMappingURL=tests.main.js.map",
+    )
+    add_file(
+        "tests.main.css",
+        "body { background-color: red; }",
+        "# sourceMappingURL=tests.main.css.map",
+    )
 
     (tmp_path / "assets" / "manifest.json").write_text(json.dumps(manifest))
 
@@ -51,7 +59,9 @@ def collection(tmp_path: Path) -> AssetManifest:
 
 
 @pytest.mark.parametrize(
-    "postfix,expected", [("", Ok()), (".map", Ok()), (".invalid", NotFound())], ids=["asset", "map", "invalid"]
+    "postfix,expected",
+    [("", Ok()), (".map", Ok()), (".invalid", NotFound())],
+    ids=["asset", "map", "invalid"],
 )
 @pytest.mark.parametrize("filename", ["js/tests.main.js", "css/tests.main.css"], ids=["js", "css"])
 @pytest.mark.parametrize("debug", [True, False], ids=["debug", "not_debug"])
@@ -64,7 +74,6 @@ def test_get(
     postfix: str,
     expected: Response,
 ) -> None:
-
     app.config["ASSETS_BUST_CACHE"] = not debug
     app.config["ASSETS_DEBUG_LOADING"] = True
     # Get URL from context, then request it.
@@ -97,10 +106,19 @@ def test_url_fallback(collection: AssetManifest) -> None:
 @pytest.mark.parametrize(
     "filename, expected",
     [
-        ("img/chalice.lake-sunset-bkg.c6d3cb3c519cf0d39d2d.jpg", "img/chalice.lake-sunset-bkg.jpg"),
-        ("img/chalice.lake-sunset-bkg.c6d3cb3c519cf0d39d2d.jpg.map", "img/chalice.lake-sunset-bkg.jpg.map"),
+        (
+            "img/chalice.lake-sunset-bkg.c6d3cb3c519cf0d39d2d.jpg",
+            "img/chalice.lake-sunset-bkg.jpg",
+        ),
+        (
+            "img/chalice.lake-sunset-bkg.c6d3cb3c519cf0d39d2d.jpg.map",
+            "img/chalice.lake-sunset-bkg.jpg.map",
+        ),
         ("img/chalice.lake-sunset-bkg.jpg", "img/chalice.lake-sunset-bkg.jpg"),
-        ("css/tests.main.7c16d7abf39269d0a6fd444dfbef74cd.css.map", "css/tests.main.css.map"),
+        (
+            "css/tests.main.7c16d7abf39269d0a6fd444dfbef74cd.css.map",
+            "css/tests.main.css.map",
+        ),
     ],
 )
 def test_parse_filename(filename: str, expected: str) -> None:
@@ -108,7 +126,6 @@ def test_parse_filename(filename: str, expected: str) -> None:
 
 
 class TestCollection:
-
     @pytest.mark.usefixtures("app_context")
     def test_iter_assets(self, collection: AssetManifest) -> None:
         assert [asset.filename for asset in collection.iter_assets("js")] == [Path("js/tests.main.js")]
@@ -165,7 +182,6 @@ class TestCollection:
 
 @pytest.mark.usefixtures("app_context", "not_debug")
 def test_bundled_assets(app: Flask) -> None:
-
     assert app.config["ASSETS_BUST_CACHE"], "Cache should be busted"
 
     collection = AssetManifest(location="basingse")
@@ -179,7 +195,6 @@ def test_bundled_assets(app: Flask) -> None:
 
 
 def test_check_dist(capsys: pytest.CaptureFixture) -> None:
-
     check_dist()
 
     captured = capsys.readouterr()

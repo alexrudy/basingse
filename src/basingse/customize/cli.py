@@ -25,7 +25,14 @@ def init() -> None:
 
     links = []
     for link in ("Youtube", "Instagram"):
-        links.append(SocialLink(name=link, url=f"https://{link.lower()}.com", icon=link.lower(), site=settings))
+        links.append(
+            SocialLink(
+                name=link,
+                url=f"https://{link.lower()}.com",
+                icon=link.lower(),
+                site=settings,
+            )
+        )
     session.add_all(links)
     session.commit()
 

@@ -137,13 +137,21 @@ class PermissionGrant(Model):
 
     role_id: Mapped[uuid.UUID] = mapped_column(Uuid(), ForeignKey("roles.id"), nullable=False, doc="Role ID")
     role: Mapped["Role"] = relationship(
-        "Role", back_populates="grants", info=orm.info(schema=orm.auto(), form=orm.auto())
+        "Role",
+        back_populates="grants",
+        info=orm.info(schema=orm.auto(), form=orm.auto()),
     )
     model: Mapped[str] = mapped_column(
-        String(), nullable=False, doc="Model", info=orm.info(schema=orm.auto(), form=orm.auto())
+        String(),
+        nullable=False,
+        doc="Model",
+        info=orm.info(schema=orm.auto(), form=orm.auto()),
     )
     action: Mapped[Action] = mapped_column(
-        Enum(Action), nullable=False, doc="Permission", info=orm.info(schema=orm.auto(), form=orm.auto())
+        Enum(Action),
+        nullable=False,
+        doc="Permission",
+        info=orm.info(schema=orm.auto(), form=orm.auto()),
     )
 
     def __repr__(self) -> str:
@@ -166,7 +174,11 @@ class Role(Model):
         def __init__(self, *, name: str | None = None, administrator: bool | None = None) -> None: ...
 
     name: Mapped[str] = mapped_column(
-        String(), nullable=False, unique=True, doc="Role name", info=orm.info(schema=orm.auto(), form=orm.auto())
+        String(),
+        nullable=False,
+        unique=True,
+        doc="Role name",
+        info=orm.info(schema=orm.auto(), form=orm.auto()),
     )
     administrator: Mapped[bool] = mapped_column(
         Boolean(),
@@ -176,7 +188,11 @@ class Role(Model):
     )
 
     grants: Mapped[set["PermissionGrant"]] = relationship(
-        "PermissionGrant", back_populates="role", cascade="all, delete-orphan", lazy="selectin", collection_class=set
+        "PermissionGrant",
+        back_populates="role",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        collection_class=set,
     )
 
     permissions: AssociationProxy[set[Permission]] = association_proxy(
@@ -237,13 +253,15 @@ def require_permission(
 
 
 @overload
-def require_permission(permission: Permission) -> Callable[[RouteCallable], RouteCallable]:  # pragma: nocover
+def require_permission(
+    permission: Permission,
+) -> Callable[[RouteCallable], RouteCallable]:  # pragma: nocover
     ...
 
 
 @overload
 def require_permission(
-    permission: str | tuple[str, str | Action]
+    permission: str | tuple[str, str | Action],
 ) -> Callable[[RouteCallable], RouteCallable]:  # pragma: nocover
     ...
 

@@ -51,12 +51,37 @@ def auth(app: Flask) -> None:
 @pytest.mark.parametrize(
     "event, debug, expected_level",
     [
-        pytest.param({"level": logging.DEBUG, "debug": True}, True, logging.DEBUG, id="no-op demote"),
+        pytest.param(
+            {"level": logging.DEBUG, "debug": True},
+            True,
+            logging.DEBUG,
+            id="no-op demote",
+        ),
         pytest.param({"level": logging.DEBUG, "debug": True}, False, logging.DEBUG, id="no-op"),
-        pytest.param({"level": logging.WARNING, "debug": True}, False, logging.DEBUG, id="warn-debug"),
-        pytest.param({"level": logging.WARNING, "debug": True}, True, logging.WARNING, id="warn-warn"),
-        pytest.param({"level": logging.INFO, "debug": True}, False, logging.DEBUG, id="info-debug"),
-        pytest.param({"level": logging.INFO, "debug": False}, False, logging.INFO, id="info-nodebug"),
+        pytest.param(
+            {"level": logging.WARNING, "debug": True},
+            False,
+            logging.DEBUG,
+            id="warn-debug",
+        ),
+        pytest.param(
+            {"level": logging.WARNING, "debug": True},
+            True,
+            logging.WARNING,
+            id="warn-warn",
+        ),
+        pytest.param(
+            {"level": logging.INFO, "debug": True},
+            False,
+            logging.DEBUG,
+            id="info-debug",
+        ),
+        pytest.param(
+            {"level": logging.INFO, "debug": False},
+            False,
+            logging.INFO,
+            id="info-nodebug",
+        ),
         pytest.param({"level": logging.INFO}, False, logging.INFO, id="info-missingdebug"),
         pytest.param({"level": logging.INFO, "debug": True}, None, logging.INFO, id="info-no-app"),
     ],
@@ -65,7 +90,6 @@ def test_debug_demoter(app: Flask, event: dict[str, Any], debug: bool, expected_
     demoter = DebugDemoter()
 
     with contextlib.ExitStack() as stack:
-
         if debug is not None:
             app.debug = debug
             stack.enter_context(app.app_context())
@@ -77,7 +101,17 @@ def test_debug_demoter(app: Flask, event: dict[str, Any], debug: bool, expected_
 @pytest.mark.parametrize(
     "request_args, attributes",
     [
-        pytest.param({}, {"id": None, "peer": None, "path": "/", "host": "localhost", "method": "GET"}, id="simple"),
+        pytest.param(
+            {},
+            {
+                "id": None,
+                "peer": None,
+                "path": "/",
+                "host": "localhost",
+                "method": "GET",
+            },
+            id="simple",
+        ),
         pytest.param(
             {"headers": {"X-Unique-ID": "123", "X-Forwarded-For": "10.0.0.1"}},
             {"peer": "10.0.0.1", "id": "123"},
@@ -86,7 +120,6 @@ def test_debug_demoter(app: Flask, event: dict[str, Any], debug: bool, expected_
     ],
 )
 def test_request_info(app: Flask, request_args: dict[str, Any], attributes: dict[str, Any]) -> None:
-
     with app.test_request_context("/", **request_args):
         info = RequestInfo.build()
         for name, expected in attributes.items():

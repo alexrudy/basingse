@@ -6,7 +6,6 @@ from basingse.admin.portal import PortalMenuItem
 
 
 def test_portal_menu() -> None:
-
     menu = PortalMenuItem("Test", ".test", Icon("test"), "test.view")
 
     assert isinstance(menu.link, View)
@@ -16,7 +15,6 @@ def test_portal_menu() -> None:
 
 
 def test_portal_menu_permissions(app: Flask) -> None:
-
     menu = PortalMenuItem("Test", ".test", Icon("test"), "test.view")
 
     with app.test_request_context("/"):
@@ -24,7 +22,6 @@ def test_portal_menu_permissions(app: Flask) -> None:
 
 
 def test_portal_menu_no_permissions(app: Flask) -> None:
-
     menu = PortalMenuItem("Test", ".test", "test", "test.view")
     menu.permissions = None
 

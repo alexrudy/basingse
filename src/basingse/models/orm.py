@@ -32,7 +32,6 @@ def info(
     form: FormInfo | wtforms.Field | Auto | None = None,
     listview: Column | ColumnInfo | Auto | None = None,
 ) -> dict[str, Any]:
-
     if isinstance(schema, Auto):
         schema = SchemaInfo()
     if isinstance(form, Auto):

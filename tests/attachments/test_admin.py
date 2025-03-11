@@ -37,15 +37,17 @@ logger = structlog.get_logger()
 
 
 class FakeProfile(Model):
-
     title: Mapped[str] = mapped_column(default="")
     created: Mapped[dt.datetime] = mapped_column(default=lambda: dt.datetime.now(dt.UTC))
     attachment_id: Mapped[UUID] = mapped_column()
-    attachment = relationship(Attachment, foreign_keys=[attachment_id], primaryjoin=Attachment.id == attachment_id)
+    attachment = relationship(
+        Attachment,
+        foreign_keys=[attachment_id],
+        primaryjoin=Attachment.id == attachment_id,
+    )
 
 
 class FakeProfileSchema(BaseSchema):
-
     id = fields.Integer(dump_only=True)
     title = fields.String(required=True)
 
@@ -54,14 +56,12 @@ class FakeProfileSchema(BaseSchema):
 
 
 class FakeProfileForm(Form):
-
     title = form_fields.StringField("Title", validators=[validators.DataRequired()])
     title = form_fields.StringField("Title", validators=[validators.DataRequired()])
     attachment = AttachmentField("Picture")
 
 
 class FakeProfileTable(Table):
-
     title = Column("Title")
     content = Column("Content")
 
@@ -74,7 +74,6 @@ def portal() -> Portal:
 
 @pytest.fixture
 def adminview(portal: Portal, app: Flask) -> type[AdminView]:
-
     class FakeProfileAdmin(AttachmentAdmin, blueprint=portal):
         url = "profiles"
         key = "<uuid:id>"
@@ -104,7 +103,10 @@ def adminview(portal: Portal, app: Flask) -> type[AdminView]:
 def profile(app: Flask) -> FakeProfile:
     with app.app_context():
         session = svcs.get(Session)
-        profile = FakeProfile(title="Hello", attachment=Attachment.from_file(Path("tests/data/attachment.txt")))
+        profile = FakeProfile(
+            title="Hello",
+            attachment=Attachment.from_file(Path("tests/data/attachment.txt")),
+        )
         session.add(profile)
         session.commit()
         session.refresh(profile)
@@ -114,7 +116,6 @@ def profile(app: Flask) -> FakeProfile:
 
 @pytest.mark.usefixtures("adminview")
 def test_delete_attachment(app: Flask, profile: FakeProfile) -> None:
-
     with app.test_client() as client:
         response = client.get(f"/tests/admin/profiles/{profile.id}/delete-attachment/{profile.attachment_id}/")
         assert response == Ok()
@@ -122,11 +123,13 @@ def test_delete_attachment(app: Flask, profile: FakeProfile) -> None:
 
 @pytest.mark.usefixtures("adminview")
 def test_save_attachment_field(app: Flask) -> None:
-
     with app.test_client() as client:
         response = client.post(
             "/tests/admin/profiles/new/",
-            data={"title": "Hello", "attachment": FileStorage(io.BytesIO(b"Replaced!"), "example.txt")},
+            data={
+                "title": "Hello",
+                "attachment": FileStorage(io.BytesIO(b"Replaced!"), "example.txt"),
+            },
         )
         assert response == Redirect("/tests/admin/profiles/list/")
 
@@ -141,11 +144,13 @@ def test_save_attachment_field(app: Flask) -> None:
 
 @pytest.mark.usefixtures("adminview")
 def test_update_attachment_field(app: Flask, profile: FakeProfile) -> None:
-
     with app.test_client() as client:
         response = client.post(
             f"/tests/admin/profiles/{profile.id}/edit/",
-            data={"title": "Hello", "attachment": FileStorage(io.BytesIO(b"Hello, World!"), "example.txt")},
+            data={
+                "title": "Hello",
+                "attachment": FileStorage(io.BytesIO(b"Hello, World!"), "example.txt"),
+            },
         )
         assert response == Redirect("/tests/admin/profiles/list/")
 
@@ -159,7 +164,6 @@ def test_update_attachment_field(app: Flask, profile: FakeProfile) -> None:
 
 
 class TestAttachmentAdmin:
-
     @pytest.fixture
     def attachment(self, app: Flask) -> Attachment:
         with app.app_context():
@@ -208,13 +212,17 @@ class TestAttachmentAdmin:
     def test_edit_attachment_invalid(self, app: Flask, attachment: Attachment) -> None:
         with app.test_client() as client:
             response = client.post(
-                f"/admin/attachment/{attachment.id}/edit/", data={"content_type": "some/invalid/mime"}
+                f"/admin/attachment/{attachment.id}/edit/",
+                data={"content_type": "some/invalid/mime"},
             )
             assert response == Ok()
 
     def test_edit_attachment(self, app: Flask, attachment: Attachment) -> None:
         with app.test_client() as client:
-            response = client.post(f"/admin/attachment/{attachment.id}/edit/", data={"filename": "example.txt"})
+            response = client.post(
+                f"/admin/attachment/{attachment.id}/edit/",
+                data={"filename": "example.txt"},
+            )
             assert response == Redirect("/admin/attachment/list/")
 
         with app.app_context():
@@ -232,7 +240,12 @@ class TestAttachmentAdmin:
         with app.test_client() as client:
             response = client.post(
                 f"/admin/attachment/{attachment.id}/edit/",
-                data={"filename": "example.txt", "compression": "GZIP", "digest_algorithm": "sha1", "digest": "1234"},
+                data={
+                    "filename": "example.txt",
+                    "compression": "GZIP",
+                    "digest_algorithm": "sha1",
+                    "digest": "1234",
+                },
             )
             assert response == Ok()
 

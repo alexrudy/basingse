@@ -43,7 +43,16 @@ def test_new_user_update(runner: FlaskCliRunner, app: Flask) -> None:
         session.commit()
     result = runner.invoke(
         auth_cli,
-        ["new-user", "--email", "example@basingse.test", "--inactive", "--password", "goodpassword", "--role", "admin"],
+        [
+            "new-user",
+            "--email",
+            "example@basingse.test",
+            "--inactive",
+            "--password",
+            "goodpassword",
+            "--role",
+            "admin",
+        ],
     )
     assert result.exit_code == 0
 
@@ -122,7 +131,10 @@ def test_grant(runner: FlaskCliRunner, app: Flask) -> None:
         session.add(role)
         session.commit()
 
-    result = runner.invoke(auth_cli, ["grant", "--role", "admin", "--permission", "edit", "--model", "user"])
+    result = runner.invoke(
+        auth_cli,
+        ["grant", "--role", "admin", "--permission", "edit", "--model", "user"],
+    )
     assert result.exit_code == 0
 
     with app.app_context():
@@ -177,7 +189,16 @@ def test_set_password(runner: FlaskCliRunner, app: Flask) -> None:
         session.add(user)
         session.commit()
 
-    result = runner.invoke(auth_cli, ["set-password", "--email", "hello@basingse.test", "--password", "sillypassword"])
+    result = runner.invoke(
+        auth_cli,
+        [
+            "set-password",
+            "--email",
+            "hello@basingse.test",
+            "--password",
+            "sillypassword",
+        ],
+    )
     assert result.exit_code == 0
 
     with app.app_context():
@@ -194,10 +215,18 @@ def test_delete_user(runner: FlaskCliRunner, app: Flask) -> None:
         session.add(user)
         session.commit()
 
-    result = runner.invoke(auth_cli, ["delete-user", "--email", "hello@basingse.test"], catch_exceptions=False)
+    result = runner.invoke(
+        auth_cli,
+        ["delete-user", "--email", "hello@basingse.test"],
+        catch_exceptions=False,
+    )
     assert result.exit_code == 0
 
-    result = runner.invoke(auth_cli, ["delete-user", "--email", "hello@basingse.test", "--yes"], catch_exceptions=False)
+    result = runner.invoke(
+        auth_cli,
+        ["delete-user", "--email", "hello@basingse.test", "--yes"],
+        catch_exceptions=False,
+    )
     assert result.exit_code == 0
 
     with app.app_context():
@@ -242,8 +271,14 @@ def test_list_users(runner: FlaskCliRunner, app: Flask, user: Any, flags: list[s
 
 
 def test_init_administrator(runner: FlaskCliRunner, app: Flask) -> None:
-    result = runner.invoke(auth_cli, ["init", "--email", "admin@basingse.test", "--password", "badpassword"])
+    result = runner.invoke(
+        auth_cli,
+        ["init", "--email", "admin@basingse.test", "--password", "badpassword"],
+    )
     assert result.exit_code == 0
 
-    result = runner.invoke(auth_cli, ["init", "--email", "another@basingse.test", "--password", "badpassword"])
+    result = runner.invoke(
+        auth_cli,
+        ["init", "--email", "another@basingse.test", "--password", "badpassword"],
+    )
     assert result.exit_code == 0

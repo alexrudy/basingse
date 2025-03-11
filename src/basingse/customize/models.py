@@ -36,31 +36,55 @@ class Logo(Model):
     """Represents the options for a site's logo"""
 
     small_id: Mapped[UUID] = mapped_column(
-        Uuid(), ForeignKey("attachments.attachment.id", ondelete="SET NULL"), nullable=True
+        Uuid(),
+        ForeignKey("attachments.attachment.id", ondelete="SET NULL"),
+        nullable=True,
     )
     small = relationship(
-        Attachment, uselist=False, foreign_keys=[small_id], primaryjoin=Attachment.id == small_id, lazy="joined"
+        Attachment,
+        uselist=False,
+        foreign_keys=[small_id],
+        primaryjoin=Attachment.id == small_id,
+        lazy="joined",
     )
 
     large_id: Mapped[UUID] = mapped_column(
-        Uuid(), ForeignKey("attachments.attachment.id", ondelete="SET NULL"), nullable=True
+        Uuid(),
+        ForeignKey("attachments.attachment.id", ondelete="SET NULL"),
+        nullable=True,
     )
     large = relationship(
-        Attachment, uselist=False, foreign_keys=[large_id], primaryjoin=Attachment.id == large_id, lazy="joined"
+        Attachment,
+        uselist=False,
+        foreign_keys=[large_id],
+        primaryjoin=Attachment.id == large_id,
+        lazy="joined",
     )
 
     text_id: Mapped[UUID] = mapped_column(
-        Uuid(), ForeignKey("attachments.attachment.id", ondelete="SET NULL"), nullable=True
+        Uuid(),
+        ForeignKey("attachments.attachment.id", ondelete="SET NULL"),
+        nullable=True,
     )
     text = relationship(
-        Attachment, uselist=False, foreign_keys=[text_id], primaryjoin=Attachment.id == text_id, lazy="joined"
+        Attachment,
+        uselist=False,
+        foreign_keys=[text_id],
+        primaryjoin=Attachment.id == text_id,
+        lazy="joined",
     )
 
     favicon_id: Mapped[UUID] = mapped_column(
-        Uuid(), ForeignKey("attachments.attachment.id", ondelete="SET NULL"), nullable=True
+        Uuid(),
+        ForeignKey("attachments.attachment.id", ondelete="SET NULL"),
+        nullable=True,
     )
     favicon = relationship(
-        Attachment, uselist=False, foreign_keys=[favicon_id], primaryjoin=Attachment.id == favicon_id, lazy="joined"
+        Attachment,
+        uselist=False,
+        foreign_keys=[favicon_id],
+        primaryjoin=Attachment.id == favicon_id,
+        lazy="joined",
     )
 
     alt_text: Mapped[str] = mapped_column(String(), nullable=True, doc="Alt text for logo")
@@ -148,15 +172,24 @@ class SiteSettings(Model):
 
     homepage_id: Mapped[UUID] = mapped_column(Uuid(), ForeignKey("pages.id"), nullable=True)
     homepage: Mapped["Page"] = relationship(
-        "basingse.page.models.page.Page", uselist=False, foreign_keys=[homepage_id], lazy="selectin"
+        "basingse.page.models.page.Page",
+        uselist=False,
+        foreign_keys=[homepage_id],
+        lazy="selectin",
     )
 
     contactpage_id: Mapped[UUID] = mapped_column(Uuid(), ForeignKey("pages.id"), nullable=True)
     contactpage: Mapped["Page"] = relationship(
-        "basingse.page.models.page.Page", uselist=False, foreign_keys=[contactpage_id], lazy="selectin"
+        "basingse.page.models.page.Page",
+        uselist=False,
+        foreign_keys=[contactpage_id],
+        lazy="selectin",
     )
     contact_message: Mapped[str] = mapped_column(
-        String(), nullable=True, doc="What to say on the contacts", default="Collaborate"
+        String(),
+        nullable=True,
+        doc="What to say on the contacts",
+        default="Collaborate",
     )
 
     footer_message: Mapped[str] = mapped_column(String(), nullable=True, doc="Footer message")
@@ -179,7 +212,10 @@ class SocialLink(Model):
     )
 
     order: Mapped[int] = mapped_column(
-        Integer, nullable=True, doc="Social link order on homepage", info=orm.info(schema=orm.auto())
+        Integer,
+        nullable=True,
+        doc="Social link order on homepage",
+        info=orm.info(schema=orm.auto()),
     )
     name: Mapped[str] = mapped_column(
         String(),
@@ -202,7 +238,11 @@ class SocialLink(Model):
     )
     image_id: Mapped[UUID] = mapped_column(Uuid(), nullable=True)
     image = relationship(
-        "Attachment", uselist=False, foreign_keys=[image_id], primaryjoin=Attachment.id == image_id, lazy="joined"
+        "Attachment",
+        uselist=False,
+        foreign_keys=[image_id],
+        primaryjoin=Attachment.id == image_id,
+        lazy="joined",
     )
 
     @property

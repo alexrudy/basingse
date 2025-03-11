@@ -46,7 +46,6 @@ class DebugDemoter:
 
 @dc.dataclass
 class RequestInfo:
-
     id: str | None
     peer: str | None
     path: str | None
@@ -117,7 +116,6 @@ def setup_query_logging() -> None:
 
 @dc.dataclass(frozen=True)
 class Logging:
-
     def init_app(self, app: Flask) -> None:
         configure_structlog()
         request_started.connect(bind_request_details, app)
@@ -128,7 +126,12 @@ class Logging:
 
 
 def log_queries(
-    conn: Any, cursor: Any, statement: str, parameters: dict[str, Any], context: Any, executemany: Any
+    conn: Any,
+    cursor: Any,
+    statement: str,
+    parameters: dict[str, Any],
+    context: Any,
+    executemany: Any,
 ) -> None:
     if statement.strip().startswith("PRAGMA ") or statement.strip().startswith("CREATE "):
         logger.debug("%s parameters=%r", statement.strip(), parameters)

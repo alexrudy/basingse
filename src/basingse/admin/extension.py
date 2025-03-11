@@ -100,7 +100,7 @@ def handle_validation(exc: ValidationError) -> IntoResponse:
             return jsonify(errors=exc.messages, error=format_error_dictionary(exc.messages)), 400
         return jsonify(error=str(exc)), 400
 
-    return render_template(["admin/400.html", "admin/bad_request.html"], error=exc), 400
+    return render_template(["admin/validation_error.html", "admin/400.html", "admin/bad_request.html"], error=exc), 400
 
 
 def handle_integrity(exc: IntegrityError) -> IntoResponse:
@@ -129,7 +129,6 @@ def handle_http_exception(exc: HTTPException) -> IntoResponse:
 
 
 def register_error_handlers(scaffold: Flask | Blueprint) -> None:
-
     scaffold.register_error_handler(NoItemFound, handle_notfound)
     scaffold.register_error_handler(ValidationError, handle_validation)
     scaffold.register_error_handler(IntegrityError, handle_integrity)
@@ -193,7 +192,6 @@ class AdminManager(Generic[M]):
 
 @attrs.define(init=False)
 class ViewKey:
-
     name: str = attrs.field()
     argtype: str = attrs.field()
 
@@ -229,7 +227,6 @@ def _get_model_attrs_from_request(model: type[ModelBase]) -> dict[str, Any]:
 
 
 class AdminView(View, Generic[M, I]):
-
     #: Whether to initialize the view on every request
     init_every_request: ClassVar[bool] = False
 
@@ -312,11 +309,20 @@ class AdminView(View, Generic[M, I]):
 
         settings = cast(Action, method.action)  # pyright: ignore
         if request.method not in settings.methods:
-            self.logger.error(f"Method not allowed {action!r}", path=request.path, method=request.method, debug=True)
+            self.logger.error(
+                f"Method not allowed {action!r}",
+                path=request.path,
+                method=request.method,
+                debug=True,
+            )
             abort(405, description=f"Method not allowed {request.method}")
 
         if not check_permissions(self.permission, settings.permission):
-            self.logger.error(f"Permission denied {action!r}", path=request.path, permission=settings.permission)
+            self.logger.error(
+                f"Permission denied {action!r}",
+                path=request.path,
+                permission=settings.permission,
+            )
             abort(401, description=f"Permission denied {settings.permission}")
 
         return method(self, **kwargs)
@@ -375,7 +381,12 @@ class AdminView(View, Generic[M, I]):
 
         return render_template(template_files, **context)
 
-    def render(self, *templates: str, item: M | Iterable[M], context: dict[str, Any] | None = None) -> IntoResponse:
+    def render(
+        self,
+        *templates: str,
+        item: M | Iterable[M],
+        context: dict[str, Any] | None = None,
+    ) -> IntoResponse:
         if request_accepts_json():
             return self.render_json(item=item)
 
@@ -396,7 +407,8 @@ class AdminView(View, Generic[M, I]):
                 return obj
             elif form.errors:
                 raise FormValidationError(
-                    response=self.render("edit", item=obj, context={"form": form}), errors=form.errors
+                    response=self.render("edit", item=obj, context={"form": form}),
+                    errors=form.errors,
                 )
 
         return None  # No changes applied
@@ -482,7 +494,6 @@ class AdminView(View, Generic[M, I]):
             log.exception("Exception registering action", name=name, debug=True)
         else:
             if action is not None:
-
                 view = require_permission(f"{cls.permission}.{action.permission}")(cls.as_view(action.name))
                 cls.bp.add_url_rule(
                     action.url.replace("<key>", key.template),
@@ -497,7 +508,10 @@ class AdminView(View, Generic[M, I]):
     @classmethod
     def register_blueprint(cls, scaffold: Flask | Blueprint, namespace: str | None, url: str, key: ViewKey) -> None:
         cls.bp = AdminBlueprint(
-            namespace or cls.name, cls.__module__, url_prefix=f"/{url}/", template_folder="templates/"
+            namespace or cls.name,
+            cls.__module__,
+            url_prefix=f"/{url}/",
+            template_folder="templates/",
         )
 
         if isinstance(scaffold, Portal):
@@ -562,7 +576,6 @@ class AdminView(View, Generic[M, I]):
 
     @classmethod
     def importer(cls, data: dict[str, Any]) -> list[M]:
-
         try:
             items = data[cls.name]
         except (KeyError, TypeError, IndexError):
@@ -576,7 +589,6 @@ class AdminView(View, Generic[M, I]):
 
     @classmethod
     def import_subcommand(cls) -> click.Command:
-
         logger = structlog.get_logger(model=cls.name, command="import")
 
         @click.command(name=cls.name)
@@ -613,7 +625,6 @@ class AdminView(View, Generic[M, I]):
 
     @classmethod
     def export_subcommand(cls) -> click.Command:
-
         logger = structlog.get_logger(model=cls.name, command="import")
 
         @click.command(name=cls.name)

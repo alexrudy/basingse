@@ -46,7 +46,6 @@ _Attribute = sa.Column | orm.relationships.RelationshipProperty | sa.sql.element
 
 @dc.dataclass
 class SchemaInfo(Generic[T]):
-
     load_default: T | Missing | None = missing
     dump_default: T | Missing | None = missing
     data_key: str | None = None
@@ -77,7 +76,6 @@ class SchemaInfo(Generic[T]):
             raise ValueError(f"Unable to find schema for {target!r}")
 
     def _column_field(self, column: sa.Column | sa.sql.elements.KeyedColumnElement) -> fields.Field:
-
         fcls = self._get_field_for_type(column.type)
 
         assert issubclass(fcls, fields.Field), f"{fcls} is not a subclass of {fields.Field}"
@@ -117,7 +115,6 @@ class SchemaInfo(Generic[T]):
 
 @dc.dataclass
 class FormInfo:
-
     validators: list[Any] | None = None
     label: str | None = None
     description: str | None = None

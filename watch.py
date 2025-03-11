@@ -95,7 +95,6 @@ class SocketIOHandler(PatternMatchingEventHandler):
 
 
 class ShellCommandHandler(PatternMatchingEventHandler):
-
     def __init__(
         self,
         command: list[str],
@@ -140,7 +139,6 @@ class ShellCommandDebouncer(threading.Thread):
 
     def run(self) -> None:
         while not self.event.is_set():
-
             try:
                 command = self.queue.get(timeout=1)
             except queue.Empty:
@@ -185,11 +183,13 @@ def main() -> int:
 
     (app, socketio) = create_socketio_app()
     threading.Thread(
-        target=socketio.run, args=(app, "localhost", 5010), kwargs=dict(use_reloader=False), daemon=True
+        target=socketio.run,
+        args=(app, "localhost", 5010),
+        kwargs=dict(use_reloader=False),
+        daemon=True,
     ).start()
 
     with contextlib.ExitStack() as stack:
-
         stack.enter_context(subprocess.Popen(["just", "serve"]))
         shell_manager = ShellCommandDebouncer()
         stack.enter_context(stopping(shell_manager))

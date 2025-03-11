@@ -40,11 +40,15 @@ logger = structlog.get_logger()
 
 @attrs.define
 class PortalDropdown(Dropdown):
-
     permissions: str | None = None
 
-    def __init__(self, *, title: MaybeTaggable, icon: str | Icon | None = None, permissions: str | None = None) -> None:
-
+    def __init__(
+        self,
+        *,
+        title: MaybeTaggable,
+        icon: str | Icon | None = None,
+        permissions: str | None = None,
+    ) -> None:
         if isinstance(icon, str):
             icon = Icon(icon)
         if icon:
@@ -92,7 +96,6 @@ class PortalMenuItem(Link):
 
     @property
     def active(self) -> bool:
-
         blueprint: str | None = self.active_for_blueprint and getattr(self.link, "blueprint", None)
         if blueprint is None:
             return super().active
@@ -188,10 +191,14 @@ def import_all(ctx: click.Context, filename: list[IO[str]], clear: bool) -> None
     session = svcs.get(Session)
     portal = svcs.get(Portal)
 
-    logger.info("Importing all", clear=clear, data=data.keys(), models=[cls.name for cls in portal.admins])
+    logger.info(
+        "Importing all",
+        clear=clear,
+        data=data.keys(),
+        models=[cls.name for cls in portal.admins],
+    )
 
     for cls in portal.admins:
-
         if (items := data.get(cls.name, None)) is None:
             continue
 
@@ -221,7 +228,6 @@ def export_all(ctx: click.Context, filename: IO[str]) -> None:
     data = {}
 
     for cls in portal.admins:
-
         logger.info(f"Exporting {cls.name}", model=cls.name)
         items = session.scalars(select(cls.model)).all()
         schema = cls.schema(many=True)

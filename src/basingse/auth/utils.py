@@ -28,7 +28,12 @@ def url_for(endpoint: str, *, _external: Any = None, _anchor: Any = None, **para
 
 
 def url_with(
-    location: str, *, _external: Any = None, _scheme: Any = None, _anchor: Any = None, **parameters: Any
+    location: str,
+    *,
+    _external: Any = None,
+    _scheme: Any = None,
+    _anchor: Any = None,
+    **parameters: Any,
 ) -> str:
     """Alter a url with new parameters.
 

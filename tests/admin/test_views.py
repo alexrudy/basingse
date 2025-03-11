@@ -46,9 +46,15 @@ def client(app: Flask) -> Iterator[FlaskClient]:
 @pytest.mark.parametrize(
     "attribute,action",
     [
-        ("edit", Action("edit", "edit", "/<key>/edit/", methods=["GET", "POST", "PATCH", "PUT"])),
+        (
+            "edit",
+            Action("edit", "edit", "/<key>/edit/", methods=["GET", "POST", "PATCH", "PUT"]),
+        ),
         ("preview", Action("preview", "view", "/<key>/preview/", methods=["GET"])),
-        ("delete", Action("delete", "delete", "/<key>/delete/", methods=["GET", "DELETE"])),
+        (
+            "delete",
+            Action("delete", "delete", "/<key>/delete/", methods=["GET", "DELETE"]),
+        ),
         ("listview", Action("list", "view", "/list/", methods=["GET"])),
         ("new", Action("new", "edit", "/new/", methods=["GET", "POST", "PUT"])),
     ],
@@ -62,32 +68,25 @@ def test_action_definition(attribute: str, action: Action) -> None:
 
 @pytest.mark.usefixtures("post")
 class TestUnknownEndpoints:
-
     def test_unknown_endpoint(self, client: FlaskClient) -> None:
-
         response = client.get("/tests/admin/")
         assert response == NotFound()
 
     def test_unknown_action(self, client: FlaskClient) -> None:
-
         response = client.get("/tests/admin/posts/do/other/")
         assert response == BadRequest()
 
     def test_invalid_method(self, client: FlaskClient) -> None:
-
         response = client.post("/tests/admin/posts/list/")
         assert response == BadRequest(status=405)
 
     def test_invalid_action_method(self, client: FlaskClient) -> None:
-
         response = client.post("/tests/admin/posts/do/list/")
         assert response == BadRequest(status=405)
 
 
 def test_adminview_new(app: Flask) -> None:
-
     with app.test_client() as client:
-
         response = client.get("/tests/admin/posts/new/")
         assert response == Ok()
         assert b"Title" in response.data
@@ -136,15 +135,12 @@ def test_adminview_delete_via_get(client: FlaskClient) -> None:
 
 @pytest.mark.usefixtures("post")
 class TestHtmxSupport:
-
     def test_request_partial(self, client: FlaskClient) -> None:
-
         response = client.get("/tests/admin/posts/list/?partial=partial", headers={"HX-Request": "GET"})
         assert response == Ok()
         assert response.json is not None, "Partial returns json"
 
     def test_request_no_partial(self, client: FlaskClient) -> None:
-
         response = client.get("/tests/admin/posts/list/", headers={"HX-Request": "GET"})
         assert response == Ok()
         assert response.json is None, "HTMX without partial returns full response"
@@ -152,9 +148,7 @@ class TestHtmxSupport:
 
 @pytest.mark.usefixtures("post")
 class TestCustomAction:
-
     def test_destructive_action(self, client: FlaskClient) -> None:
-
         response = client.get("/tests/admin/posts/destructive/?arbitrary=arg")
         assert response == Ok()
         assert response.json, "Expected JSON response"
@@ -162,7 +156,6 @@ class TestCustomAction:
         assert response.json["args"]["arbitrary"] == "arg", f"Expected to get arguments back in {response.json!r}"
 
     def test_regular_action(self, client: FlaskClient) -> None:
-
         response = client.get("/tests/admin/posts/do/partial/?arbitrary=arg")
         assert response == Ok()
 
@@ -173,7 +166,6 @@ class TestCustomAction:
 
 @pytest.mark.usefixtures("post")
 class TestAdminViewEdit:
-
     def test_edit_view(self, client: FlaskClient) -> None:
         response = client.get(f"/tests/admin/posts/{ONE!s}/edit/")
         assert response == Ok()
@@ -190,7 +182,10 @@ class TestAdminViewEdit:
         assert post.title == "Hello"
 
     def test_edit_post(self, client: FlaskClient, post: FakePost) -> None:
-        response = client.post(f"/tests/admin/posts/{ONE!s}/edit/", data={"title": "Goodbye", "content": "World!"})
+        response = client.post(
+            f"/tests/admin/posts/{ONE!s}/edit/",
+            data={"title": "Goodbye", "content": "World!"},
+        )
         assert response == Redirect("/tests/admin/posts/list/")
 
         post = svcs.get(Session).get(FakePost, post.id)
@@ -205,7 +200,6 @@ class TestAdminViewEdit:
 
 @pytest.mark.usefixtures("post")
 class TestAdminViewJSON:
-
     @pytest.fixture
     def client(self, app: Flask) -> Iterator[FlaskClient]:
         with app.test_client() as client:
@@ -262,7 +256,10 @@ class TestAdminViewJSON:
         assert post.title == "Hello"
 
     def test_edit_post(self, client: FlaskClient, post: FakePost) -> None:
-        response = client.post(f"/tests/admin/posts/{ONE!s}/edit/", data={"title": "Goodbye", "content": "World!"})
+        response = client.post(
+            f"/tests/admin/posts/{ONE!s}/edit/",
+            data={"title": "Goodbye", "content": "World!"},
+        )
         assert response == Ok()
         assert response.json is not None, "Expected JSON response"
         assert response.json["title"] == "Goodbye"
@@ -274,7 +271,10 @@ class TestAdminViewJSON:
         assert post.title == "Goodbye"
 
     def test_edit_post_json(self, client: FlaskClient, post: FakePost) -> None:
-        response = client.post(f"/tests/admin/posts/{ONE!s}/edit/", json={"title": "Goodbye", "content": "World!"})
+        response = client.post(
+            f"/tests/admin/posts/{ONE!s}/edit/",
+            json={"title": "Goodbye", "content": "World!"},
+        )
         assert response == Ok()
         assert response.json is not None, "Expected JSON response"
         assert response.json["title"] == "Goodbye"
@@ -286,7 +286,10 @@ class TestAdminViewJSON:
         assert post.title == "Goodbye"
 
     def test_edit_post_json_list(self, client: FlaskClient, post: FakePost) -> None:
-        response = client.post(f"/tests/admin/posts/{ONE!s}/edit/", json=[{"title": "Goodbye", "content": "World!"}])
+        response = client.post(
+            f"/tests/admin/posts/{ONE!s}/edit/",
+            json=[{"title": "Goodbye", "content": "World!"}],
+        )
         assert response == BadRequest()
         assert response.json is not None, "Expected JSON response"
         assert "error" in response.json, "Expected error in JSON response"

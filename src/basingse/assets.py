@@ -27,9 +27,7 @@ from . import svcs
 
 
 class AssetLogger(structlog.BoundLogger):
-
     def _proxy_to_logger(self, method_name: str, event: str | None = None, **event_kw: Any) -> None:
-
         try:
             allowed = current_app.config.get(_ASSETS_DEBUG_LOADING, False)
         except RuntimeError:
@@ -146,7 +144,11 @@ class AssetManifest(Mapping[str, Asset]):
         if not isinstance(filename, str):
             return False
         filename = parse_filename(filename)
-        logger.debug("Checking if asset is in manifest", filename=filename, manifest=set(self.manifest.keys()))
+        logger.debug(
+            "Checking if asset is in manifest",
+            filename=filename,
+            manifest=set(self.manifest.keys()),
+        )
         return filename in self.manifest
 
     def __getitem__(self, filename: str) -> Asset:
@@ -185,11 +187,19 @@ class AssetManifest(Mapping[str, Asset]):
             try:
                 filename = self.manifest[filename]
             except KeyError:
-                logger.debug("Asset not found in manifest", filename=filename, manifest=self.manifest)
+                logger.debug(
+                    "Asset not found in manifest",
+                    filename=filename,
+                    manifest=self.manifest,
+                )
                 raise
         else:
             if filename not in self.manifest:
-                logger.debug("Asset not found in manifest", filename=filename, manifest=self.manifest)
+                logger.debug(
+                    "Asset not found in manifest",
+                    filename=filename,
+                    manifest=self.manifest,
+                )
                 raise KeyError(filename)
 
         return url_for("assets", filename=filename, **kwargs)
@@ -210,13 +220,21 @@ class AssetManifest(Mapping[str, Asset]):
                 if filename in self.manifest.values():
                     pass
                 else:
-                    logger.debug("Asset not found in manifest", filename=filename, manifest=self.manifest)
+                    logger.debug(
+                        "Asset not found in manifest",
+                        filename=filename,
+                        manifest=self.manifest,
+                    )
                     raise
         elif filename not in self.manifest.values():
             if filename in self.manifest:
                 filename = self.manifest[filename]
             else:
-                logger.debug("Asset not found in manifest", filename=filename, manifest=self.manifest)
+                logger.debug(
+                    "Asset not found in manifest",
+                    filename=filename,
+                    manifest=self.manifest,
+                )
                 raise KeyError(filename)
 
         conditional = current_app.config[_ASSETS_BUST_CACHE_KEY]
@@ -227,7 +245,11 @@ class AssetManifest(Mapping[str, Asset]):
             logger.debug("Asset not found at location", filename=filename, location=self.location)
             raise FileNotFoundError(filename)
 
-        return send_file(cast(BinaryIO, asset.open("rb")), download_name=asset.name, conditional=conditional)
+        return send_file(
+            cast(BinaryIO, asset.open("rb")),
+            download_name=asset.name,
+            conditional=conditional,
+        )
 
 
 @attrs.define(init=False)
@@ -300,7 +322,6 @@ class Assets(Mapping[str, Asset]):
         return collection
 
     def url(self, filename: str, **kwargs: Any) -> str:
-
         for manifest in self.manifests:
             if filename in manifest:
                 return manifest.url(filename, **kwargs)

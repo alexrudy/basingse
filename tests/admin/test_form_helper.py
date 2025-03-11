@@ -27,7 +27,6 @@ class NoWidgetForm(Form):
 
 
 def test_infer_form_encoding() -> None:
-
     assert get_form_encoding(PlainForm()) == "application/x-www-form-urlencoded"
     assert get_form_encoding(ProfileForm()) == "multipart/form-data"
     assert get_form_encoding(CustomWidgetForm()) == "multipart/form-data"

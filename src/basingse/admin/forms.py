@@ -34,7 +34,6 @@ class LinkButton:
 
 
 class ControlButton(Field):
-
     widget = LinkButton()
 
     def __init__(self, *, action: str, **kwargs: Any) -> None:
@@ -43,7 +42,6 @@ class ControlButton(Field):
 
 
 class DeleteRowControl:
-
     def __init__(self, label: str) -> None:
         self.label = label
 
@@ -56,7 +54,6 @@ class DeleteRowControl:
 
 
 class AddRowControl:
-
     def __init__(self, label: str) -> None:
         self.label = label
 
@@ -69,7 +66,6 @@ class AddRowControl:
 
 
 class FieldPosition(enum.Enum):
-
     PREFIX = "prefix"
     POSTFIX = "postfix"
     NONE = "none"

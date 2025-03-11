@@ -80,6 +80,9 @@ assets = "src/basingse/assets"
 [tool.black]
 line-length = 120
 
+[tool.ruff]
+line-length = 120
+
 [dependency-groups]
 dev = [
     "black>=25.1.0",

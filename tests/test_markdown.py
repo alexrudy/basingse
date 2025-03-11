@@ -10,7 +10,11 @@ from basingse.markdown import render
     "source, expected",
     [
         pytest.param("# Hello World", "<h1>Hello World</h1>", id="h1"),
-        pytest.param("> Blockquote", "<blockquote class='blockquote'><p>Blockquote</p></blockquote>", id="blockquote"),
+        pytest.param(
+            "> Blockquote",
+            "<blockquote class='blockquote'><p>Blockquote</p></blockquote>",
+            id="blockquote",
+        ),
     ],
 )
 def test_markdown(source: str, expected: str) -> None:

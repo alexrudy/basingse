@@ -35,7 +35,6 @@ class OrmInfoWarning(UserWarning):
 
 
 class Schema(BaseSchema):
-
     def __init__(self, *, many: bool = False, instance: Any = None, **kwargs: Any) -> None:
         self._orm_instance = instance
         super().__init__(many=many, **kwargs)
@@ -103,7 +102,6 @@ def collect_attributes(
             attrs[name] = process_info(name, column, cast(A, value), info_type)
 
     for name, relationship in model.__mapper__.relationships.items():
-
         if isinstance(relationship.info, Auto):
             relationship.info = orm.info(schema=SchemaInfo(), form=FormInfo(), listview=ColumnInfo())
 

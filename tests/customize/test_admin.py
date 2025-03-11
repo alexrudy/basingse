@@ -27,7 +27,6 @@ def test_maybe(input: str | int, expected: int) -> None:
 
 
 class TestSiteSettings:
-
     def test_admin_edit_get_default(self, app: Flask, client: FlaskClient) -> None:
         with app.app_context():
             _ = get_site_settings()
@@ -52,7 +51,6 @@ class TestSiteSettings:
             assert settings.logo.text is None
 
     def test_admin_edit_post_social_links(self, app: Flask, client: FlaskClient) -> None:
-
         data = {
             "title": "New Title",
             "active": "1",
@@ -89,7 +87,6 @@ class TestSiteSettings:
 
 
 class TestSocialLinks:
-
     @pytest.fixture
     def social_link(self, app: Flask) -> SocialLink:
         with app.app_context():
@@ -104,7 +101,6 @@ class TestSocialLinks:
             return link
 
     def test_admin_delete_missing_social_image(self, app: Flask, client: FlaskClient) -> None:
-
         resp = client.get("/admin/settings/social/delete-image/00000000-0000-0000-0000-000000000000/")
         assert resp.status_code == 200
 
@@ -113,12 +109,10 @@ class TestSocialLinks:
             assert settings.links == []
 
     def test_admin_delete_social_image(self, app: Flask, client: FlaskClient, social_link: SocialLink) -> None:
-
         resp = client.get(f"/admin/settings/social/delete-image/{social_link.image_id}/")
         assert resp.status_code == 200
 
     def test_admin_link_order(self, app: Flask, client: FlaskClient, social_link: SocialLink) -> None:
-
         with app.app_context():
             session = svcs.get(Session)
             link = SocialLink(name="Another Test", url="https://test.com", site_id=social_link.site_id)
@@ -153,7 +147,6 @@ class TestSocialLinks:
             assert links[0].name == "Another Test"
 
     def test_admin_link_invalid(self, client: FlaskClient, social_link: SocialLink) -> None:
-
         data = {
             "item": [
                 social_link.id,
@@ -165,7 +158,6 @@ class TestSocialLinks:
         assert resp.status_code == 400
 
     def test_admin_link_append(self, app: Flask, client: FlaskClient, social_link: SocialLink) -> None:
-
         resp = client.get("/admin/settings/social/append-link/")
         assert resp.status_code == 200
 
@@ -178,7 +170,6 @@ class TestSocialLinks:
             assert links[1].name is None
 
     def test_admin_delete_link(self, app: Flask, client: FlaskClient, social_link: SocialLink) -> None:
-
         resp = client.get(f"/admin/settings/social/delete-link/{social_link.id}/")
         assert resp.status_code == 200
 

@@ -92,6 +92,10 @@ def pytest_assertrepr_compare(op: str, left: Any, right: Any) -> list[str] | Non
         ]
 
     if isinstance(right, Ok):
-        return ["expected Ok:", f"  Status: {left.status_code} == {right.status}", f"  Location: {left.location}"]
+        return [
+            "expected Ok:",
+            f"  Status: {left.status_code} == {right.status}",
+            f"  Location: {left.location}",
+        ]
 
     return None

@@ -43,7 +43,6 @@ ModifyContext = Callable[[], ContextManager[Session]]
 
 @pytest.fixture
 def modify(app: Flask) -> ModifyContext:
-
     @contextlib.contextmanager
     def _modify_context() -> Iterator[Session]:
         with app.app_context():
@@ -104,7 +103,11 @@ def test_login_dev_production(author: User, client: LoginClient, app: Flask) -> 
 
 @pytest.mark.usefixtures("secure")
 def test_dev_login_unknown_user(author: User, client: LoginClient) -> None:
-    with client.post("/auth/testing/login/", follow_redirects=True, json={"email": "hello@example.com"}) as resp:
+    with client.post(
+        "/auth/testing/login/",
+        follow_redirects=True,
+        json={"email": "hello@example.com"},
+    ) as resp:
         assert resp.status_code == 404
         assert not current_user.is_authenticated
 
@@ -127,7 +130,9 @@ def test_login_logout_redirects(author: User, client: LoginClient) -> None:
     assert not current_user.is_authenticated
 
     resp = client.login(
-        author.email, "notpassword", query_string=dict(next=str(serializer().dumps("/some/funky/url/")))
+        author.email,
+        "notpassword",
+        query_string=dict(next=str(serializer().dumps("/some/funky/url/"))),
     )
     assert not current_user.is_authenticated
     assert parse_qs(url_parse(resp.location).query)["next"][0] == serializer().dumps("/some/funky/url/")
@@ -175,7 +180,11 @@ def test_change_password(app: Flask, author: User, client: LoginClient) -> None:
 
     with client.post(
         "/auth/password/",
-        data={"old_password": "goodpassword", "new_password": "worsepassword", "confirm": "worsepassword"},
+        data={
+            "old_password": "goodpassword",
+            "new_password": "worsepassword",
+            "confirm": "worsepassword",
+        },
     ) as resp:
         assert resp == Ok()
         msgs = get_flashed_messages()
@@ -184,7 +193,11 @@ def test_change_password(app: Flask, author: User, client: LoginClient) -> None:
 
     client.post(
         "/auth/password/",
-        data={"old_password": "badpassword", "new_password": "worsepassword", "confirm": "worsepassword"},
+        data={
+            "old_password": "badpassword",
+            "new_password": "worsepassword",
+            "confirm": "worsepassword",
+        },
     )
 
     with app.app_context():
@@ -229,7 +242,6 @@ def test_user_attributes(author: User, client: LoginClient) -> None:
 
 @pytest.mark.usefixtures("secure")
 def test_user_activate_endpoints(author: User, admin: User, client: LoginClient) -> None:
-
     client.login_session(admin.email)
 
     log.info("GET /activate", user=author, active=author.is_active)

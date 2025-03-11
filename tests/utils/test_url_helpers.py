@@ -13,8 +13,18 @@ from basingse.utils.urls import rewrite_url
     "request_url,parameters,expected",
     [
         pytest.param("http://example.com", {"a": "b"}, "http://example.com/?a=b", id="simple"),
-        pytest.param("http://example.com?c=d", {"a": "b"}, "http://example.com/?c=d&a=b", id="existing"),
-        pytest.param("http://example.com?c=d", {"c": "e"}, "http://example.com/?c=e", id="overwrite"),
+        pytest.param(
+            "http://example.com?c=d",
+            {"a": "b"},
+            "http://example.com/?c=d&a=b",
+            id="existing",
+        ),
+        pytest.param(
+            "http://example.com?c=d",
+            {"c": "e"},
+            "http://example.com/?c=e",
+            id="overwrite",
+        ),
     ],
 )
 def test_rewrite_url(app: Flask, request_url: str, parameters: dict[str, str], expected: str) -> None:
@@ -27,8 +37,18 @@ def test_rewrite_url(app: Flask, request_url: str, parameters: dict[str, str], e
     "request_url,parameters,expected",
     [
         pytest.param("http://example.com/testing/1", {"id": 2}, "/testing/2", id="simple"),
-        pytest.param("http://example.com/testing/1", {"a": "b"}, "/testing/1?a=b", id="parameters"),
-        pytest.param("http://example.com/testing/1?c=d", {"c": "e"}, "/testing/1?c=e", id="overwrite"),
+        pytest.param(
+            "http://example.com/testing/1",
+            {"a": "b"},
+            "/testing/1?a=b",
+            id="parameters",
+        ),
+        pytest.param(
+            "http://example.com/testing/1?c=d",
+            {"c": "e"},
+            "/testing/1?c=e",
+            id="overwrite",
+        ),
     ],
 )
 def test_rewrite_endpoint(app: Flask, request_url: str, parameters: dict[str, Any], expected: str) -> None:

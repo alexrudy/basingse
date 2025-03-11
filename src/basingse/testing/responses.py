@@ -6,7 +6,6 @@ from werkzeug import Response as TestResponse
 
 
 class Response:
-
     status: int
 
     def __eq__(self, other: object) -> bool:  # pragma: nocover

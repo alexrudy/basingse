@@ -34,7 +34,11 @@ def configure_app(app: Flask, config: dict[str, Any] | None = None, prefix: str 
 
 
 def create_app(config: dict[str, Any] | None = None, prefix: str | None = None) -> Flask:
-    app = Flask(__name__, instance_relative_config=True, instance_path=os.path.join(os.getcwd(), "instance"))
+    app = Flask(
+        __name__,
+        instance_relative_config=True,
+        instance_path=os.path.join(os.getcwd(), "instance"),
+    )
 
     configure_app(app, config, prefix)
 

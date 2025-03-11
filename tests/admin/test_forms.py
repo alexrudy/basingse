@@ -10,7 +10,6 @@ from basingse.admin.forms import InteractiveFieldListWidget
 
 
 def test_render_link_button() -> None:
-
     class FormTest(Form):
         test = ControlButton(label="Test", action="http://example.com")
 
@@ -34,7 +33,6 @@ def app() -> Flask:
 
 @pytest.mark.xfail
 def test_interactive_field_widget(app: Flask) -> None:
-
     widget = InteractiveFieldListWidget("ul")
     widget.add.label = "New"
 

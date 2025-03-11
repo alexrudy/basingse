@@ -6,7 +6,6 @@ from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
 
 class WebpackBuildHook(BuildHookInterface):
-
     def check_command(self, command: str | list[str], **kwargs: Any) -> None:
         if self.app.verbosity > 1:
             kwargs.setdefault("capture_output", False)
@@ -22,7 +21,6 @@ class WebpackBuildHook(BuildHookInterface):
         raise AssertionError("unreachable code")
 
     def clean(self, versions: list[str]) -> None:
-
         if assets := self.config.get("assets") is not None:
             self.check_command(["rm", "-rf", f"{assets}/*"])
 
@@ -43,7 +41,6 @@ class WebpackBuildHook(BuildHookInterface):
         self.check_command(["npm", "run", "build"])
 
     def initialize(self, version: str, build_data: dict[str, Any]) -> None:
-
         assets = self._assets()
 
         manifest = os.path.join(self.root, assets, "manifest.json")

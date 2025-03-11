@@ -34,7 +34,6 @@ def default_homepage() -> dict[str, Any]:
 @contextlib.contextmanager
 def session_for_customize(session: Session | None = None) -> Iterator[Session]:
     with contextlib.ExitStack() as stack:
-
         if session is None:
             if (session := g.get("_customize_session")) is None:
                 engine = svcs.get(Engine)

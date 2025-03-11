@@ -26,6 +26,5 @@ def render(text: str | None) -> Markup | Undefined:
 
 @dc.dataclass(frozen=True)
 class MarkdownOptions:
-
     def init_app(self, app: Flask) -> None:
         app.add_template_filter(render, "markdown")

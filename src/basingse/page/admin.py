@@ -77,7 +77,6 @@ def require_editor_token() -> Callable[[F], F]:
     def decorator(func: F) -> F:
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> ResponseReturnValue:
-
             extension = get_extension()
 
             token = request.headers.get("AUTHORIZATION")

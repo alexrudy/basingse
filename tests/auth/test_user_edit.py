@@ -26,7 +26,6 @@ def author(user: Any) -> User:
 
 
 def test_edit_user(app: Flask, author: User, client: LoginClient) -> None:
-
     from flask import abort
     from flask import redirect
     from flask import render_template

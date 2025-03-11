@@ -15,7 +15,6 @@ from basingse.testing.cli import Success
 
 @pytest.mark.usefixtures("adminview", "post")
 class TestImports:
-
     @pytest.fixture
     def yml(self) -> Path:
         return Path(__file__).parent / "data"
@@ -59,7 +58,10 @@ class TestImports:
 
     def test_model_alternate_key(self, app: Flask, portal: Portal, yml: Path) -> None:
         runner = app.test_cli_runner()
-        result = runner.invoke(portal.importer_group, ["post", str(yml / "post.yml"), "--data-key", "alternate"])
+        result = runner.invoke(
+            portal.importer_group,
+            ["post", str(yml / "post.yml"), "--data-key", "alternate"],
+        )
         assert result == Success()
 
         with app.app_context():
@@ -82,9 +84,7 @@ class TestImports:
 
 @pytest.mark.usefixtures("adminview", "post")
 class TestExports:
-
     def test_all(self, app: Flask, portal: Portal, tmp_path: Path) -> None:
-
         where = tmp_path / "all.yml"
         runner = app.test_cli_runner(mix_stderr=False)
         result = runner.invoke(portal.exporter_group, ["all", str(where)], catch_exceptions=False)

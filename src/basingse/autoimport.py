@@ -14,7 +14,6 @@ DEFAULT_AVOID = {"tests", "test", "testing", "wsgi", "app"}
 
 @dc.dataclass()
 class AutoImport:
-
     avoid: None | Iterable[str] = None
     name: str | None = None
 
@@ -23,7 +22,6 @@ class AutoImport:
         self.auto_import(app, name, self.avoid)
 
     def auto_import(self, app: Flask, name: str, avoid: None | Iterable[str] = None) -> "AutoImportRecord":
-
         # Truncate .app if we are in a .app module (not package) so that users can pass __name__
         if name.endswith(".app"):
             name = name[:-4]
@@ -33,7 +31,6 @@ class AutoImport:
         records = []
 
         for module_name in find_modules(name, include_packages=True, recursive=True):
-
             if set(module_name.split(".")).intersection(avoid):
                 records.append(AutoImportModuleRecord(module_name, skipped=True, initialized=False))
                 continue

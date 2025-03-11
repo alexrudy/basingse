@@ -1,0 +1,55 @@
+{% extends base_template %}
+
+
+{% block title %}
+{% if site_settings is defined %}
+ValidationError | Admin | {{ site_settings.title }}
+{% else %}
+ValidationError | Admin
+{% endif %}
+{% endblock %}
+
+{% block main %}
+<div class="row me-5">
+    <div class="col-xl-6">
+        <h2>Schema Validation Error (400)</h2>
+
+        {% if config.DEBUG %}
+        <p>A {{ error.__class__.__name__ }} occurred with the following message:</p>
+        <pre>{{ error }}</pre>
+
+        {% if '_schema' in error.messages %}
+        <h4>Schema validation errors:</h4>
+        <ul>
+        {% for message in error.messages['_schema'] %}
+        <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+        {% endif %}
+
+        {% for field, messages in error.messages.items() %}
+        {% if field != '_schema' %}
+        <h5>Field '{{ field }}' validation errors:</h5>
+        <ul>
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+        {% endif %}
+        {% endfor %}
+
+        <h4>Request ID:</h4>
+        <pre>{{ g.get('request_info').id|default('') }}</pre>
+
+        <h4>Data:</h4>
+        <pre>{{ error.data | pprint }}</pre>
+
+        {% else %}
+        <p>Something went wrong with your request to {{ request.path }}</p>
+        <p>{{ message }}</p>
+        <p>Request ID:</p>
+        <pre>{{ g.get('request_info').id|default('') }}</pre>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

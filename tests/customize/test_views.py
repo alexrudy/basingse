@@ -18,7 +18,8 @@ def logo_fixture(size: LogoSize) -> None:
     settings.logo.set_size(
         size,
         Attachment.from_file(
-            "tests/data/logo.png", content_type="image/x-icon" if size == LogoSize.FAVICON else "image/png"
+            "tests/data/logo.png",
+            content_type="image/x-icon" if size == LogoSize.FAVICON else "image/png",
         ),
     )
 

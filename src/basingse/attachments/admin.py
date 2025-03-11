@@ -50,7 +50,13 @@ class AttachmentAdmin(AdminView[M, I]):
         context["form"] = form
         context["field"] = field
 
-        return render_template(["admin/{self.name}/_attachment_field.html", "admin/attachment/_field.html"], **context)
+        return render_template(
+            [
+                "admin/{self.name}/_attachment_field.html",
+                "admin/attachment/_field.html",
+            ],
+            **context,
+        )
 
     @action(
         permission="edit",

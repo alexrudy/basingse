@@ -15,7 +15,11 @@ from basingse.auth.testing import Redirect
     [
         ("http://example.com", {"foo": "bar"}, "http://example.com?foo=bar"),
         ("http://example.com?foo=bar", {"foo": "baz"}, "http://example.com?foo=baz"),
-        ("http://example.com?foo=bar", {"foo": "baz", "bar": "baz"}, "http://example.com?foo=baz&bar=baz"),
+        (
+            "http://example.com?foo=bar",
+            {"foo": "baz", "bar": "baz"},
+            "http://example.com?foo=baz&bar=baz",
+        ),
         ("http://example.com", {"_anchor": "foo"}, "http://example.com#foo"),
     ],
     ids=["url", "replace", "add", "anchor"],
@@ -63,7 +67,14 @@ def test_wrap_redirect(app: Flask, url: str, next: str | None, location: str, co
         ("/admin/", {}, "/admin/"),
         ("http://example.com/", {}, "/"),
     ],
-    ids=["default", "default_home", "default_absolute", "default_parameters", "next", "next_external"],
+    ids=[
+        "default",
+        "default_home",
+        "default_absolute",
+        "default_parameters",
+        "next",
+        "next_external",
+    ],
 )
 def test_redirect_next(app: Flask, next: str | None, kwargs: dict[str, Any], expected: str) -> None:
     query = {}
@@ -79,9 +90,17 @@ def test_redirect_next(app: Flask, next: str | None, kwargs: dict[str, Any], exp
 @pytest.mark.parametrize(
     "endpoint, kwargs, expected",
     [
-        ("auth.login", {"next": "/"}, "/auth/login/?next=Ii8i.y40kSL_yxBf26FHWxsMMeYjYzf4"),
+        (
+            "auth.login",
+            {"next": "/"},
+            "/auth/login/?next=Ii8i.y40kSL_yxBf26FHWxsMMeYjYzf4",
+        ),
         ("auth.login", {}, "/auth/login/?next=Ii8_Ig.VQPHBpOwjGVq9kzUTt4R_0AYzWQ"),
-        ("auth.login", {"next": "home"}, "/auth/login/?next=ImhvbWUi.L4YBtc1AxyPYsrXzgjJTIPMLxSI"),
+        (
+            "auth.login",
+            {"next": "home"},
+            "/auth/login/?next=ImhvbWUi.L4YBtc1AxyPYsrXzgjJTIPMLxSI",
+        ),
         (
             "auth.login",
             {"next": "home", "foo": "bar"},

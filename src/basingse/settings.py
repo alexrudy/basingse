@@ -39,7 +39,6 @@ NAMESPACE = "BASINGSE"
 
 @dc.dataclass(frozen=True)
 class Context:
-
     def init_app(self, app: Flask) -> None:
         app.context_processor(context)
 
@@ -56,12 +55,10 @@ def context() -> dict[str, Any]:
 
 
 class Settings(Protocol):
-
     def init_app(self, app: Flask) -> None: ...
 
 
 class BaSingSe(Mapping[str, Settings]):
-
     EXTENSIONS: dict[str, Callable[[], Settings]] = {
         "autoimport": AutoImport,
         "assets": Assets,
@@ -134,7 +131,6 @@ class BaSingSe(Mapping[str, Settings]):
         return self
 
     def init_app(self, app: Flask) -> None:
-
         config = app.config.get_namespace(f"{NAMESPACE}_")
 
         svcs.init_app(app)
@@ -154,7 +150,6 @@ E = TypeVar("E", bound=Settings)
 def apply_config(config: dict[str, Any], name: str, extension: E) -> E:
     extension_config = config.get(name, {})
     if dc.is_dataclass(extension):
-
         for field in dc.fields(extension):
             key = f"{name}_{field.name}"
             if key in config:

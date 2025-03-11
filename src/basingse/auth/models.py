@@ -47,28 +47,28 @@ class RoleColumn(Column):
 
 
 class User(Model):
+    email: Mapped[str] = mapped_column(
+        String(),
+        nullable=False,
+        unique=True,
+        doc="User's email address",
+        info=orm.info(
+            schema=fields.Email(),
+            form=wtforms.fields.EmailField(validators=[EmailValidator(granular_message=True)]),
+            listview=ActionColumn("Email", name="email"),
+        ),
+    )
 
-    email: Mapped[str] = deferred(
+    password: Mapped[str | None] = deferred(
         mapped_column(
             String(),
-            nullable=False,
-            unique=True,
-            doc="User's email address",
+            nullable=True,
+            doc="Password",
             info=orm.info(
-                schema=fields.Email(),
-                form=wtforms.fields.EmailField(validators=[EmailValidator(granular_message=True)]),
-                listview=ActionColumn("Email", name="email"),
+                schema=orm.SchemaInfo(load_only=True),
+                form=wtforms.PasswordField("Password", validators=[wtforms.validators.DataRequired()]),
             ),
         )
-    )
-    password: Mapped[str | None] = mapped_column(
-        String(),
-        nullable=True,
-        doc="Password",
-        info=orm.info(
-            schema=orm.SchemaInfo(load_only=True),
-            form=wtforms.PasswordField("Password", validators=[wtforms.validators.DataRequired()]),
-        ),
     )
 
     active: Mapped[bool] = mapped_column(
@@ -90,7 +90,10 @@ class User(Model):
         info=orm.info(schema=orm.SchemaInfo(load_only=True)),
     )
     last_login: Mapped[dt.datetime | None] = mapped_column(
-        DateTime(), default=None, nullable=True, info=orm.info(schema=orm.SchemaInfo(dump_only=True))
+        DateTime(),
+        default=None,
+        nullable=True,
+        info=orm.info(schema=orm.SchemaInfo(dump_only=True)),
     )
     roles: Mapped[list[Role]] = relationship(
         "Role",
@@ -100,7 +103,10 @@ class User(Model):
         info=orm.info(
             schema=fields.Function(lambda obj: [role.name for role in obj.roles], dump_only=True),
             form=QueryCheckboxField(
-                "Roles", get_label="name", query_factory=get_query_roles, widget=BSListWidget(prefix_label=False)
+                "Roles",
+                get_label="name",
+                query_factory=get_query_roles,
+                widget=BSListWidget(prefix_label=False),
             ),
             listview=RoleColumn("Roles"),
         ),

@@ -18,19 +18,16 @@ class FakeFlask:
 
 @dc.dataclass
 class FakeModule:
-
     initialized: bool = False
 
 
 class FakeModuleWithInit(FakeModule):
-
     def init_app(self, app: Any) -> None:
         self.initialized = True
 
 
 @dc.dataclass
 class FakeSetup:
-
     modules: dict[str, FakeModule] = dc.field(default_factory=dict)
     _calls: list[dict[str, Any]] = dc.field(default_factory=list)
 
@@ -50,7 +47,6 @@ class FakeSetup:
 
 
 def test_no_modules(monkeypatch: pytest.MonkeyPatch) -> None:
-
     setup = FakeSetup()
     monkeypatch.setattr("basingse.autoimport.find_modules", setup.find_modules)
     monkeypatch.setattr("basingse.autoimport.import_string", setup.import_string)
@@ -66,7 +62,6 @@ def test_no_modules(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_imports(monkeypatch: pytest.MonkeyPatch) -> None:
-
     setup = FakeSetup()
     setup.modules["simple"] = FakeModule()
     setup.modules["with_init"] = FakeModuleWithInit()
@@ -88,7 +83,6 @@ def test_imports(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_imports_via_init_app(monkeypatch: pytest.MonkeyPatch) -> None:
-
     setup = FakeSetup()
     setup.modules["simple"] = FakeModule()
     setup.modules["with_init"] = FakeModuleWithInit()
@@ -136,10 +130,22 @@ def test_imports_avoid(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.mark.parametrize(
     "record, expected",
     [
-        (AutoImportModuleRecord(name="foo", skipped=False, initialized=False), "<foo imported>"),
-        (AutoImportModuleRecord(name="foo", skipped=True, initialized=False), "<foo skipped>"),
-        (AutoImportModuleRecord(name="foo", skipped=False, initialized=True), "<foo initialized>"),
-        (AutoImportModuleRecord(name="foo", skipped=True, initialized=True), "<foo skipped>"),
+        (
+            AutoImportModuleRecord(name="foo", skipped=False, initialized=False),
+            "<foo imported>",
+        ),
+        (
+            AutoImportModuleRecord(name="foo", skipped=True, initialized=False),
+            "<foo skipped>",
+        ),
+        (
+            AutoImportModuleRecord(name="foo", skipped=False, initialized=True),
+            "<foo initialized>",
+        ),
+        (
+            AutoImportModuleRecord(name="foo", skipped=True, initialized=True),
+            "<foo skipped>",
+        ),
     ],
 )
 def test_module_record_repr(record: AutoImportModuleRecord, expected: str) -> None:

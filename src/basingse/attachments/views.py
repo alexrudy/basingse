@@ -61,7 +61,6 @@ class AttachmentSchema(Schema):
 
 
 class AttachmentTable(Table):
-
     filename = ActionColumn("Filename")
     compression = Column("Compression")
     size = Column("Size")

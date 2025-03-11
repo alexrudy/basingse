@@ -17,7 +17,6 @@ class EditorJS:
     """Flask extension for EditorJS with Image support"""
 
     def __init__(self, app: Flask | None = None) -> None:
-
         if app is not None:
             self.init_app(app)
 

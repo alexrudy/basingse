@@ -51,7 +51,6 @@ class AttachmentField(FileField):
 
 
 class Unchanged:
-
     def __call__(self, form: FlaskForm, field: Field) -> Any:
         try:
             id = form.id.data
@@ -66,12 +65,16 @@ class Unchanged:
             return
 
         if field.object_data is not None and field.data != field.object_data:
-            log.debug("Field changed", field=field.name, data=field.data, object_data=field.object_data)
+            log.debug(
+                "Field changed",
+                field=field.name,
+                data=field.data,
+                object_data=field.object_data,
+            )
             raise ValidationError(f"Can't change {field.name} of an existing file.")
 
 
 class FileOrExistingAttachment:
-
     def __call__(self, form: FlaskForm, field: Field) -> Any:
         try:
             id = form.id.data
@@ -97,7 +100,9 @@ class AttachmentForm(FlaskForm):
     )
     digest = StringField("Digest", validators=[Unchanged()])
     digest_algorithm = SelectField(
-        label="Digest Algorithm", choices=sorted(hashlib.algorithms_available), validators=[Unchanged()]
+        label="Digest Algorithm",
+        choices=sorted(hashlib.algorithms_available),
+        validators=[Unchanged()],
     )
 
     attachment = FileField("Attachment", validators=[FileOrExistingAttachment()])

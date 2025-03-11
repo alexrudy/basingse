@@ -159,7 +159,6 @@ def session_reset_token(id: uuid.UUID) -> Any:
 @bp.route("/@me")
 @login_required
 def me() -> Any:
-
     if request.accept_mimetypes.best_match(["text/html", "application/json"]) == "application/json":
         schema = current_user.__schema__()()
         return jsonify(schema.dump(current_user))
@@ -178,7 +177,11 @@ def logout() -> Any:
 @bp.route("/testing/login/", methods=["POST"])
 def dev_login() -> Any:
     if not current_app.testing:  # pragma: nocover
-        log.warning("Test login attempted", testing=current_app.testing, env=current_app.config.get("ENV"))
+        log.warning(
+            "Test login attempted",
+            testing=current_app.testing,
+            env=current_app.config.get("ENV"),
+        )
         abort(401)
 
     if current_app.config.get("ENV", "").lower() == "production":  # pragma: nocover

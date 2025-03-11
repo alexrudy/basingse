@@ -98,7 +98,13 @@ def new_role(name: str, administrator: bool) -> None:
 
 @auth_cli.command()
 @click.option("--role", help="Role to grant permissions for", type=str, required=True, prompt=True)
-@click.option("--model", help="Model to grant permissions for", type=str, required=True, prompt=True)
+@click.option(
+    "--model",
+    help="Model to grant permissions for",
+    type=str,
+    required=True,
+    prompt=True,
+)
 @click.option(
     "--permission",
     help="Permission to grant",
@@ -120,7 +126,13 @@ def grant(role: str, model: str, permission: str) -> None:
 
 
 @auth_cli.command()
-@click.option("--email", type=str, help="Email for the user to activate", required=True, prompt=True)
+@click.option(
+    "--email",
+    type=str,
+    help="Email for the user to activate",
+    required=True,
+    prompt=True,
+)
 @click.option("--active/--inactive", default=True, help="Is this account active?", prompt=True)
 def activate(email: str, active: bool) -> None:
     """Activate or deactivate a user."""
@@ -179,7 +191,11 @@ def delete_user(email: str, confirm: bool) -> None:
 @auth_cli.command(name="list")
 @click.option("--active/--inactive", default=None, help="Filter by active/inactive status")
 @click.option("--role", type=str, help="Filter by role", required=False, prompt=False)
-@click.option("--administrator/--not-administrator", default=None, help="Filter by administrator status")
+@click.option(
+    "--administrator/--not-administrator",
+    default=None,
+    help="Filter by administrator status",
+)
 def list_users(active: bool | None, role: str | None, administrator: bool | None) -> None:
     """List users"""
     session = svcs.get(Session)
@@ -209,7 +225,13 @@ def list_users(active: bool | None, role: str | None, administrator: bool | None
 
 @auth_cli.command()
 @click.option("--email", type=str, help="Email for the admin user", prompt=True, required=True)
-@click.option("--password", help="Password for the admin user", prompt=True, hide_input=True, required=True)
+@click.option(
+    "--password",
+    help="Password for the admin user",
+    prompt=True,
+    hide_input=True,
+    required=True,
+)
 def init(email: str, password: str) -> None:
     """Initialize the authentication system with an administrator user"""
     session = svcs.get(Session)

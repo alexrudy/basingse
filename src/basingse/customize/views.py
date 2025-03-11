@@ -67,7 +67,6 @@ def no_homepage(settings: SiteSettings) -> Never:
 
 @bp.route("/")
 def home() -> IntoResponse:
-
     settings = svcs.get(SiteSettings)
     session = svcs.get(Session)
 
@@ -77,7 +76,6 @@ def home() -> IntoResponse:
     # coverage is not needed here because the homepage_id is a foreign key, so this should
     # never happen
     if (homepage := session.get(Page, settings.homepage_id)) is None:  # pragma: nocover
-
         # Check if the homepage is unpublished
         if (
             session.scalar(
@@ -86,11 +84,15 @@ def home() -> IntoResponse:
             is not None
         ):
             logger.warning(
-                "Homepage is set, but the ID points to an unpublished page", homepage_id=settings.homepage_id
+                "Homepage is set, but the ID points to an unpublished page",
+                homepage_id=settings.homepage_id,
             )
             abort(404)
 
-        logger.warning("Homepage is set, but the ID points to a missing page", homepage_id=settings.homepage_id)
+        logger.warning(
+            "Homepage is set, but the ID points to a missing page",
+            homepage_id=settings.homepage_id,
+        )
         abort(404)
 
     return render_template(["home.html", "page.html"], page=homepage)

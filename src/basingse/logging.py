@@ -1,5 +1,6 @@
 import dataclasses as dc
 import logging
+import sys
 from collections.abc import MutableMapping
 from typing import Any
 from typing import TypeVar
@@ -92,7 +93,7 @@ def configure_structlog() -> None:
         ],
         wrapper_class=structlog.make_filtering_bound_logger(logging.NOTSET),
         context_class=dict,
-        logger_factory=structlog.PrintLoggerFactory(),
+        logger_factory=structlog.PrintLoggerFactory(file=sys.stderr),
         cache_logger_on_first_use=False,
     )
 

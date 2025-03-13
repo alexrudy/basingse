@@ -46,6 +46,10 @@ def init_app(app: Flask) -> None:
         app.add_url_rule("/healthcheck", "health", health, methods=["GET"])
 
 
+def get_registry(app: Flask) -> Registry:
+    return app.extensions[_REGISTRY_KEY]
+
+
 def register_factory(
     app: Flask,
     svc_type: type,

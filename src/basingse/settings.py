@@ -25,6 +25,7 @@ from .logging import Logging
 from .markdown import MarkdownOptions
 from .models import Model
 from .models import SQLAlchemy
+from .opentelemetry.settings import OpenTelemetry
 from .page.settings import PageSettings
 from .utils.urls import rewrite_endpoint
 from .utils.urls import rewrite_update
@@ -69,6 +70,7 @@ class BaSingSe(Mapping[str, Settings]):
         "core": CoreSettings,
         "sqlalchemy": SQLAlchemy,
         "logging": Logging,
+        "opentelemetry": OpenTelemetry,
         "markdown": MarkdownOptions,
         "context": Context,
         "bootlace": Bootlace,

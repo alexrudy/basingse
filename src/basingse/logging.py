@@ -5,8 +5,8 @@ from typing import Any
 from typing import TypeVar
 
 import structlog
-from flask import current_app
 from flask import Flask
+from flask import current_app
 from flask import has_app_context
 from flask import request
 from flask import request_started

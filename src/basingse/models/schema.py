@@ -1,45 +1,140 @@
 import enum
 import functools
 import warnings
+from collections.abc import Sequence
+from collections.abc import Set
 from itertools import chain
-from typing import Any
-from typing import cast
 from typing import TYPE_CHECKING
+from typing import Any
 from typing import TypeVar
+from typing import cast
 
 import wtforms
 from bootlace.table import ColumnBase as Column
 from bootlace.table import Table
 from flask_wtf import FlaskForm
-from marshmallow import fields
-from marshmallow import post_load
 from marshmallow import Schema as BaseSchema
+from marshmallow import fields
+from marshmallow import post_dump
+from marshmallow import post_load
+from marshmallow import pre_load
+from marshmallow.schema import SchemaOpts
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import Session
+from sqlalchemy.util.typing import TypedDict
 
 from basingse import svcs
 from basingse.models import orm
-from basingse.models.info import _Attribute
 from basingse.models.info import Auto
 from basingse.models.info import ColumnInfo
 from basingse.models.info import FormInfo
 from basingse.models.info import OrmInfo
 from basingse.models.info import SchemaInfo
+from basingse.models.info import _Attribute
 
 if TYPE_CHECKING:
     from . import Model
 
 E = TypeVar("E", bound=enum.Enum)
+Keys = Sequence[str] | Set[str]
 
 
 class OrmInfoWarning(UserWarning):
     pass
 
 
-class Schema(BaseSchema):
-    def __init__(self, *, many: bool = False, instance: Any = None, **kwargs: Any) -> None:
+class Envelope(TypedDict):
+    name: str | None
+    plural: str | None
+
+
+class EnvelopeOptions(SchemaOpts):
+    envelope: str | None = None
+    plural_envelope: str | None = None
+
+
+class EnvelopeSchema(BaseSchema):
+    OPTIONS_CLASS = EnvelopeOptions
+
+    def __init__(
+        self,
+        *,
+        only: Keys | None = None,
+        exclude: Keys = (),
+        many: bool | None = None,
+        load_only: tuple[str, ...] = (),
+        dump_only: tuple[str, ...] = (),
+        partial: list[str] | None = None,
+        unknown: str | None = None,
+        context: dict[str, Any] | None = None,
+        envelope: Envelope | None = None,
+    ) -> None:
+        super().__init__(
+            only=only,
+            exclude=exclude,
+            many=many,
+            load_only=load_only,
+            dump_only=dump_only,
+            partial=partial,
+            unknown=unknown,
+            context=context,
+        )
+        self.envelope = envelope
+
+    def _get_envelope_key(self, many: bool) -> str | None:
+        if many:
+            if self.envelope and self.envelope["plural"]:
+                return self.envelope["plural"]
+            if self.opts.plural_envelope:
+                return self.opts.plural_envelope
+        else:
+            if self.envelope and self.envelope["name"]:
+                return self.envelope["name"]
+            if self.opts.envelope:
+                return self.opts.envelope
+
+    @pre_load(pass_many=True)
+    def unwrap_envelope(self, data: dict[str, Any], many: bool, **kwargs: Any) -> dict[str, Any]:
+        key = self._get_envelope_key(many)
+        if key and key in data:
+            return data[key]
+        return data
+
+    @post_dump(pass_many=True)
+    def wrap_envelope(self, data: dict[str, Any], many: bool, **kwargs: Any) -> dict[str, Any]:
+        key = self._get_envelope_key(many)
+        if key:
+            return {key: data}
+        return data
+
+
+class Schema(EnvelopeSchema):
+    def __init__(
+        self,
+        *,
+        instance: Any | None = None,
+        only: Keys | None = None,
+        exclude: Keys = (),
+        many: bool | None = None,
+        load_only: tuple[str, ...] = (),
+        dump_only: tuple[str, ...] = (),
+        partial: list[str] | None = None,
+        unknown: str | None = None,
+        context: dict[str, Any] | None = None,
+        envelope: Envelope | None = None,
+    ) -> None:
         self._orm_instance = instance
-        super().__init__(many=many, **kwargs)
+        super().__init__(
+            only=only,
+            exclude=exclude,
+            many=many,
+            load_only=load_only,
+            dump_only=dump_only,
+            partial=partial,
+            unknown=unknown,
+            envelope=envelope,
+            context=context,
+        )
 
     @post_load
     def make_instance(self, data: dict[str, Any], **kwargs: Any) -> Any:

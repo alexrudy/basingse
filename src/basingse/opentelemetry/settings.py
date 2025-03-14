@@ -4,6 +4,7 @@ import importlib.metadata
 from collections.abc import Callable
 from typing import Generic
 from typing import ParamSpec
+from typing import TYPE_CHECKING
 from typing import TypedDict
 from typing import TypeVar
 
@@ -28,6 +29,9 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from sqlalchemy.engine import Engine
 
 from basingse import svcs
+
+if TYPE_CHECKING:
+    from opentelemetry.sdk.trace.export import SpanExporter
 
 
 class MetricsSettings(TypedDict):
@@ -59,6 +63,8 @@ R = TypeVar("R")
 
 class Once(Generic[P, R]):
 
+    _result: R | NotInitialized
+
     def __init__(self, f: Callable[P, R]) -> None:
         self._inner = f
         functools.wraps(f)(self)
@@ -85,7 +91,7 @@ def init_trace_provider(resource: Resource, otlp: OTLPSettings | None = None, co
         provider.add_span_processor(span_processor)
 
     if otlp:
-        otlp_exporter = None
+        otlp_exporter: SpanExporter | None = None
         if otlp.get("http"):
             print(f"configuring with otlp/http {otlp['http']}")
             otlp_exporter = OTLPHTTPSpanExporter(endpoint=otlp["http"])
@@ -133,12 +139,14 @@ def attributes(app: Flask) -> dict[str, str]:
 @dc.dataclass
 class OpenTelemetry:
 
-    metrics: MetricsSettings = dc.field(default_factory=lambda: {"system": True, "console": False})
+    metrics: MetricsSettings = dc.field(default_factory=lambda: MetricsSettings({"system": True, "console": False}))
     tracing: TracingSettings = dc.field(
-        default_factory=lambda: {
-            "otlp": None,
-            "console": True,
-        }
+        default_factory=lambda: TracingSettings(
+            {
+                "otlp": None,
+                "console": True,
+            }
+        )
     )
 
     def init_app(self, app: Flask) -> None:

@@ -8,3 +8,8 @@ BCRYPT_LOG_ROUNDS = 4
 SERVER_NAME = "basingse.test"
 TESTING = True
 DEBUG = True
+
+BASINGSE_OPENTELEMETRY = {
+    "tracing": {"otlp": None, "console": False},
+    "metrics": {"system": False, "console": False},
+}

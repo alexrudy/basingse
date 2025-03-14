@@ -15,6 +15,7 @@ from flask_login import AnonymousUserMixin
 from flask_login import login_user
 from flask_login import logout_user
 from marshmallow import fields
+from opentelemetry import trace
 from sqlalchemy import Boolean
 from sqlalchemy import DateTime
 from sqlalchemy import select
@@ -39,11 +40,12 @@ from basingse.models import orm
 __all__ = ["User"]
 
 logger = structlog.get_logger(__name__)
+tracer = trace.get_tracer(__name__)
 
 
 class RoleColumn(Column):
-    def cell(self, item: Any) -> Any:
-        return ", ".join(role.name for role in getattr(item, self.attribute))
+    def cell(self, value: Any) -> Any:
+        return ", ".join(role.name for role in getattr(value, self.attribute))
 
 
 class User(Model):
@@ -182,6 +184,7 @@ class User(Model):
         return url_for("auth.login", token=token, _external=True)
 
     @classmethod
+    @tracer.start_as_current_span("login")
     def login(cls, session: Session, email: str, password: str) -> bool:
         user = session.execute(select(cls).where(cls.email == email).limit(1)).scalar_one_or_none()
         if user and user.compare_password(password):

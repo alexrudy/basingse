@@ -8,6 +8,7 @@ from flask import redirect
 from flask import request
 from flask import typing
 from flask_login import LoginManager
+from opentelemetry import trace
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from werkzeug.wrappers import Request
@@ -21,8 +22,10 @@ IntoResponse = typing.ResponseReturnValue
 
 log = structlog.get_logger(__name__)
 request_load = signal("request-load")
+tracer = trace.get_tracer(__name__)
 
 
+@tracer.start_as_current_span("load_auth")
 def load_auth(token: str) -> User | None:
     """Loads an Authentication from the DB for use with flask-login
 
@@ -34,6 +37,7 @@ def load_auth(token: str) -> User | None:
     return session.execute(select(User).where(User.token == token).limit(1)).scalar_one_or_none()
 
 
+@tracer.start_as_current_span("request_loader")
 def request_loader(request: Request) -> User | None:
     """Loads an Authentication from the DB for use with flask-login
 

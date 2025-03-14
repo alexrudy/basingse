@@ -90,6 +90,7 @@ class EnvelopeSchema(BaseSchema):
                 return self.envelope["name"]
             if self.opts.envelope:
                 return self.opts.envelope
+        return None
 
     @pre_load(pass_many=True)
     def unwrap_envelope(self, data: dict[str, Any], many: bool, **kwargs: Any) -> dict[str, Any]:

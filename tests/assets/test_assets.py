@@ -7,15 +7,15 @@ import pytest
 import werkzeug.exceptions
 from flask import Flask
 from flask.testing import FlaskClient
+from pytest_basingse.responses import NotFound
+from pytest_basingse.responses import Ok
+from pytest_basingse.responses import Response
 
 from basingse import svcs
 from basingse.assets import AssetManifest
 from basingse.assets import Assets
 from basingse.assets import check_dist
 from basingse.assets import parse_filename
-from basingse.testing.responses import NotFound
-from basingse.testing.responses import Ok
-from basingse.testing.responses import Response
 
 
 @pytest.fixture

@@ -2,10 +2,10 @@ import functools
 
 import pytest
 from flask import Flask
+from pytest_basingse.templates import TemplatesFixture
 from sqlalchemy.orm import Session
 
 from .auth.conftest import user  # noqa: F401
-from .conftest import TemplatesFixture
 from basingse import svcs
 from basingse.app import configure_app
 from basingse.auth.models import User

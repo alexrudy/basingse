@@ -7,6 +7,10 @@ from flask import Flask
 from flask import request
 from flask import Response
 from flask.testing import FlaskClient
+from pytest_basingse.responses import BadRequest
+from pytest_basingse.responses import NotFound
+from pytest_basingse.responses import Ok
+from pytest_basingse.responses import Redirect
 from sqlalchemy.orm import make_transient
 from sqlalchemy.orm import Session
 
@@ -15,10 +19,6 @@ from basingse import svcs
 from basingse.admin import views
 from basingse.admin.extension import Action
 from basingse.admin.extension import AdminView
-from basingse.testing.responses import BadRequest
-from basingse.testing.responses import NotFound
-from basingse.testing.responses import Ok
-from basingse.testing.responses import Redirect
 
 ONE = UUID(int=1)
 

@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 import yaml
 from flask import Flask
+from pytest_basingse.cli import Success
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -10,7 +11,6 @@ from .conftest import FakePost
 from basingse import svcs
 from basingse.admin.portal import import_all
 from basingse.admin.portal import Portal
-from basingse.testing.cli import Success
 
 
 @pytest.mark.usefixtures("adminview", "post")

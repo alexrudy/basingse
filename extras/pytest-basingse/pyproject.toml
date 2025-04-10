@@ -1,0 +1,18 @@
+[project]
+name = "pytest-basingse"
+version = "0.1.0"
+description = "Pytest Plugin for BaSingSe"
+readme = "README.md"
+authors = [{ name = "Alex Rudy", email = "opensource@alexrudy.net" }]
+requires-python = ">=3.11"
+dependencies = ["basingse", "pytest>=8.3.5"]
+
+[tool.uv.sources]
+basingse = { workspace = true }
+
+[project.entry-points.pytest11]
+basingse = "pytest_basingse.plugin"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

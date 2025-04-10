@@ -3,24 +3,15 @@
 # Set up the virtual environment based on the direnv convention
 # https://direnv.net/docs/legacy.html#virtualenv
 python_version := env('PYTHON_VERSION', "3.12")
-virtual_env :=  justfile_directory() / ".direnv/python-$python_version/bin"
+virtual_env :=  justfile_directory() / ".venv/bin"
 export PATH := virtual_env + ":" + env('PATH')
-export REQUIREMENTS_TXT := env('REQUIREMENTS', '')
 
-[private]
-prepare:
-    pip install --quiet --upgrade pip
-    pip install --quiet -r requirements/pip-tools.txt
 
-# lock the requirements files
-compile: prepare
-    pip-compile-multi --use-cache --backtracking
+
 
 # Install dependencies
-sync: prepare
-    pip-sync requirements/dev.txt
-    [[ -f requirements/local.txt ]] && pip install -r requirements/local.txt
-    tox -p auto --notest
+sync:
+    uv sync --all-packages --group dev
 
 alias install := sync
 alias develop := sync
@@ -31,7 +22,7 @@ isort:
 
 # Run tests
 test:
-    pytest -q -n 4 --cov-report=html
+    uv run --group testing pytest -q -n 4 --cov-report=html
 
 # Run all tests
 test-all:
@@ -46,18 +37,18 @@ lint:
 
 # Run mypy
 mypy:
-    mypy
+    uv run --group typing mypy
 
 # run the flask application
 serve:
-    flask run
+    uv run flask run
 
 alias s := serve
 alias run := serve
 
 # Build docs
 docs:
-    cd docs && make html
+    cd docs && uv run --group docs make html
 
 # Clean up
 clean:

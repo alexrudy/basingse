@@ -77,11 +77,32 @@ local_scheme = "no-local-version"
 path = "hatch_build.py"
 assets = "src/basingse/assets"
 
+[tool.uv.workspace]
+members = ["extras/*"]
+
 [tool.black]
 line-length = 120
 
 [tool.ruff]
 line-length = 120
+
+[tool.ruff.lint.isort]
+force-single-line = true
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "W", "B9"]
+ignore = [
+    # "B902",
+    "E203",
+    "E402",
+    "E501",
+    # "E704",
+    "E711",
+    "E712",
+    "E722",
+    # "W503",
+    # "W504",
+]
 
 [dependency-groups]
 dev = [
@@ -96,11 +117,7 @@ dev = [
     "twine>=6.1.0",
     "watchdog>=6.0.0",
 ]
-docs = [
-    "sphinx>=8.2.1",
-    "sphinx-automodapi>=0.18.0",
-    "sphinx-mdinclude>=0.6.2",
-]
+docs = ["sphinx>=8.2.1", "sphinx-automodapi>=0.18.0", "sphinx-mdinclude>=0.6.2"]
 testing = [
     "freezegun>=1.5.1",
     "pytest>=8.3.4",

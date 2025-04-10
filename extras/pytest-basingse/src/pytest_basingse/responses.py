@@ -50,8 +50,8 @@ class Ok(Response):
 
 
 def assertrepr_compare(config: Any, op: str, left: Any, right: Any) -> list[str] | None:  # pragma: nocover
-    expected = None
-    assertee = None
+    expected: Response | None = None
+    assertee: TestResponse | None = None
     if isinstance(left, Response) and isinstance(right, TestResponse):
         expected = left
         assertee = right
@@ -63,9 +63,6 @@ def assertrepr_compare(config: Any, op: str, left: Any, right: Any) -> list[str]
     if expected is None or assertee is None:
         return None
 
-    expected = left if isinstance(left, Response) else right
-    assertee = right if isinstance(left, Response) else left
-
     lines = []
 
     if op == "==":
@@ -76,7 +73,11 @@ def assertrepr_compare(config: Any, op: str, left: Any, right: Any) -> list[str]
         lines.append(f"Unsupported operator: {op}")
 
     lines.append(f"Expected: {expected!r}")
-    lines.append(f"Got: {assertee.status_code}")
+    lines.append(f"Got: {assertee.status_code} {assertee.status}")
     lines.extend(f"  {line}" for line in assertee.data.decode("utf-8").splitlines())
 
     return lines
+
+
+def pytest_assertrepr_compare(config: Any, op: str, left: Any, right: Any) -> list[str] | None:
+    return assertrepr_compare(config, op, left, right)

@@ -13,6 +13,8 @@ from flask_attachments import Attachment
 from flask_attachments import CompressionAlgorithm
 from flask_wtf.form import FlaskForm as Form
 from marshmallow import fields
+from pytest_basingse.responses import Ok
+from pytest_basingse.responses import Redirect
 from sqlalchemy.orm import make_transient
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
@@ -30,8 +32,6 @@ from basingse.attachments.admin import AttachmentAdmin
 from basingse.attachments.forms import AttachmentField
 from basingse.models import Model
 from basingse.models.schema import Schema as BaseSchema
-from basingse.testing.responses import Ok
-from basingse.testing.responses import Redirect
 
 logger = structlog.get_logger()
 

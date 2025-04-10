@@ -1,7 +1,7 @@
 from flask import Flask
+from pytest_basingse.cli import Success
 
 from basingse.customize.cli import init
-from basingse.testing.cli import Success
 
 
 def test_init(app: Flask) -> None:

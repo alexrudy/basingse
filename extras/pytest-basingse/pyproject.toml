@@ -1,11 +1,11 @@
 [project]
 name = "pytest-basingse"
-version = "0.1.0"
 description = "Pytest Plugin for BaSingSe"
 readme = "README.md"
 authors = [{ name = "Alex Rudy", email = "opensource@alexrudy.net" }]
 requires-python = ">=3.11"
 dependencies = ["basingse", "pytest>=8.3.5"]
+dynamic = ["version"]
 
 [tool.uv.sources]
 basingse = { workspace = true }
@@ -14,5 +14,15 @@ basingse = { workspace = true }
 basingse = "pytest_basingse.plugin"
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/pytest_basingse/_version.py"
+
+[tool.hatch.version.raw-options]
+local_scheme = "no-local-version"
+root = "../.."

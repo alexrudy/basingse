@@ -96,9 +96,6 @@ def configure_structlog() -> None:
         cache_logger_on_first_use=False,
     )
 
-    wkz = logging.getLogger("werkzeug")
-    wkz.addHandler(logging.NullHandler())
-
     install(show_locals=True)
 
 
@@ -123,6 +120,10 @@ class Logging:
         user_loaded_from_cookie.connect(bind_user_details, app)
         if app.config.get("LOG_QUERIES", False):
             setup_query_logging()
+
+        if not app.config.get("DEBUG", False) and not app.config.get("LOG_WERKZEUG", True):
+            wkz = logging.getLogger("werkzeug")
+            wkz.addHandler(logging.NullHandler())
 
 
 def log_queries(

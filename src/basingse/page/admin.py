@@ -25,7 +25,6 @@ from basingse.admin.views import portal
 from basingse.auth.extension import get_extension as get_auth_extension
 from basingse.auth.models import User
 
-
 logger = structlog.get_logger()
 
 
@@ -38,11 +37,11 @@ class PageAdmin(AdminView, blueprint=portal):
 
     def query(self) -> Any:
         session = svcs.get(Session)
-        return session.scalars(select(Page).order_by(Page.slug).execution_options(include_upublished=True))
+        return session.scalars(select(Page).order_by(Page.slug).execution_options(include_unpublished=True))
 
     def single(self, id: str) -> Any:
         session = svcs.get(Session)
-        return session.scalars(select(Page).where(Page.id == id).execution_options(include_upublished=True))
+        return session.scalar(select(Page).where(Page.id == id).execution_options(include_unpublished=True))
 
 
 F = TypeVar("F", bound=Callable[..., ResponseReturnValue])

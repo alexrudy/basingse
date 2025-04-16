@@ -190,7 +190,7 @@ class AdminManager(Generic[M]):
     model: type[M]
 
 
-@attrs.define(init=False)
+@attrs.define(init=False, repr=False)
 class ViewKey:
     name: str = attrs.field()
     argtype: str = attrs.field()
@@ -206,6 +206,9 @@ class ViewKey:
             self.name = m.group(2)
         else:
             raise ValueError(f"Unable to parse URL key {key}")
+
+    def __repr__(self) -> str:
+        return f"<{self.argtype}:{self.name}>"
 
 
 def request_accepts_json() -> bool:
@@ -566,11 +569,16 @@ class AdminView(View, Generic[M, I]):
             # No endpoint - can't inject identity
             return
 
+        if cls.name not in request.endpoint:
+            # Not our endpoint - don't inject.
+            return
+
         key = cls._bss_key.name
 
-        if request.view_args and (id := request.view_args.get(key, None)) is not None:
+        if request.view_args and (id := request.view_args.get(key, None)) is not None and cls.name in endpoint:
             if current_app.url_map.is_endpoint_expecting(endpoint, key):
-                values[key] = id
+                log.debug(f"{endpoint}/{cls.name}")
+                values.setdefault(key, id)
 
     # Import/Export CLI commands
 

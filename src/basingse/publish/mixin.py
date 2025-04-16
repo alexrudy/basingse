@@ -3,7 +3,8 @@ import enum
 
 import marshmallow.fields
 import pytz
-import wtforms.fields
+import structlog
+import wtforms
 from sqlalchemy import case
 from sqlalchemy import DateTime
 from sqlalchemy import event
@@ -17,6 +18,8 @@ from sqlalchemy.orm import with_loader_criteria
 from sqlalchemy.sql.expression import ColumnElement
 
 from basingse.models import orm
+
+log = structlog.get_logger(__name__)
 
 
 class Status(enum.Enum):
@@ -41,9 +44,11 @@ class PublishMixin:
                 execute_state.statement = execute_state.statement.options(
                     with_loader_criteria(cls, lambda cls: cls.is_published, include_aliases=True)
                 )
+            else:
+                log.debug("Query without published filter")
 
     @hybrid_property
-    @orm.annotate(schema=marshmallow.fields.DateTime())
+    @orm.annotate(schema=marshmallow.fields.DateTime(), form=wtforms.DateTimeField())
     def published_at(self) -> dt.datetime | None:
         return pytz.utc.localize(self._published_at) if self._published_at is not None else None
 
@@ -69,7 +74,8 @@ class PublishMixin:
     def status(self) -> Status:
         if self.published_at is None:
             return Status.DRAFT
-        now = pytz.utc.localize(dt.datetime.now(pytz.UTC))
+
+        now = dt.datetime.now(pytz.UTC)
         if self.published_at > now:
             return Status.SCHEDULED
         return Status.PUBLISHED
@@ -83,7 +89,7 @@ class PublishMixin:
         )
 
     @hybrid_property
-    @orm.annotate(form=wtforms.fields.BooleanField("Publish"))
+    @orm.annotate(form=wtforms.BooleanField("Publish"))
     def is_published(self) -> bool:
         # TODO: Support showing draft posts when logged in
         return self.status == Status.PUBLISHED

@@ -1,3 +1,4 @@
+import contextlib
 import os.path
 import re
 from collections.abc import Callable
@@ -37,7 +38,9 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import BadRequestKeyError
 from werkzeug.exceptions import HTTPException
+from wtforms.fields import FieldList
 
 from basingse.admin.portal import Portal
 from basingse.admin.portal import PortalMenuItem
@@ -126,6 +129,14 @@ def handle_http_exception(exc: HTTPException) -> IntoResponse:
     if request.accept_mimetypes.best_match(["text/html", "application/json"]) == "application/json":
         return jsonify(error=str(exc)), getattr(exc, "code", 400)
     return render_template(["admin/400.html", "admin/bad_request.html"], error=exc), exc.code or 400
+
+
+@contextlib.contextmanager
+def transform_key_error():
+    try:
+        yield
+    except KeyError as err:
+        raise BadRequestKeyError(*err.args) from err
 
 
 def register_error_handlers(scaffold: Flask | Blueprint) -> None:
@@ -297,12 +308,11 @@ class AdminView(View, Generic[M, I]):
             abort(400, description="No action specified")
 
         self.logger.debug("Dispatching", action=action, **kwargs)
-        response = self.dispatch_action(action=action, **kwargs)
         if request.headers.get("HX-Request"):
             if (partial := request.args.get("partial")) is not None:
                 self.logger.debug("Dispatching for partial", partial=partial)
                 return self.dispatch_action(action=partial, **kwargs)
-        return response
+        return self.dispatch_action(action=action, **kwargs)
 
     def dispatch_action(self, action: str, **kwargs: Any) -> IntoResponse:
         method = self.actions.get(action)
@@ -432,6 +442,54 @@ class AdminView(View, Generic[M, I]):
             return self.redirect(".list", item=obj)
         return self.render("edit", item=obj, context={"form": self.form(obj=obj)})
 
+    @action(name="field-list", permission="edit", url="/<key>/edit/field-list/", methods=["GET", "DELETE"])
+    def form_field_list(self, id: I) -> IntoResponse:
+        field_name = request.args["field"]
+        action = request.args.get("list", "append")
+        obj = self.single(id=id)
+        form = self.form(obj=obj)
+        with transform_key_error():
+            field = form
+            for part in field_name.split("-"):
+                try:
+                    part = int(part)
+                except ValueError:
+                    pass
+                field = field[part]  # type: ignore
+
+        if not isinstance(field, FieldList):
+            raise BadRequest(f"FieldList requested, but found {type(field)!r}")
+
+        if action == "append":
+            field.append_entry()
+            return self.render_template("field_list", item=obj, context={"field": field})
+        elif action == "delete":
+            target = request.headers["HX-target"]
+            entries = field.entries[:]
+            field.entries.clear()
+            for entry in entries:
+                if entry.id == target:
+                    continue
+                else:
+                    field.append_entry(entry.data)
+            return self.render_template("field", item=obj, context={"field": field})
+        raise BadRequest(f"field-list requires a known action, got {action}")
+
+    @action(name="field", permission="edit", url="/<key>/edit/field/", methods=["GET", "POST", "DELETE"])
+    def form_field(self, id: I) -> IntoResponse:
+        field_name = request.args["field"]
+        obj = self.single(id=id)
+        form = self.form(obj=obj)
+        with transform_key_error():
+            field = form
+            for part in field_name.split("-"):
+                try:
+                    part = int(part)
+                except ValueError:
+                    pass
+                field = field[part]  # type: ignore
+        return self.render_template("field", item=obj, context={"field": field})
+
     def redirect(self, endpoint: str, *, item: M) -> IntoResponse:
         if request_accepts_json():
             return jsonify(self.schema().dump(item))
@@ -550,7 +608,7 @@ class AdminView(View, Generic[M, I]):
         )
 
         cls.bp.add_url_rule(
-            "/do/<action>/",
+            f"/{key}/do/<action>/",
             view_func=cls.as_view("do"),
             methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
         )
@@ -577,7 +635,6 @@ class AdminView(View, Generic[M, I]):
 
         if request.view_args and (id := request.view_args.get(key, None)) is not None and cls.name in endpoint:
             if current_app.url_map.is_endpoint_expecting(endpoint, key):
-                log.debug(f"{endpoint}/{cls.name}")
                 values.setdefault(key, id)
 
     # Import/Export CLI commands

@@ -12,7 +12,9 @@ interface HTMXEvent extends Event {
 
 export function connect() {
     htmx.onLoad(function (content: Element) {
-        const csrf_token = get_csrf();
+        const csrf_token = (
+            content.querySelector('meta[name="csrf"]') as HTMLMetaElement
+        )?.content;
         if (!csrf_token) {
             console.error("No CSRF token found");
             return;

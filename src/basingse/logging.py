@@ -90,9 +90,7 @@ def configure_structlog() -> None:
             structlog.processors.TimeStamper(),
             structlog.dev.ConsoleRenderer(),
         ],
-        wrapper_class=structlog.make_filtering_bound_logger(logging.NOTSET),
         context_class=dict,
-        logger_factory=structlog.PrintLoggerFactory(),
         cache_logger_on_first_use=False,
     )
 

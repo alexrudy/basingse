@@ -18,6 +18,7 @@ from bootlace.table.base import Table
 from marshmallow import fields
 from marshmallow.utils import _Missing as Missing
 from marshmallow.utils import missing
+from sqlalchemy.ext.associationproxy import AssociationProxy
 from sqlalchemy.types import TypeEngine
 
 #: Type alias for the python type of a SQLAlchemy attribute.
@@ -60,7 +61,7 @@ class SchemaInfo(Generic[T]):
         elif isinstance(attribute, orm.relationships.RelationshipProperty):
             return self._relationship_field(attribute)
         else:
-            raise ValueError(f"Unable to determine the type of {attribute!r}")
+            raise ValueError(f"Unable to determine the type of {attribute!r} ({name})")
 
     def _relationship_field(self, relationship: orm.relationships.RelationshipProperty) -> fields.Field:
         if relationship.uselist:
@@ -126,8 +127,10 @@ class FormInfo:
         elif isinstance(column, orm.relationships.RelationshipProperty):
             return self._field_for_relationship(column)
         elif isinstance(column, Detached):
-            return self._field_for_detached(column)
-        raise ValueError(f"Unable to determine the type of {column!r}")
+            raise ValueError("Detached fields must be concrete, .auto() is not supported.")
+        elif isinstance(column, AssociationProxy):
+            raise ValueError("AssociationProxy fields must be concrete, .auto() is not supported.")
+        raise ValueError(f"Unable to determine the type of {column!r}  ({name})")
 
     def _field_for_relationship(self, relationship: orm.relationships.RelationshipProperty) -> wtforms.Field:
         if relationship.uselist:
@@ -142,9 +145,6 @@ class FormInfo:
                 description=self.description or "",
                 validators=self.validators,
             )
-
-    def _field_for_detached(self, detached: Detached) -> wtforms.Field:
-        raise ValueError("Detached fields must be concrete, not abstract")
 
     def _field_for_column(self, column: sa.Column | sa.sql.elements.KeyedColumnElement) -> wtforms.Field:
         fcls = self._get_field_for_type(column.type)
@@ -198,14 +198,11 @@ class ColumnInfo:
         elif isinstance(column, orm.relationships.RelationshipProperty):
             return self._field_for_relationship(column)
         elif isinstance(column, Detached):
-            return self._field_for_detached(column)
-        raise ValueError(f"Unable to determine the type of {column!r}")
+            raise ValueError("Detached fields must be concrete, .auto() is not supported.")
+        raise ValueError(f"Unable to determine the type of {column!r} ({name})")
 
     def _field_for_relationship(self, relationship: orm.relationships.RelationshipProperty) -> Column:
         raise NotImplementedError("Relationships are not supported in list views")
-
-    def _field_for_detached(self, detached: Detached) -> Column:
-        raise ValueError("Detached fields must be concrete, not abstract")
 
     def _field_for_column(self, column: sa.Column | sa.sql.elements.KeyedColumnElement) -> Column:
         fcls = self._get_field_for_type(column.type)

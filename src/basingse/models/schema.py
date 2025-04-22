@@ -1,6 +1,7 @@
 import enum
 import functools
 import warnings
+from itertools import chain
 from typing import Any
 from typing import cast
 from typing import TYPE_CHECKING
@@ -13,6 +14,7 @@ from flask_wtf import FlaskForm
 from marshmallow import fields
 from marshmallow import post_load
 from marshmallow import Schema as BaseSchema
+from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import Session
 
 from basingse import svcs
@@ -84,39 +86,53 @@ def collect_attributes(
             if value := info.get(key):
                 attrs[name] = process_info(name, None, value, info_type)  # type: ignore[arg-type]
 
-    for name, column in model.__table__.columns.items():
-        if isinstance(column.info, Auto):
-            column.info = orm.info(schema=SchemaInfo(), form=FormInfo(), listview=ColumnInfo())  # type: ignore
+    for mapped_property in chain(inspect(model).iterate_properties, inspect(model).columns.values()):
+        name = mapped_property.key
 
-        if not isinstance(column.info, (dict, OrmInfo)):
+        if isinstance(mapped_property.info, Auto):
+            mapped_property.info = orm.info(schema=SchemaInfo(), form=FormInfo(), listview=ColumnInfo())
+
+        if not isinstance(mapped_property.info, (dict, OrmInfo)):
             warnings.warn(
                 OrmInfoWarning(
-                    f"Unexpected info for {model.__name__}.{name}: .info is {column.info!r} (type {type(column.info)})"
+                    f"Unexpected info for {model.__name__}.{name}: "
+                    f".info is {mapped_property.info!r} (type {type(mapped_property.info)})"
                 ),
                 stacklevel=2,
             )
 
             continue
 
-        if value := column.info.get(key):
-            attrs[name] = process_info(name, column, cast(A, value), info_type)
+        if value := mapped_property.info.get(key):
+            attrs[name] = process_info(name, mapped_property, cast(A, value), info_type)
 
-    for name, relationship in model.__mapper__.relationships.items():
-        if isinstance(relationship.info, Auto):
-            relationship.info = orm.info(schema=SchemaInfo(), form=FormInfo(), listview=ColumnInfo())
+    for name in list(vars(model)):
+        if name in attrs:
+            continue
 
-        if not isinstance(relationship.info, (dict, OrmInfo)):
+        try:
+            other_property = getattr(model, name)
+        except AttributeError:
+            continue
+
+        try:
+            info = other_property.info
+        except AttributeError:
+            continue
+
+        if isinstance(info, Auto):
+            other_property.info = info = orm.info(schema=SchemaInfo(), form=FormInfo(), listview=ColumnInfo())
+
+        if not isinstance(info, (dict, OrmInfo)):
             warnings.warn(
-                OrmInfoWarning(
-                    f"Unexpected info for {model.__name__}.{name}: .info is {relationship.info!r} (type {type(relationship.info)})"
-                ),
+                OrmInfoWarning(f"Unexpected info for {model.__name__}.{name}: .info is {info!r} (type {type(info)})"),
                 stacklevel=2,
             )
 
             continue
 
-        if value := relationship.info.get(key):
-            attrs[name] = process_info(name, relationship, value, info_type)
+        if value := info.get(key):
+            attrs[name] = process_info(name, other_property, cast(A, value), info_type)
 
     reordered = {}
     for cls in reversed(model.__mro__):

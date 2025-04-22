@@ -40,7 +40,6 @@ from . import orm
 from . import schema
 from basingse import svcs
 
-
 CONVENTION = {
     "ix": "ix_%(column_0_label)s",
     "uq": "uq_%(table_name)s_%(column_0_name)s",
@@ -59,11 +58,7 @@ def tablename(name: str) -> str:
         if c.isupper():
             word += "_"
         word += c.lower()
-    if word.endswith("y"):
-        return word[:-1] + "ies"
-    if word.endswith("s"):
-        return word
-    return word + "s"
+    return word
 
 
 class Base(DeclarativeBase):

@@ -153,7 +153,7 @@ class SiteSettings(Model):
         info=orm.info(schema=orm.auto(), form=orm.auto(), listview=CheckColumn("Active")),
     )
 
-    logo_id: Mapped[UUID] = mapped_column(Uuid(), ForeignKey("logos.id", ondelete="SET NULL"), nullable=True)
+    logo_id: Mapped[UUID] = mapped_column(Uuid(), ForeignKey("logo.id", ondelete="SET NULL"), nullable=True)
     logo = relationship(
         Logo,
         uselist=False,
@@ -170,7 +170,7 @@ class SiteSettings(Model):
     )
     subtitle: Mapped[str] = mapped_column(String(), nullable=True, doc="Site subtitle")
 
-    homepage_id: Mapped[UUID] = mapped_column(Uuid(), ForeignKey("pages.id"), nullable=True)
+    homepage_id: Mapped[UUID] = mapped_column(Uuid(), ForeignKey("page.id"), nullable=True)
     homepage: Mapped["Page"] = relationship(
         "basingse.page.models.page.Page",
         uselist=False,
@@ -178,7 +178,7 @@ class SiteSettings(Model):
         lazy="selectin",
     )
 
-    contactpage_id: Mapped[UUID] = mapped_column(Uuid(), ForeignKey("pages.id"), nullable=True)
+    contactpage_id: Mapped[UUID] = mapped_column(Uuid(), ForeignKey("page.id"), nullable=True)
     contactpage: Mapped["Page"] = relationship(
         "basingse.page.models.page.Page",
         uselist=False,

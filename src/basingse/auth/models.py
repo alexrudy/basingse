@@ -97,7 +97,7 @@ class User(Model):
     )
     roles: Mapped[list[Role]] = relationship(
         "Role",
-        secondary="role_grants",
+        secondary="role_grant",
         back_populates="users",
         lazy="selectin",
         info=orm.info(

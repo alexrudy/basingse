@@ -34,7 +34,6 @@ from basingse import svcs
 from basingse.models import Model
 from basingse.models import orm
 
-
 if TYPE_CHECKING:
     from .models import User
 
@@ -135,7 +134,7 @@ class PermissionGrant(Model):
         def __init__(self, **kwargs):  # type: ignore
             ...
 
-    role_id: Mapped[uuid.UUID] = mapped_column(Uuid(), ForeignKey("roles.id"), nullable=False, doc="Role ID")
+    role_id: Mapped[uuid.UUID] = mapped_column(Uuid(), ForeignKey("role.id"), nullable=False, doc="Role ID")
     role: Mapped["Role"] = relationship(
         "Role",
         back_populates="grants",
@@ -201,7 +200,7 @@ class Role(Model):
         creator=PermissionGrant.from_permission,
     )
 
-    users: Mapped[list["User"]] = relationship("User", secondary="role_grants", back_populates="roles", lazy="selectin")
+    users: Mapped[list["User"]] = relationship("User", secondary="role_grant", back_populates="roles", lazy="selectin")
 
     def __repr__(self) -> str:
         if self.administrator:
@@ -238,8 +237,8 @@ class RoleGrant(Model):
 
         def __init__(self, *, user_id: uuid.UUID, role_id: uuid.UUID) -> None: ...
 
-    user_id: Mapped[uuid.UUID] = mapped_column(Uuid(), ForeignKey("users.id"), nullable=False, doc="User ID")
-    role_id: Mapped[uuid.UUID] = mapped_column(Uuid(), ForeignKey("roles.id"), nullable=False, doc="Role ID")
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid(), ForeignKey("user.id"), nullable=False, doc="User ID")
+    role_id: Mapped[uuid.UUID] = mapped_column(Uuid(), ForeignKey("role.id"), nullable=False, doc="Role ID")
 
     def __repr__(self) -> str:
         return f"<RoleGrant user={self.user_id} role={self.role_id}>"

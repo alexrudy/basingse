@@ -21,6 +21,7 @@ from flask import send_file
 from flask import url_for
 from flask.typing import ResponseReturnValue
 from markupsafe import Markup
+from opentelemetry import trace
 from werkzeug.exceptions import NotFound
 
 from . import svcs
@@ -38,6 +39,7 @@ class AssetLogger(structlog.BoundLogger):
 
 
 logger = structlog.wrap_logger(structlog.get_logger(), wrapper_class=AssetLogger)
+tracer = trace.get_tracer(__name__)
 
 _ASSETS_EXTENSION_KEY = "basingse.assets"
 _ASSETS_BUST_CACHE_KEY = "ASSETS_BUST_CACHE"
@@ -213,37 +215,38 @@ class AssetManifest(Mapping[str, Asset]):
         filename : str
             The name of the asset to serve.
         """
-        if not current_app.config[_ASSETS_BUST_CACHE_KEY]:
-            try:
-                filename = self.manifest[filename]
-            except KeyError:
-                if filename in self.manifest.values():
-                    pass
+        with tracer.start_as_current_span("asset.serve", attributes={"asset.filename": filename}):
+            if not current_app.config[_ASSETS_BUST_CACHE_KEY]:
+                try:
+                    filename = self.manifest[filename]
+                except KeyError:
+                    if filename in self.manifest.values():
+                        pass
+                    else:
+                        logger.debug(
+                            "Asset not found in manifest",
+                            filename=filename,
+                            manifest=self.manifest,
+                        )
+                        raise
+            elif filename not in self.manifest.values():
+                if filename in self.manifest:
+                    filename = self.manifest[filename]
                 else:
                     logger.debug(
                         "Asset not found in manifest",
                         filename=filename,
                         manifest=self.manifest,
                     )
-                    raise
-        elif filename not in self.manifest.values():
-            if filename in self.manifest:
-                filename = self.manifest[filename]
-            else:
-                logger.debug(
-                    "Asset not found in manifest",
-                    filename=filename,
-                    manifest=self.manifest,
-                )
-                raise KeyError(filename)
+                    raise KeyError(filename)
 
-        conditional = current_app.config[_ASSETS_BUST_CACHE_KEY]
+            conditional = current_app.config[_ASSETS_BUST_CACHE_KEY]
 
-        asset = self.path(filename)
+            asset = self.path(filename)
 
-        if not asset.is_file():
-            logger.debug("Asset not found at location", filename=filename, location=self.location)
-            raise FileNotFoundError(filename)
+            if not asset.is_file():
+                logger.debug("Asset not found at location", filename=filename, location=self.location)
+                raise FileNotFoundError(filename)
 
         return send_file(
             cast(BinaryIO, asset.open("rb")),

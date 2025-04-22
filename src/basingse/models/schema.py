@@ -4,20 +4,20 @@ import warnings
 from collections.abc import Sequence
 from collections.abc import Set
 from itertools import chain
-from typing import TYPE_CHECKING
 from typing import Any
-from typing import TypeVar
 from typing import cast
+from typing import TYPE_CHECKING
+from typing import TypeVar
 
 import wtforms
 from bootlace.table import ColumnBase as Column
 from bootlace.table import Table
 from flask_wtf import FlaskForm
-from marshmallow import Schema as BaseSchema
 from marshmallow import fields
 from marshmallow import post_dump
 from marshmallow import post_load
 from marshmallow import pre_load
+from marshmallow import Schema as BaseSchema
 from marshmallow.schema import SchemaOpts
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import Session
@@ -25,12 +25,12 @@ from sqlalchemy.util.typing import TypedDict
 
 from basingse import svcs
 from basingse.models import orm
+from basingse.models.info import _Attribute
 from basingse.models.info import Auto
 from basingse.models.info import ColumnInfo
 from basingse.models.info import FormInfo
 from basingse.models.info import OrmInfo
 from basingse.models.info import SchemaInfo
-from basingse.models.info import _Attribute
 
 if TYPE_CHECKING:
     from . import Model
@@ -92,6 +92,8 @@ class EnvelopeSchema(BaseSchema):
                 return self.envelope["name"]
             if self.opts.envelope:
                 return self.opts.envelope
+
+        return None
 
     @pre_load(pass_many=True)
     def unwrap_envelope(self, data: dict[str, Any], many: bool, **kwargs: Any) -> dict[str, Any]:

@@ -7,6 +7,7 @@ from typing import Any
 from typing import cast
 from typing import overload
 from typing import Protocol
+from typing import Self
 from typing import TYPE_CHECKING
 from typing import TypeVar
 
@@ -17,6 +18,7 @@ from flask import request
 from flask.typing import ResponseReturnValue
 from flask.typing import RouteCallable
 from flask_login import current_user
+from opentelemetry import trace
 from sqlalchemy import Boolean
 from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
@@ -38,6 +40,7 @@ if TYPE_CHECKING:
     from .models import User
 
 log = structlog.get_logger(__name__)
+tracer = trace.get_tracer(__name__)
 
 
 class Action(enum.Enum):
@@ -82,31 +85,31 @@ class Permission:
 
 
 R = TypeVar("R", covariant=True)
-S = TypeVar("S", covariant=True)
+S = TypeVar("S")
 
 
-class Permissionable(Protocol[S, R]):  # pragma: nocover
+class Permissionable(Protocol[R]):  # pragma: nocover
     @overload
-    def __call__(self: S, permission: Permission) -> R: ...
-
-    @overload
-    def __call__(self: S, permission: str) -> R: ...
+    def __call__(self: Self, permission: Permission) -> R: ...
 
     @overload
-    def __call__(self: S, permission: tuple[str, str | Action]) -> R: ...
+    def __call__(self: Self, permission: str) -> R: ...
 
     @overload
-    def __call__(self: S, model: str, action: str | Action, /) -> R: ...
+    def __call__(self: Self, permission: tuple[str, str | Action]) -> R: ...
 
-    def __call__(self: S, permission: Any, action: str | Action | None = None) -> Any:
+    @overload
+    def __call__(self: Self, model: str, action: str | Action, /) -> R: ...
+
+    def __call__(self: Self, permission: Any, action: str | Action | None = None) -> Any:
         pass
 
 
-def permissionable(func: Callable[[S, Permission], R]) -> Permissionable[S, R]:
+def permissionable(func: Callable[[S, Permission], R]) -> Permissionable[R]:
     """Decorator to make a function permissionable. This allows the function to accept a permission as the first argument."""
 
     @wraps(func)
-    def inner_permissionable(self: Any, permission: Any, action: str | Action | None = None) -> R:
+    def inner_permissionable(self: S, permission: Any, action: str | Action | None = None) -> R:
         if action is not None:
             permission = Permission(permission, action)
         elif not isinstance(permission, Permission):
@@ -114,7 +117,7 @@ def permissionable(func: Callable[[S, Permission], R]) -> Permissionable[S, R]:
 
         return func(self, permission)
 
-    return cast(Permissionable[S, R], inner_permissionable)
+    return cast(Permissionable[R], inner_permissionable)
 
 
 class PermissionGrant(Model):
@@ -190,7 +193,6 @@ class Role(Model):
         "PermissionGrant",
         back_populates="role",
         cascade="all, delete-orphan",
-        lazy="selectin",
         collection_class=set,
     )
 
@@ -287,6 +289,7 @@ def require_permission(
     return wrapper
 
 
+@tracer.start_as_current_span("check_permissions")
 def check_permissions(permission: Any, action: Any = None) -> bool:
     """Check if the current user has a permission"""
     if action is not None:

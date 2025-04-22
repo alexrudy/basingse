@@ -8,6 +8,9 @@ from markdown_it.renderer import RendererHTML
 from markupsafe import Markup
 from mdit_py_plugins.footnote import footnote_plugin
 from mdit_py_plugins.front_matter import front_matter_plugin
+from opentelemetry import trace
+
+tracer = trace.get_tracer(__name__)
 
 
 class BootstrapRender(RendererHTML):
@@ -18,6 +21,7 @@ class BootstrapRender(RendererHTML):
 md = MarkdownIt(renderer_cls=BootstrapRender).use(front_matter_plugin).use(footnote_plugin)
 
 
+@tracer.start_as_current_span("markdown.render")
 def render(text: str | None) -> Markup | Undefined:
     if text is None:
         return Undefined()

@@ -61,15 +61,7 @@ def tablename(name: str) -> str:
     return word
 
 
-class Base(DeclarativeBase):
-    __abstract__ = True
-
-    metadata: ClassVar[MetaData] = MetaData(naming_convention=CONVENTION)
-
-    @declared_attr.directive
-    def __tablename__(cls) -> str:  # noqa: B902
-        return tablename(cls.__name__)
-
+class OrmInfo:
     @classmethod
     def __info__(cls) -> dict[str, info.OrmInfo]:
         detected = {}
@@ -97,6 +89,16 @@ class Base(DeclarativeBase):
         return detected
 
 
+class Base(DeclarativeBase, OrmInfo):
+    __abstract__ = True
+
+    metadata: ClassVar[MetaData] = MetaData(naming_convention=CONVENTION)
+
+    @declared_attr.directive
+    def __tablename__(cls) -> str:  # noqa: B902
+        return tablename(cls.__name__)
+
+
 class TimestampsMixin:
     __abstract__ = True
 
@@ -113,18 +115,8 @@ class TimestampsMixin:
     )
 
 
-class Model(TimestampsMixin, Base):
+class OrmMixin:
     __abstract__ = True
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(),
-        primary_key=True,
-        default=uuid.uuid4,
-        info=orm.info(schema=info.SchemaInfo(required=False)),
-    )
-
-    def __repr__(self) -> str:
-        return f"<{self.__class__.__name__} id={self.id}>"
 
     @classmethod
     def __schema__(cls) -> type[schema.Schema]:
@@ -137,6 +129,20 @@ class Model(TimestampsMixin, Base):
     @classmethod
     def __form__(cls) -> type[Form]:
         return schema.build_model_form(cls)
+
+
+class Model(TimestampsMixin, OrmMixin, Base):
+    __abstract__ = True
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(),
+        primary_key=True,
+        default=uuid.uuid4,
+        info=orm.info(schema=info.SchemaInfo(required=False)),
+    )
+
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__} id={self.id}>"
 
 
 class Session(BaseSession):

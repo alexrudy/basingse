@@ -6,9 +6,6 @@ python_version := env('PYTHON_VERSION', "3.12")
 virtual_env :=  justfile_directory() / ".venv/bin"
 export PATH := virtual_env + ":" + env('PATH')
 
-
-
-
 # Install dependencies
 sync:
     uv sync --all-packages --group dev
@@ -23,6 +20,10 @@ isort:
 # Run tests
 test:
     uv run --group testing pytest -q -n 4 --cov-report=html
+
+# serve coverage report
+htmlcov PORT="8082":
+    uv run python -m http.server --directory=htmlcov/ {{PORT}}
 
 # Run all tests
 test-all:

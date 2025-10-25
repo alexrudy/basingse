@@ -35,7 +35,7 @@ dependencies = [
     "humanize>=4.12.1",
     "itsdangerous>=2.2.0",
     "markdown-it-py[plugins]>=3.0.0",
-    "marshmallow>=3.26.1",
+    "marshmallow>=3.26.1,<4",
     "marshmallow-dataclass>=8.7.1",
     "opentelemetry-api>=1.31.0",
     "opentelemetry-exporter-otlp>=1.31.0",
@@ -89,6 +89,9 @@ assets = "src/basingse/assets"
 [tool.uv.workspace]
 members = ["extras/*"]
 
+[tool.uv.sources]
+pytest-basingse = { workspace = true }
+
 [tool.black]
 line-length = 120
 
@@ -130,6 +133,7 @@ docs = ["sphinx>=8.2.1", "sphinx-automodapi>=0.18.0", "sphinx-mdinclude>=0.6.2"]
 testing = [
     "freezegun>=1.5.1",
     "pytest>=8.3.4",
+    "pytest-basingse",
     "pytest-cov>=6.0.0",
     "pytest-xdist>=3.6.1",
 ]

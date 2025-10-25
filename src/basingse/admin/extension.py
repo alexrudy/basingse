@@ -446,7 +446,10 @@ class AdminView(View, Generic[M, I]):
     def form_field_list(self, id: I) -> IntoResponse:
         field_name = request.args["field"]
         action = request.args.get("list", "append")
-        obj = self.single(id=id)
+        if id is None:
+            obj = self.model()
+        else:
+            obj = self.single(id=id)
         form = self.form(obj=obj)
         with transform_key_error():
             field = form
@@ -462,7 +465,7 @@ class AdminView(View, Generic[M, I]):
 
         if action == "append":
             field.append_entry()
-            return self.render_template("field_list", item=obj, context={"field": field})
+            return self.render_template("edit", item=obj, context={"form": form})
         elif action == "delete":
             target = request.headers["HX-target"]
             entries = field.entries[:]
@@ -472,13 +475,17 @@ class AdminView(View, Generic[M, I]):
                     continue
                 else:
                     field.append_entry(entry.data)
-            return self.render_template("field", item=obj, context={"field": field})
+            return self.render_template("edit", item=obj, context={"form": form})
         raise BadRequest(f"field-list requires a known action, got {action}")
 
     @action(name="field", permission="edit", url="/<key>/edit/field/", methods=["GET", "POST", "DELETE"])
     def form_field(self, id: I) -> IntoResponse:
         field_name = request.args["field"]
-        obj = self.single(id=id)
+        if id is None:
+            obj = self.model()
+        else:
+            obj = self.single(id=id)
+
         form = self.form(obj=obj)
         with transform_key_error():
             field = form
@@ -488,7 +495,7 @@ class AdminView(View, Generic[M, I]):
                 except ValueError:
                     pass
                 field = field[part]  # type: ignore
-        return self.render_template("field", item=obj, context={"field": field})
+        return self.render_template("edit", item=obj, context={"form": form})
 
     def redirect(self, endpoint: str, *, item: M) -> IntoResponse:
         if request_accepts_json():
@@ -607,9 +614,24 @@ class AdminView(View, Generic[M, I]):
             methods=["GET"],
         )
 
+        do_view = cls.as_view("do")
+
         cls.bp.add_url_rule(
             f"/{key}/do/<action>/",
-            view_func=cls.as_view("do"),
+            view_func=do_view,
+            methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+        )
+
+        cls.bp.add_url_rule(
+            "/new/do/<action>/",
+            view_func=do_view,
+            methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+            defaults={"id": None},
+        )
+
+        cls.bp.add_url_rule(
+            "/do/<action>/",
+            view_func=cls.as_view("does"),
             methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
         )
 

@@ -22,3 +22,5 @@ exclude_lines =
     if __name__ == .__main__.:
     except BaseException:
 	@overload
+omit =
+    src/basingse/_version.py

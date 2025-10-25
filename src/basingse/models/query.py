@@ -6,10 +6,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import select
 from sqlalchemy.sql.expression import ColumnExpressionArgument
 
-from . import Model
+from . import Base
 from basingse import svcs
 
-M = TypeVar("M", bound=Model)
+M = TypeVar("M", bound=Base)
 
 
 def update_one(cls: type[M], data: dict[str, Any], field: str) -> M:

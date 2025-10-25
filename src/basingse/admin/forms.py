@@ -1,5 +1,9 @@
 import enum
+import itertools
+from collections.abc import Callable
+from collections.abc import Iterable
 from typing import Any
+from typing import Generic
 from typing import Protocol
 from typing import TypeVar
 
@@ -19,6 +23,7 @@ from werkzeug.exceptions import BadRequest
 from werkzeug.routing.exceptions import BuildError
 from wtforms.fields import Field
 from wtforms.fields import FieldList
+from wtforms.fields import FormField
 from wtforms.form import Form
 from wtforms.validators import ValidationError
 from wtforms.widgets import html_params
@@ -223,16 +228,16 @@ class InteractiveFieldListWidget:
     )
 
     ul: Tag = Tag(tags.ul)
-    li: Tag = Tag(tags.li, classes={"input-group"})
+    control: Tag = Tag(tags.div, classes={"input-group"})
 
     add: Widget = attrs.field(factory=lambda: ControlWidget.add_btn("Add"))
     row: Widget = attrs.field(factory=lambda: RemovableRowWidget())
 
     def render_control_row(self, field: Field, **kwargs: Any) -> Markup:
-        htmx = HtmxProperties(swap=HtmxSwap.BEFORE_BEGIN, target="this")
-        item = self.li(id=f"control-{field.id}", **htmx.attrs)
+        htmx = HtmxProperties(swap=HtmxSwap.BEFORE_END, target=f"#{field.id}")
+        item = self.control(id=f"control-{field.id}", **htmx.attrs)
 
-        htmx = HtmxProperties(get=self.endpoint.build(field=field.id))
+        htmx = HtmxProperties(get=self.endpoint.build(field=field.id), select=f"#{field.id} li:last-child")
         item.add_raw_string(self.add(field, **htmx.attrs))
         return render(item)
 
@@ -247,7 +252,8 @@ class InteractiveFieldListWidget:
 
         container = self.ul(**kwargs, **htmx.attrs)
         for subfield in field:
-            container.add_raw_string(self.row(subfield, class_="form-control"))
+            row = self.row(subfield, class_="form-control")
+            container.add_raw_string(row)
 
         container.add_raw_string(self.render_control_row(field))
         return render(container)
@@ -266,3 +272,51 @@ class UniqueListValidator:
         values = [item.data for item in field]
         if len(values) != len(set(values)):
             raise ValidationError(self.message)
+
+
+class ModelFormList(FieldList, Generic[M]):
+    """Adapts a field list for a suitable relationship pattern."""
+
+    def __init__(
+        self,
+        form: type[Form],
+        model: type[M],
+        label: str | None = None,
+        validators: list[Any] | None = None,
+        min_entries: int = 0,
+        max_entries: int | None = None,
+        separator: str = "-",
+        default: Iterable[Any] | Callable[[], Iterable[Any]] = (),
+        **kwargs: Any,
+    ) -> None:
+        field = FormField(form)
+        super().__init__(
+            field,
+            label=label,
+            validators=validators,
+            min_entries=min_entries,
+            max_entries=max_entries,
+            separator=separator,
+            default=default,
+            **kwargs,
+        )
+
+        self.model = model
+
+    def populate_obj(self, obj: object, name: str) -> None:
+        values = getattr(obj, name, None)
+        try:
+            ivalues = iter(values)  # type: ignore
+        except TypeError:
+            ivalues = iter([])
+
+        candidates = itertools.chain(ivalues, (self.model() for _ in itertools.repeat(None)))
+        _fake = type("_fake", (object,), {})
+        output = []
+        for field, data in zip(self.entries, candidates, strict=False):
+            fake_obj = _fake()
+            fake_obj.data = data  # type: ignore
+            field.populate_obj(fake_obj, "data")
+            output.append(fake_obj.data)  # type: ignore
+
+        setattr(obj, name, output)

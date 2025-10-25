@@ -11,7 +11,7 @@ from typing import TypeVar
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
 import sqlalchemy.sql.elements
-import wtforms
+import wtforms.fields
 from bootlace.table import columns
 from bootlace.table.base import ColumnBase as Column
 from bootlace.table.base import Table
@@ -154,10 +154,14 @@ class FormInfo:
             del kwargs[key]
 
         if not column.nullable:
-            if not any(
-                isinstance(validator, wtforms.validators.DataRequired) for validator in kwargs.get("validators", [])
-            ):
-                kwargs.setdefault("validators", []).append(wtforms.validators.DataRequired())
+            is_bool = issubclass(fcls, wtforms.fields.BooleanField)
+            has_required_validator = any(
+                isinstance(validator, (wtforms.validators.InputRequired, wtforms.validators.DataRequired))
+                for validator in kwargs.get("validators", [])
+            )
+
+            if not (is_bool or has_required_validator):
+                kwargs.setdefault("validators", []).append(wtforms.validators.InputRequired())
 
         assert issubclass(fcls, wtforms.Field), f"{fcls} is not a subclass of {wtforms.Field}"
 
